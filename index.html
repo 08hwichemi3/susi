@@ -693,6 +693,25 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 }
 #pwCancel{margin-top:2px}
 
+
+/* 엑셀 양식 도움말 (접었다 펴는 것) */
+.fmthelp{margin:10px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.fmthelp summary{cursor:pointer;padding:9px 13px;font-size:12.5px;font-weight:600;color:var(--accent);
+  list-style:none}
+.fmthelp summary::-webkit-details-marker{display:none}
+.fmthelp summary::before{content:'▸ ';color:var(--ink-3)}
+.fmthelp[open] summary::before{content:'▾ '}
+.fmthelp > *:not(summary){margin-left:13px;margin-right:13px}
+.fmthelp > *:last-child{margin-bottom:11px}
+.gt.kv{font-size:12px;margin-top:2px;width:100%;table-layout:auto}
+.gt.kv th{width:88px;text-align:left;color:var(--ink-2);font-weight:600;white-space:nowrap;
+  vertical-align:top}
+/* .gt 는 값을 가운데로 모으는데, 여기는 설명 문장이라 왼쪽 정렬이 읽기 편하다 */
+.gt.kv td{color:var(--ink-3);text-align:left;line-height:1.7}
+.gt.kv td b{color:var(--ink)}
+.gt.kv .or{color:var(--accent);font-size:11px}
+.yrrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+
 </style></head><body><!-- ══════════ 로그인 ══════════ -->
 <div id="gate" class="gate">
   <div class="gatebox">
@@ -823,7 +842,26 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       <div class="panel pad">
         <h3 class="sec">학생 자료 올리기 <span class="tag" id="rosterOnly"></span></h3>
         <p class="hint"><b>학생자료양식.xlsx</b> 를 그대로 올리시면 됩니다.
-          머리글 두 줄(묶음 이름 + 세부 항목)을 알아서 읽습니다.</p>
+          다른 양식도 <b>뜻이 같으면 알아서 읽습니다</b> — 머리글이 한 줄이든 두 줄이든,
+          위에 제목 줄이 몇 개 있든, 열 순서가 달라도 됩니다.</p>
+        <details class="fmthelp">
+          <summary>어떤 이름까지 알아보나요?</summary>
+          <table class="gt kv">
+            <tbody>
+              <tr><th>반</th><td>반 · 학반 · 분반 · 학급 &nbsp;<span class="or">또는</span>&nbsp; <b>학번</b> 한 칸(30125)</td></tr>
+              <tr><th>번호</th><td>번호 · 번 · 출석번호</td></tr>
+              <tr><th>이름</th><td>이름 · 성명 · 학생명</td></tr>
+              <tr><th>생년월일</th><td>생년월일 · 생일 · 출생일 &nbsp;<span class="or">(20080101 · 2008-01-01 · 2008년 1월 1일)</span></td></tr>
+              <tr><th>전화번호</th><td>전화번호 · 연락처 · 휴대전화 · 핸드폰</td></tr>
+              <tr><th>내신 계열</th><td>국수영과 · 국·수·영·과 · 국영수과 (순서 무관) / 국수영사 / 전과목 · 전교과</td></tr>
+              <tr><th>내신 학년</th><td>1학년 · 1 · 고1 / 평균 · 계</td></tr>
+              <tr><th>모의고사</th><td>3월 · 03월 · 3월모의 … 수능 &nbsp;<span class="or">(3~11월 아무 달)</span></td></tr>
+              <tr><th>모의 과목</th><td>국 · 국어 / 수 · 수학 / 영 · 영어 / 탐1 · 사탐1 · 과탐1 / 탐2</td></tr>
+            </tbody>
+          </table>
+          <p class="hint">올린 뒤 <b>「읽은 열」</b> 줄에 몇 칸을 알아봤는지 나옵니다.
+            빠진 게 있으면 <b>못 알아본 열</b>에 이름이 그대로 찍히니 알려 주세요.</p>
+        </details>
         <div class="tblwrap"><table class="gt fmt">
           <thead><tr><th>반</th><th>번호</th><th>이름</th>
             <th colspan="4">국수영과 / 국수영사 / 전과목</th>
@@ -839,10 +877,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           이미 있는 학생은 이름·연락처와 성적만 갱신되고 계정·비밀번호는 그대로입니다.
           등급 칸의 <b>0</b> 이나 빈칸은 넣지 않고 건너뜁니다.</p>
         <div class="yrrow">
-          <label>학년
-            <select id="rosterGrade"><option value="3">3학년</option><option value="2">2학년</option><option value="1">1학년</option></select>
-          </label>
-          <button class="btn" id="pickRoster">엑셀 고르기</button>
+          <button class="btn primary" id="pickRoster">엑셀 고르기</button>
+          <span class="fh">3학년 명부로 읽습니다</span>
           <input type="file" id="rosterFile" accept=".xlsx,.xls,.csv" hidden>
         </div>
         <div id="rosterOut"></div>
@@ -2276,11 +2312,105 @@ window.SUSI_CFG = {
   var MOCKS = ['3월', '5월', '6월', '7월', '9월', '수능'];
   var SUBJ = [['korean','국'], ['math','수'], ['english','영'], ['sci1','탐1'], ['sci2','탐2']];
 
-  function norm(v) { return String(v == null ? '' : v).replace(/[\s()（）·.]/g, ''); }
+  /* ───────── 엑셀 읽기 ─────────
+     학교마다 양식이 조금씩 다릅니다. 「국수영과」를 「국·수·영·과」로 쓰기도 하고
+     「이름」을 「성명」, 「전화번호」를 「연락처」로 쓰기도 합니다. 머리글이 한 줄일 때도
+     두 줄일 때도 있고, 위에 제목 줄이 몇 개 붙어 있기도 합니다.
+     그래서 '정확히 이 글자' 대신 '뜻이 같으면 받아들이는' 방식으로 읽습니다. */
+
+  // 비교하기 전에 군더더기를 다 털어 낸다: 공백·괄호·가운뎃점·마침표·하이픈·밑줄·빗금
+  function norm(v) {
+    return String(v == null ? '' : v)
+      .replace(/[\s()（）\[\]{}·․.\-_/\\|,'"]/g, '')
+      .toLowerCase();
+  }
+
+  /* 이름표 한 개가 어떤 항목인지 알아본다.
+     alias 에 있는 조각이 '들어 있으면' 맞다고 본다(부분 일치) — 「학생이름」·「이름(성명)」
+     같은 변형을 일일이 적지 않아도 되게. */
+  function hasAny(key, list) {
+    for (var i = 0; i < list.length; i++) if (key.indexOf(list[i]) >= 0) return true;
+    return false;
+  }
+
+  var FIELD = {
+    cls:   ['반', '학급', '분반', 'class'],
+    num:   ['번호', '출석번', 'no', 'num'],
+    sno:   ['학번', '학생번호'],
+    name:  ['이름', '성명', '학생명', 'name'],
+    birth: ['생년월일', '생년월', '생일', '출생', 'birth', 'birthday'],
+    phone: ['전화', '연락처', '휴대', '핸드폰', '폰번', 'phone', 'hp', 'tel', 'mobile']
+  };
+
+  /* 내신 계열을 알아본다. 「국수영과」·「국·수·영·과」·「국영수과」처럼 순서가 달라도,
+     들어 있는 글자만 보고 판단한다. 「전과목」계열은 따로 본다. */
+  function naesinTrack(key) {
+    if (!key) return null;
+    if (/전과목|전교과|전체과목|전체|모든과목/.test(key)) return 'all';
+    var has = function (c) { return key.indexOf(c) >= 0; };
+    if (has('국') && has('수') && has('영')) {
+      if (has('과')) return 'nat';
+      if (has('사')) return 'hum';
+    }
+    // 계열 이름으로 쓰는 학교도 있다
+    if (/자연계|이과/.test(key)) return 'nat';
+    if (/인문계|문과/.test(key)) return 'hum';
+    return null;
+  }
+
+  /* 「1학년」·「1」·「고1」·「1년」 → _y1 / 「평균」·「계」 → _avg
+     ★ loose 를 켜면 긴 이름표 안에서 찾는다(「전과목1학년」처럼 한 줄 머리글일 때).
+     끄면 그 칸 전체가 학년 표시일 때만 인정한다.
+
+     처음에 /([123])\s*(학년|년|$)/ 로 썼다가 크게 데었습니다 —
+     `$` 때문에 **1·2·3 으로 끝나는 아무 문자열이나** 학년으로 읽혔습니다.
+     그래서 학번 `30512` 나 전화번호 `01033333333` 이 들어 있는 '데이터 줄' 이
+     머리글처럼 보였고, 모든 양식이 통째로 안 읽혔습니다. */
+  function naesinYear(key, loose) {
+    if (!key) return null;
+    if (/평균|avg|^계$|^소계$/.test(key)) return '_avg';
+    if (/^고?([123])(학년|년)?$/.test(key)) {
+      return '_y' + key.replace(/[^123]/g, '').charAt(0);
+    }
+    if (loose) {
+      var m = key.match(/([123])\s*학년/);
+      if (m) return '_y' + m[1];
+    }
+    return null;
+  }
+
+  /* 모의고사 이름을 고른다. 「3월」·「03월」·「3월모의」·「3모」 → 3월, 「수능」 → 수능.
+     달을 넓게 받는다(3~11월) — 학교마다 보는 달이 다르다. exam 은 자유 문자열이라
+     새 달이 들어와도 저장에는 문제가 없다. */
+  function mockName(key) {
+    if (!key) return null;
+    if (/수능/.test(key)) return '수능';
+    var m = key.match(/(1[012]|[3-9])\s*월/);
+    if (m) return parseInt(m[1], 10) + '월';
+    return null;
+  }
+
+  // 모의고사 과목: 국/국어, 수/수학, 영/영어, 탐1·사탐1·과탐1, 탐2…
+  function mockSubj(key) {
+    if (!key) return null;
+    if (/탐(구)?\s*2|사탐2|과탐2|탐구영역2|제2선택|선택2/.test(key)) return 'sci2';
+    if (/탐(구)?\s*1|사탐1|과탐1|탐구영역1|제1선택|선택1|^탐$|^탐구$/.test(key)) return 'sci1';
+    if (/국어|^국$/.test(key)) return 'korean';
+    if (/수학|^수$/.test(key)) return 'math';
+    if (/영어|^영$/.test(key)) return 'english';
+    return null;
+  }
+
+  var NAESIN = [['국수영과', 'nat'], ['국수영사', 'hum'], ['전과목', 'all']];
+  var YEARCOL = [['1학년', '_y1'], ['2학년', '_y2'], ['3학년', '_y3'], ['평균', '_avg']];
+  var MOCKS = ['3월', '5월', '6월', '7월', '9월', '수능'];
+  var SUBJ = [['korean', '국'], ['math', '수'], ['english', '영'], ['sci1', '탐1'], ['sci2', '탐2']];
 
   // 등급은 1~9 만 유효하다. 양식에 자리표시로 0 이 들어 있는 칸이 많아 그건 빈칸으로 본다.
   function grade(v) {
-    var n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.]/g, ''));
+    var t = String(v == null ? '' : v).trim();
+    if (!t) return null;
+    var n = parseFloat(t.replace(/[^0-9.]/g, ''));
     return (isFinite(n) && n >= 1 && n <= 9) ? n : null;
   }
   function gradeInt(v) {
@@ -2288,116 +2418,200 @@ window.SUSI_CFG = {
     return n === null ? null : Math.round(n);
   }
 
-  function parseStudentSheet(aoa) {
-    // 반·번호·이름이 있는 줄을 찾는다 (보통 2행)
-    var hRow = -1;
-    for (var i = 0; i < Math.min(aoa.length, 8); i++) {
+  /* ★ 하나의 파서로 통일했습니다. 예전에는 '두 줄 머리글용' 과 '한 줄 머리글용' 이
+     따로 있어서, 조금만 달라도 둘 다 실패하고 "읽어낼 수 있는 줄이 없습니다" 만 떴습니다.
+
+     읽는 순서
+       ① 머리글 줄을 찾는다 (위에서부터 20줄까지 훑는다 — 제목 줄이 몇 개 있어도 됨)
+       ② 그 윗줄이 '묶음 이름' 줄인지 본다. 병합 칸이라 첫 칸에만 이름이 있으므로
+          오른쪽으로 이어 채운다
+       ③ 각 칸의 이름표를 '묶음+세부', '세부' 두 가지로 만들어 두고 뜻으로 맞춘다  */
+  function parseSheet(aoa) {
+    if (!aoa || !aoa.length) return null;
+
+    // ① 머리글 줄 찾기
+    var hRow = -1, i, c;
+    for (i = 0; i < Math.min(aoa.length, 20); i++) {
       var row = (aoa[i] || []).map(norm);
-      if (row.indexOf('반') >= 0 && row.indexOf('번호') >= 0 && row.indexOf('이름') >= 0) { hRow = i; break; }
+      var hasCls = false, hasNum = false, hasSno = false, hasName = false;
+      for (c = 0; c < row.length; c++) {
+        if (!row[c]) continue;
+        if (hasAny(row[c], FIELD.sno)) hasSno = true;
+        else if (hasAny(row[c], FIELD.cls)) hasCls = true;
+        if (hasAny(row[c], FIELD.num)) hasNum = true;
+        if (hasAny(row[c], FIELD.name)) hasName = true;
+      }
+      if (((hasCls && hasNum) || hasSno) && hasName) { hRow = i; break; }
     }
     if (hRow < 0) return null;
 
-    // 윗줄의 묶음 이름을 오른쪽으로 이어 채운다 (병합처럼 쓰인 칸이라 첫 칸에만 이름이 있다)
-    var top = hRow > 0 ? (aoa[hRow - 1] || []) : [];
-    var sub = aoa[hRow] || [];
-    var width = Math.max(top.length, sub.length);
-    var group = [], cur = '';
-    for (var c = 0; c < width; c++) {
-      var g = norm(top[c]);
-      if (g) cur = g;
-      // 반·번호·이름·생년월일·전화번호는 묶음에 안 들어간다
-      group[c] = ['반', '번호', '이름', '생년월일', '전화번호'].indexOf(norm(sub[c])) >= 0 ? '' : cur;
+    /* 묶음 줄이 '위' 에 있는 양식도 있고 '아래' 에 있는 양식도 있다.
+         위:  [ '', '', '', 국수영과, '', '', '' ]      ← 묶음
+              [ 반, 번호, 이름, 1학년, 2학년, 3학년, 평균 ]  ← 우리가 찾은 줄
+         아래:[ 연락처, 성명, 학반, 출석번호, 국·수·영·과, '', '' ]  ← 우리가 찾은 줄(=묶음)
+              [ '', '', '', '', 고1, 고2, 고3 ]              ← 세부
+       찾은 줄 바로 아래가 '세부처럼 생겼으면'(학년·과목 이름만 있고 반·이름은 없음)
+       찾은 줄을 묶음으로 보고 한 칸 내려간다. */
+    var top, sub;
+    var below = aoa[hRow + 1] || [];
+    var looksSub = false, filled = 0, subish = 0;
+    for (c = 0; c < below.length; c++) {
+      var bn = norm(below[c]);
+      if (!bn) continue;
+      // 숫자만 있는 칸은 이름표가 아니라 자료다. 세지 않는다.
+      if (/^[0-9.]+$/.test(bn)) { subish = -99; break; }
+      filled++;
+      if (hasAny(bn, FIELD.cls) || hasAny(bn, FIELD.num) || hasAny(bn, FIELD.name) ||
+          hasAny(bn, FIELD.sno)) { subish = -99; break; }
+      if (naesinYear(bn) || mockSubj(bn)) subish++;
     }
-    var col = {};
-    for (c = 0; c < width; c++) {
-      var key = group[c] + norm(sub[c]);
-      if (key && col[key] === undefined) col[key] = c;
-    }
-    var need = ['반', '번호', '이름'];
-    for (i = 0; i < need.length; i++) if (col[need[i]] === undefined) return null;
+    looksSub = filled > 0 && subish >= Math.max(2, Math.ceil(filled / 2));
 
+    if (looksSub) { top = aoa[hRow] || []; sub = below; hRow = hRow + 1; }
+    else { sub = aoa[hRow] || []; top = hRow > 0 ? (aoa[hRow - 1] || []) : []; }
+    var width = Math.max(top.length, sub.length);
+
+    // ② 묶음 이름 이어 채우기. 다만 그 칸의 세부 이름이 이미 '반/번호/이름/생년월일/전화'면
+    //    묶음에 넣지 않는다 (그것들은 묶음 밖의 독립 칸이다).
+    var group = [], cur = '';
+    for (c = 0; c < width; c++) {
+      var gname = norm(top[c]);
+      if (gname) cur = gname;
+      var sname = norm(sub[c]);
+      var own = function (t) {
+        return hasAny(t, FIELD.cls) || hasAny(t, FIELD.num) || hasAny(t, FIELD.sno) ||
+               hasAny(t, FIELD.name) || hasAny(t, FIELD.birth) || hasAny(t, FIELD.phone);
+      };
+      // 묶음 칸 자체가 '연락처' 같은 사람 정보면 이어 채우지 않는다(오른쪽 칸까지 오염된다)
+      if (gname && own(gname)) cur = '';
+      group[c] = (own(sname) || own(gname)) ? '' : cur;
+    }
+
+    // ③ 칸마다 무슨 항목인지 정한다
+    var col = { cls: -1, num: -1, sno: -1, name: -1, birth: -1, phone: -1 };
+    var naesinCol = {};        // 'nat_y1' → 열번호
+    var mockCol = {};          // '3월|korean' → 열번호
+    var unknown = [];
+
+    for (c = 0; c < width; c++) {
+      var sn = norm(sub[c]), gn = group[c], tn = norm(top[c]);
+      var full = gn + sn;
+      /* ★ tn 까지 봐야 한다.
+         「생년월일」·「전화번호」는 묶음 줄에만 있고 세부 줄은 비어 있는 양식이 흔하다.
+         (sn 도 gn 도 비었지만 tn 에는 이름이 있는 상태 — group[] 은 그 칸을 '사람 정보'
+          로 보고 '' 로 지웠기 때문이다.)
+         예전 조건 `if (!sn && !gn) continue` 는 그 칸을 통째로 건너뛰어서
+         생년월일·전화번호를 못 찾았고, 묶음 줄이 아래에 있는 양식은 아예 못 읽었다. */
+      if (!sn && !gn && !tn) continue;
+
+      // 사람 정보. 세부(sn) 와 묶음 줄(tn) 양쪽을 다 본다.
+      var claimed = false;
+      ['sno', 'cls', 'num', 'name', 'birth', 'phone'].forEach(function (k) {
+        if (claimed || col[k] >= 0) return;
+        if (hasAny(sn, FIELD[k]) || (!sn && hasAny(tn, FIELD[k]))) { col[k] = c; claimed = true; }
+      });
+      if (claimed) continue;
+
+      // 모의고사 — 묶음이 달 이름, 세부가 과목
+      var mo = mockName(gn) || mockName(sn);
+      var sj = mockSubj(sn) || mockSubj(full);
+      if (mo && sj) { if (mockCol[mo + '|' + sj] === undefined) mockCol[mo + '|' + sj] = c; continue; }
+
+      // 내신 — 묶음이 계열, 세부가 학년
+      var tr = naesinTrack(gn) || naesinTrack(full);
+      // 칸 자체가 학년이면 그대로, 아니면 긴 이름표 안에서 찾는다(「전과목1학년」)
+      var yr = naesinYear(sn) || naesinYear(full, true);
+      if (tr && yr) { if (naesinCol[tr + yr] === undefined) naesinCol[tr + yr] = c; continue; }
+
+      if (full) unknown.push(String(sub[c] || top[c] || '').trim());
+    }
+
+    if (col.name < 0) return null;
+    if (col.sno < 0 && (col.cls < 0 || col.num < 0)) return null;
+
+    // ── 줄 읽기 ──
     var out = [], warn = [], seen = {};
     for (var r = hRow + 1; r < aoa.length; r++) {
       var row2 = aoa[r] || [];
-      var get = function (k) { return col[k] === undefined ? '' : row2[col[k]]; };
-      var cls = parseInt(get('반'), 10), num = parseInt(get('번호'), 10);
-      var name = String(get('이름') == null ? '' : get('이름')).trim();
+      var at = function (idx) { return idx < 0 ? '' : row2[idx]; };
+      var cls, num;
+
+      if (col.sno >= 0 && String(at(col.sno)).replace(/[^0-9]/g, '').length >= 4) {
+        // 학번 한 칸으로 준 경우: 5자리 = 학년1 + 반2 + 번호2
+        var sv = parseInt(String(at(col.sno)).replace(/[^0-9]/g, ''), 10);
+        cls = Math.floor(sv / 100) % 100; num = sv % 100;
+      } else {
+        cls = parseInt(at(col.cls), 10); num = parseInt(at(col.num), 10);
+      }
+      var name = String(at(col.name) == null ? '' : at(col.name)).trim();
       if (!cls || !num || !name) continue;
+      // 합계·평균 줄이 섞여 들어오는 것을 막는다
+      if (/^(합계|계|평균|소계|총계|전체)$/.test(name.replace(/\s/g, ''))) continue;
 
       var key2 = cls + '-' + num;
-      if (seen[key2]) { warn.push('· ' + cls + '반 ' + num + '번 ' + name + ': 같은 반·번호가 여러 줄 (뒤의 줄은 건너뜀)'); continue; }
+      if (seen[key2]) {
+        warn.push('· ' + cls + '반 ' + num + '번 ' + name + ': 같은 반·번호가 여러 줄 (뒤의 줄은 건너뜀)');
+        continue;
+      }
       seen[key2] = 1;
 
       var g = {};
       NAESIN.forEach(function (n) {
-        YEARCOL.forEach(function (y) { g[n[1] + y[1]] = grade(get(n[0] + y[0])); });
-      });
-      var mocks = [];
-      MOCKS.forEach(function (mo) {
-        var rec = { exam: mo }, any = false;
-        SUBJ.forEach(function (sj) {
-          var v = gradeInt(get(mo + sj[1]));
-          if (v !== null) { rec[sj[0]] = v; any = true; }
+        YEARCOL.forEach(function (y) {
+          g[n[1] + y[1]] = grade(at(naesinCol[n[1] + y[1]] === undefined ? -1 : naesinCol[n[1] + y[1]]));
         });
-        if (any) mocks.push(rec);
       });
+
+      var byMo = {};
+      Object.keys(mockCol).forEach(function (k) {
+        var parts = k.split('|'), v = gradeInt(at(mockCol[k]));
+        if (v === null) return;
+        (byMo[parts[0]] = byMo[parts[0]] || { exam: parts[0] })[parts[1]] = v;
+      });
+      var mocks = Object.keys(byMo).map(function (k) { return byMo[k]; });
 
       out.push({
         cls: cls, num: num, name: name,
-        birth: toDate(get('생년월일')),
-        phone: String(get('전화번호') == null ? '' : get('전화번호')).trim(),
+        birth: toDate(at(col.birth)),
+        phone: String(at(col.phone) == null ? '' : at(col.phone)).trim(),
         grades: g, mocks: mocks
       });
     }
-    return { rows: out, warn: warn };
+
+    // 무엇을 어떻게 읽었는지 알려 준다 — 열이 안 잡혔을 때 원인을 바로 볼 수 있게
+    var found = {
+      naesin: Object.keys(naesinCol).length,
+      mock: Object.keys(mockCol).length,
+      birth: col.birth >= 0, phone: col.phone >= 0,
+      bySno: col.sno >= 0 && col.cls < 0,
+      unknown: unknown.filter(function (v, ix, a) { return v && a.indexOf(v) === ix; }).slice(0, 12)
+    };
+    return { rows: out, warn: warn, found: found };
   }
 
-  // 옛 한 줄 머리글 양식도 계속 받아준다
-  function parseSimpleSheet(aoa) {
-    if (!aoa.length) return null;
-    var head = (aoa[0] || []).map(norm);
-    if (head.indexOf('반') < 0 || head.indexOf('번호') < 0) return null;
-    var col = {}; head.forEach(function (h, i) { if (h && col[h] === undefined) col[h] = i; });
-    var out = [], warn = [], seen = {};
-    for (var r = 1; r < aoa.length; r++) {
-      var row = aoa[r] || [];
-      var get = function (k) { return col[k] === undefined ? '' : row[col[k]]; };
-      var cls = parseInt(get('반'), 10), num = parseInt(get('번호'), 10);
-      var name = String(get('이름') == null ? '' : get('이름')).trim();
-      if (!cls || !num || !name) continue;
-      var k = cls + '-' + num;
-      if (seen[k]) { warn.push('· ' + cls + '반 ' + num + '번: 같은 반·번호가 여러 줄'); continue; }
-      seen[k] = 1;
-      var g = {};
-      NAESIN.forEach(function (n) {
-        YEARCOL.forEach(function (y) { g[n[1] + y[1]] = grade(get(n[0] + y[0])); });
-      });
-      var mocks = [];
-      MOCKS.forEach(function (mo) {
-        var rec = { exam: mo }, any = false;
-        SUBJ.forEach(function (sj) {
-          var v = gradeInt(get(mo + sj[1]));
-          if (v !== null) { rec[sj[0]] = v; any = true; }
-        });
-        if (any) mocks.push(rec);
-      });
-      out.push({ cls: cls, num: num, name: name, birth: toDate(get('생년월일')),
-                 phone: String(get('전화번호') == null ? '' : get('전화번호')).trim(),
-                 grades: g, mocks: mocks });
-    }
-    return { rows: out, warn: warn };
-  }
+  // 이 학교는 3학년만 씁니다. 화면의 학년 고르는 칸을 없애고 여기서 고정합니다.
+  // (1·2학년까지 쓰게 되면 이 상수와 shell.html 의 안내 문구를 같이 되살리면 됩니다.)
+  var ROSTER_GRADE = 3;
 
   function uploadStudentData(file) {
-    var grade1 = parseInt($('rosterGrade').value, 10);
+    var grade1 = ROSTER_GRADE;
     var box = $('rosterOut');
     box.innerHTML = '<p class="hint">읽는 중…</p>';
 
     readSheetAoa(file).then(function (aoa) {
-      var parsed = parseStudentSheet(aoa) || parseSimpleSheet(aoa);
-      if (!parsed || !parsed.rows.length) {
-        box.innerHTML = '<div class="upres"><span class="badline">읽어낼 수 있는 줄이 없습니다.</span>' +
-          '<p class="hint">머리글에 <b>반 · 번호 · 이름</b> 이 있어야 합니다.</p></div>';
+      var parsed = parseSheet(aoa);
+      if (!parsed) {
+        box.innerHTML = '<div class="upres"><span class="badline">머리글을 찾지 못했습니다.</span>' +
+          '<p class="hint">어느 한 줄에 <b>반 · 번호 · 이름</b>(또는 <b>학번 · 이름</b>)이 있어야 합니다.<br>' +
+          '「학반·분반」, 「성명」, 「연락처」처럼 달리 쓰셔도 알아봅니다. ' +
+          '위에 제목 줄이 몇 개 있어도 괜찮습니다.</p></div>';
+        return;
+      }
+      if (!parsed.rows.length) {
+        box.innerHTML = '<div class="upres"><span class="badline">머리글은 찾았는데 학생 줄이 없습니다.</span>' +
+          '<p class="hint">반·번호·이름이 모두 채워진 줄만 읽습니다.</p>' +
+          (parsed.warn.length ? '<ul>' + parsed.warn.slice(0, 10).map(function (w) {
+            return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
         return;
       }
       var rows = parsed.rows, warn = parsed.warn.slice();
@@ -2490,7 +2704,7 @@ window.SUSI_CFG = {
           return sb.from('mock_exams').upsert(mRows, { onConflict: 'student_id,exam' });
         }).then(function (r2) {
           if (r2 && r2.error) throw r2.error;
-          report(rows, made, gRows.length, mRows.length, noContact, warn, canMakeAccounts, forAcct);
+            report(rows, made, gRows.length, mRows.length, noContact, warn, canMakeAccounts, forAcct, parsed.found);
         });
       });
     }).catch(function (e) {
@@ -2498,7 +2712,7 @@ window.SUSI_CFG = {
     });
   }
 
-  function report(rows, made, nG, nM, noContact, warn, canMakeAccounts, forAcct) {
+  function report(rows, made, nG, nM, noContact, warn, canMakeAccounts, forAcct, found) {
     var h = '<div class="upres"><span class="okline">' + rows.length + '줄을 읽었습니다.</span><br>' +
       (canMakeAccounts
         ? '계정 <b>' + made + '명</b>'
@@ -2510,6 +2724,22 @@ window.SUSI_CFG = {
            '계정까지 만들려면 그 두 칸을 채워 다시 올리세요.</span>';
     } else if (noContact) {
       h += '<br><span class="hint">생년월일·전화번호가 없는 ' + noContact + '줄은 계정을 못 만들었습니다(성적은 들어갑니다).</span>';
+    }
+    /* 무엇을 어떻게 읽었는지 보여 준다.
+       열 이름이 달라 못 알아본 칸이 있을 때, 「성적 0명」만 뜨면 원인을 알 수 없다. */
+    if (found) {
+      var bits = [];
+      bits.push('내신 열 <b>' + found.naesin + '</b>칸');
+      bits.push('모의고사 열 <b>' + found.mock + '</b>칸');
+      bits.push('생년월일 ' + (found.birth ? '찾음' : '<b class="clashk">없음</b>'));
+      bits.push('전화번호 ' + (found.phone ? '찾음' : '<b class="clashk">없음</b>'));
+      if (found.bySno) bits.push('<b>학번</b> 칸으로 읽음');
+      h += '<p class="hint" style="margin-top:8px">읽은 열: ' + bits.join(' · ') + '</p>';
+      if (found.unknown.length) {
+        h += '<p class="hint">못 알아본 열: ' +
+          found.unknown.map(function (u) { return '<code>' + esc(u) + '</code>'; }).join(' ') +
+          ' — 성적 열인데 빠졌다면 이름을 알려 주세요.</p>';
+      }
     }
     if (warn.length) {
       h += '<ul>' + warn.slice(0, 25).map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>';
