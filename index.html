@@ -310,15 +310,21 @@ td.jh{color:var(--ink-2)}
 .sortbar .sb-label{font-size:11px;color:var(--ink-3);font-weight:600;
   letter-spacing:.06em;text-transform:uppercase}
 .sortbar .sb-empty{font-size:11.5px;color:var(--ink-3)}
-.sbchip{display:inline-flex;align-items:center;gap:2px;padding:2px 3px 2px 8px;
+.sbchip{display:inline-flex;align-items:center;gap:2px;padding:2px 3px 2px 5px;
   border:1px solid var(--accent-line);border-radius:999px;background:var(--surface);
-  font-size:12px;color:var(--ink)}
+  font-size:12px;color:var(--ink);
+  cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.sbchip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sbchip.dragging{cursor:grabbing;opacity:.6;border-style:dashed}
+.sortbar.sb-dragging .sbchip{transition:none}
+.sbchip .grip{color:var(--ink-3);font-size:12px;line-height:1;margin-right:3px;letter-spacing:-1px}
 .sbchip .no{color:var(--accent);font-weight:700;margin-right:3px}
 .sbchip .nm{margin-right:3px}
+.sbchip .dir{color:var(--accent);font-weight:700;font-size:11px;margin-right:2px}
 .sbchip button{border:0;background:transparent;cursor:pointer;font-family:inherit;
-  color:var(--ink-3);border-radius:999px;width:20px;height:20px;line-height:1;padding:0;font-size:11px}
+  color:var(--ink-3);border-radius:999px;width:20px;height:20px;line-height:1;padding:0;font-size:11px;
+  touch-action:manipulation}
 .sbchip button:hover{background:var(--surface-2);color:var(--accent)}
-.sbchip button.dir{color:var(--accent);font-weight:700}
 .sb-clear{margin-left:auto;border:1px solid var(--line-2);background:var(--surface);
   color:var(--ink-3);border-radius:7px;padding:3px 10px;font-size:11.5px;cursor:pointer;font-family:inherit}
 .sb-clear:hover{border-color:var(--rose);color:var(--rose)}
@@ -808,14 +814,18 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <span class="fh">숫자 8자리로 붙여서 (2008년 1월 1일 → 20080101)</span>
         </label>
         <label>전화번호
-          <input type="tel" id="inPhone" inputmode="numeric" placeholder="010-1234-5678">
+          <input type="tel" id="inPhone" inputmode="tel" placeholder="010-1234-5678">
+          <span class="fh"><b>-</b> 는 넣어도 되고 빼도 됩니다 (01012345678 도 됩니다)</span>
         </label>
       </div>
+      <!-- 학생은 비밀번호를 바꾸지 않습니다 (susi_20). 늘 생년월일+전화번호로 들어옵니다.
+           아래 두 칸은 예전 방식(스스로 바꾼 학생)이 남아 있을 때를 위해 남겨 두되,
+           평소에는 감춰 둡니다 — setMode('first') 고정. -->
       <label id="pwOnly" class="hidden">비밀번호
         <input type="password" id="inPw" autocomplete="current-password">
       </label>
       <button type="submit" class="gbtn" id="loginBtn">로그인</button>
-      <button type="button" class="glink" id="toggleMode">비밀번호를 바꾸셨나요?</button>
+      <button type="button" class="glink hidden" id="toggleMode">비밀번호를 바꾸셨나요?</button>
     </form>
 
     <!-- 선생님: 이메일 + 비밀번호 -->
@@ -936,18 +946,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <p class="hint">올린 뒤 <b>「읽은 열」</b> 줄에 몇 칸을 알아봤는지 나옵니다.
             빠진 게 있으면 <b>못 알아본 열</b>에 이름이 그대로 찍히니 알려 주세요.</p>
         </details>
-        <div class="tblwrap"><table class="gt fmt">
-          <thead><tr><th>반</th><th>번호</th><th>이름</th>
-            <th colspan="4">국수영과 / 국수영사 / 전과목</th>
-            <th colspan="5">3월·5월·6월·7월·9월·수능</th>
-            <th>생년월일</th><th>전화번호</th></tr></thead>
-          <tbody><tr><td>1</td><td>1</td><td>고다윤</td>
-            <td colspan="4">1학년 · 2학년 · 3학년 · 평균</td>
-            <td colspan="5">국 · 수 · 영 · 탐1 · 탐2</td>
-            <td>20080101</td><td>010-1234-5678</td></tr></tbody>
-        </table></div>
         <p class="hint">이 한 파일로 <b>계정 만들기 · 내신 · 모의고사</b>가 한 번에 들어갑니다.
           <b>생년월일·전화번호</b>가 있어야 계정이 만들어지고, 그 두 값이 첫 비밀번호가 됩니다.
+          전화번호는 <b>-를 넣든 빼든</b> 상관없습니다.
           이미 있는 학생은 이름·연락처와 성적만 갱신되고 계정·비밀번호는 그대로입니다.
           등급 칸의 <b>0</b> 이나 빈칸은 넣지 않고 건너뜁니다.</p>
         <div class="yrrow">
@@ -1316,6 +1317,25 @@ window.SUSI_CFG = {
     if (b.length === 6) return b;
     return '';
   }
+  /* 전화번호를 「010-1234-5678」 한 가지 모양으로 맞춘다.
+     하이픈이 있든 없든, 공백·점이 섞였든, 엑셀이 숫자로 읽어 앞의 0 을 떨어뜨렸든
+     같은 값이 되게 한다. 비밀번호는 어차피 '숫자만 뽑아 뒤 4자리' 라 바뀌지 않는다.
+     모양을 못 알아보겠으면 적힌 그대로 둔다 — 함부로 고치지 않는다. */
+  function normPhone(v) {
+    var raw = String(v == null ? '' : v).trim();
+    if (!raw) return '';
+    var d = raw.replace(/[^0-9]/g, '');
+    if (d.length === 12 && d.slice(0, 2) === '82') d = '0' + d.slice(2);   // +82 10 …
+    if (d.length === 10 && d.charAt(0) === '1') d = '0' + d;               // 엑셀이 0 을 떨어뜨림
+    if (d.length === 11 && d.slice(0, 2) === '01') return d.slice(0, 3) + '-' + d.slice(3, 7) + '-' + d.slice(7);
+    if (d.length === 10 && d.slice(0, 2) === '02') return d.slice(0, 2) + '-' + d.slice(2, 6) + '-' + d.slice(6);
+    // ★ 010 으로 시작하는데 10자리면 한 자리 빠진 오타다(010 은 뒤가 늘 8자리).
+    //    이걸 3-3-4 로 묶으면 멀쩡한 번호처럼 보여서 오타를 못 알아본다. 그대로 둔다.
+    if (d.length === 10 && d.slice(0, 3) === '010') return raw;
+    if (d.length === 10 && d.charAt(0) === '0') return d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6);
+    return raw;
+  }
+
   function initialPassword(birth, phone) {
     var d = String(phone || '').replace(/[^0-9]/g, '');
     return birth6(birth) + d.slice(-4);
@@ -1423,11 +1443,14 @@ window.SUSI_CFG = {
     }).then(function (r) {
       if (r.error) throw r.error;
       ME = r.data;
-      // 학생만이 아니라 선생님도 첫 로그인 때 바꾸게 한다.
-      // 담임 초기 비밀번호는 1111 이라 안 바꾸면 옆자리에서 그대로 들어올 수 있다.
-      // 총관리자는 제외한다 — 이미 자기 비밀번호를 쓰고 있고, 강제로 막아 두면
-      // 관리자가 못 들어가는 상황이 생길 수 있다. (필요하면 [비밀번호] 로 직접 바꾼다)
-      if (ME.role !== 'super_admin' && ME.must_change_password) { showChangePw(); return; }
+      // 첫 로그인 때 비밀번호를 바꾸게 하는 것은 '담임' 뿐이다.
+      //  · 담임 — 초기 비밀번호가 1111 이라 안 바꾸면 옆자리에서 그대로 들어온다
+      //  · 총관리자 — 이미 자기 비밀번호를 쓰고 있고, 강제로 막아 두면 관리자가
+      //    못 들어가는 상황이 생길 수 있다 (필요하면 [비밀번호] 로 직접 바꾼다)
+      //  · 학생 — 비밀번호를 아예 안 바꾼다. 늘 '생년월일 6자리 + 전화번호 뒤 4자리'.
+      //    선생님이 학생 로그인을 대신 확인해 줘야 하는데, 학생이 바꿔 버리면
+      //    아무도 못 들어가고 계정을 지웠다 다시 만드는 수밖에 없다.
+      if (ME.role === 'teacher' && ME.must_change_password) { showChangePw(); return; }
       return enter();
     });
   }
@@ -1446,11 +1469,9 @@ window.SUSI_CFG = {
     $('pwWho').textContent = ME.name + (ME.student_no ? ' · ' + ME.student_no : '');
     $('pwWarn').innerHTML = voluntary
       ? '새 비밀번호는 <b>8자 이상</b>으로 정해 주세요.'
-      : (ME.role === 'student'
-          ? '처음 쓰신 <b>생년월일 + 전화번호</b>는 같은 반 친구도 알 수 있습니다. ' +
-            '지금 바꾸면 그 조합으로는 더 이상 들어올 수 없습니다.'
-          : '초기 비밀번호 <b>1111</b>은 누구나 아는 값입니다. ' +
-            '지금 바꾸지 않으면 다른 분이 선생님 계정으로 들어와 담당 학생 자료를 볼 수 있습니다.');
+      /* 강제 변경 화면은 이제 '담임' 에게만 뜬다 (susi_20 · 학생은 비밀번호 고정) */
+      : '초기 비밀번호 <b>1111</b>은 누구나 아는 값입니다. ' +
+        '지금 바꾸지 않으면 다른 분이 선생님 계정으로 들어와 담당 학생 자료를 볼 수 있습니다.';
     $('pwCancel').classList.toggle('hidden', !voluntary);
     $('newPw').value = ''; $('newPw2').value = '';
     say('pwMsg', '');
@@ -1508,6 +1529,8 @@ window.SUSI_CFG = {
     $('whoRole').textContent = ROLENAME[ME.role] || ME.role;
     $('whoNo').textContent = ME.role === 'student'
       ? (ME.student_no + ' · ' + ME.grade + '학년 ' + ME.class_no + '반 ' + ME.number_no + '번') : '';
+    // 학생에게는 [비밀번호] 단추를 아예 보여 주지 않는다 (서버에도 막는 트리거가 있다 — susi_20)
+    $('myPw').classList.toggle('hidden', ME.role === 'student');
 
     window.SUSI.start();                       // 자료 색인이 준비된다 (양쪽 다 필요)
     return ME.role === 'student' ? enterStudent() : enterTeacher();
@@ -2684,7 +2707,7 @@ window.SUSI_CFG = {
       out.push({
         cls: cls, num: num, name: name,
         birth: toDate(at(col.birth)),
-        phone: String(at(col.phone) == null ? '' : at(col.phone)).trim(),
+        phone: normPhone(at(col.phone)),
         grades: g, mocks: mocks
       });
     }
@@ -2926,7 +2949,10 @@ window.SUSI_CFG = {
     $('fPw').addEventListener('submit', changePw);
     $('toggleMode').addEventListener('click', function () { setMode(mode === 'first' ? 'pw' : 'first'); });
     $('pwCancel').addEventListener('click', closeChangePw);
-    $('myPw').addEventListener('click', function () { showChangePw(true); });
+    $('myPw').addEventListener('click', function () {
+      if (ME && ME.role === 'student') return;      // 학생은 못 바꾼다 (아래에서 숨기지만 이중으로)
+      showChangePw(true);
+    });
     $('logout').addEventListener('click', function () {
       flush().then(function () { return sb.auth.signOut(); }).then(function () { location.reload(); });
     });
@@ -3255,35 +3281,107 @@ window.SUSI_CFG = {
        2·3순위를 어떻게 더하는지 알 길이 없었다(실제로 '선택이 안 된다' 는 이야기를 들음). */
     el.innerHTML = '<span class="sb-label">정렬 순서</span>' +
       cs.map(function (c, i) {
-        return '<span class="sbchip" data-k="' + c.k + '">' +
+        return '<span class="sbchip" data-k="' + c.k + '" tabindex="0"' +
+          ' title="끌어서 순위 바꾸기 · 눌러서 오름↕내림 뒤집기">' +
+          '<span class="grip" aria-hidden="true">⠿</span>' +
           '<span class="no">' + CIRCLE[i] + '</span>' +
           '<span class="nm">' + (SORTNAME[c.k] || c.k) + '</span>' +
-          '<button type="button" class="dir" data-act="dir" title="' +
-            (c.dir > 0 ? '오름차순 — 눌러서 내림차순' : '내림차순 — 눌러서 오름차순') + '">' +
-            (c.dir > 0 ? '▲' : '▼') + '</button>' +
-          (i > 0 ? '<button type="button" data-act="up" title="앞 순위로">↑</button>' : '') +
+          '<span class="dir">' + (c.dir > 0 ? '▲' : '▼') + '</span>' +
           '<button type="button" data-act="del" title="빼기">×</button>' +
           '</span>';
       }).join('') +
+      '<span class="sb-more"><b>끌어서</b> 순위를 바꾸고 <b>누르면</b> ▲▼가 뒤집힙니다' +
       (cs.length < 3
-        ? '<span class="sb-more"><b>표 머리글</b>을 누르면 ' + CIRCLE[cs.length] + ' 로 쌓입니다</span>'
-        : '<span class="sb-more">3단계까지 찼습니다 — ×로 하나 빼고 다시 누르세요</span>') +
+        ? ' · <b>표 머리글</b>을 누르면 ' + CIRCLE[cs.length] + ' 로 쌓입니다'
+        : ' · 3단계까지 찼습니다') + '</span>' +
       '<button type="button" class="sb-clear">정렬 지우기</button>';
+  }
+  function flipSort(k) {
+    var cs = (find.customSort || []).slice();
+    for (var i = 0; i < cs.length; i++) if (cs[i].k === k) { cs[i] = { k: k, dir: cs[i].dir * -1 }; break; }
+    find.customSort = cs; renderTable();
   }
   $('sortBar').addEventListener('click', function (e) {
     var btn = e.target.closest('button'); if (!btn) return;
     if (btn.classList.contains('sb-clear')) { find.customSort = []; renderTable(); return; }
+    if (btn.dataset.act !== 'del') return;
     var chip = btn.closest('.sbchip'); if (!chip) return;
-    var cs = (find.customSort || []).slice(), k = chip.dataset.k, i = -1, j;
-    for (j = 0; j < cs.length; j++) if (cs[j].k === k) { i = j; break; }
-    if (i < 0) return;
-    var act = btn.dataset.act;
-    if (act === 'dir') cs[i] = { k: k, dir: cs[i].dir * -1 };
-    else if (act === 'up' && i > 0) { var t = cs[i - 1]; cs[i - 1] = cs[i]; cs[i] = t; }
-    else if (act === 'del') cs.splice(i, 1);
-    find.customSort = cs;
-    renderTable();
+    var cs = (find.customSort || []).slice(), k = chip.dataset.k;
+    for (var j = 0; j < cs.length; j++) if (cs[j].k === k) { cs.splice(j, 1); break; }
+    find.customSort = cs; renderTable();
   });
+  /* 정렬 칩: 마우스로 끌든 손가락으로 끌든 순위가 바뀐다.
+     끌지 않고 그냥 누르면 ▲▼(오름/내림)이 뒤집힌다.
+     pointer 이벤트 하나로 마우스·터치·펜을 다 받는다. CSS 의 touch-action:none 이
+     있어야 모바일에서 화면이 같이 스크롤되지 않는다. */
+  (function () {
+    var bar = $('sortBar'); if (!bar) return;
+    var drag = null;
+    function chips() { return Array.prototype.slice.call(bar.querySelectorAll('.sbchip')); }
+    function renumber() {
+      chips().forEach(function (c, i) { var n = c.querySelector('.no'); if (n) n.textContent = CIRCLE[i] || ''; });
+    }
+    function commit() {
+      var cs = find.customSort || [], map = {}, out = [];
+      cs.forEach(function (c) { map[c.k] = c; });
+      chips().forEach(function (el) { if (map[el.dataset.k]) out.push(map[el.dataset.k]); });
+      if (out.length === cs.length) find.customSort = out;
+    }
+    bar.addEventListener('pointerdown', function (e) {
+      if (e.button != null && e.button > 0) return;
+      if (e.target.closest('button')) return;                 /* × · 정렬 지우기 */
+      var chip = e.target.closest('.sbchip'); if (!chip) return;
+      drag = { chip: chip, x: e.clientX, y: e.clientY, moved: false, id: e.pointerId };
+      try { bar.setPointerCapture(e.pointerId); } catch (err) { }
+    });
+    bar.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.moved) {
+        if (Math.abs(e.clientX - drag.x) < 6 && Math.abs(e.clientY - drag.y) < 6) return;
+        drag.moved = true; drag.chip.classList.add('dragging'); bar.classList.add('sb-dragging');
+      }
+      if (e.cancelable) e.preventDefault();
+      /* 한 칸씩 밀어 넣는데, 손가락이 한 번에 멀리 뛰어도 따라가도록
+         더 옮길 곳이 없을 때까지 되풀이한다(무한루프 방지로 8번까지). */
+      var guard = 0;
+      while (guard++ < 8 && stepOnce(e.clientX, e.clientY)) { }
+    });
+    function stepOnce(px, py) {
+      var list = chips(), me = drag.chip;
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i]; if (el === me) continue;
+        var r = el.getBoundingClientRect();
+        if (py < r.top - 6 || py > r.bottom + 6) continue;                 /* 다른 줄로 넘어간 칩 */
+        var mid = r.left + r.width / 2;
+        var after = !!(el.compareDocumentPosition(me) & 4);                /* me 가 el 뒤 */
+        if (px < mid && after) { el.parentNode.insertBefore(me, el); renumber(); return true; }
+        if (px > mid && !after) { el.parentNode.insertBefore(me, el.nextSibling); renumber(); return true; }
+      }
+      return false;
+    }
+    function endDrag(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      var d = drag; drag = null;
+      try { bar.releasePointerCapture(d.id); } catch (err) { }
+      d.chip.classList.remove('dragging'); bar.classList.remove('sb-dragging');
+      if (d.moved) { commit(); renderTable(); return; }
+      flipSort(d.chip.dataset.k);
+    }
+    bar.addEventListener('pointerup', endDrag);
+    bar.addEventListener('pointercancel', endDrag);
+    /* 키보드: 칩에 초점을 두고 ←→ 로 순위 이동, 스페이스/엔터로 ▲▼ 뒤집기 */
+    bar.addEventListener('keydown', function (e) {
+      var chip = e.target.closest && e.target.closest('.sbchip'); if (!chip) return;
+      var k = chip.dataset.k, cs = (find.customSort || []).slice(), i = -1, t;
+      for (var j = 0; j < cs.length; j++) if (cs[j].k === k) { i = j; break; }
+      if (i < 0) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flipSort(k); return; }
+      if (e.key === 'ArrowLeft' && i > 0) { t = cs[i - 1]; cs[i - 1] = cs[i]; cs[i] = t; }
+      else if (e.key === 'ArrowRight' && i < cs.length - 1) { t = cs[i + 1]; cs[i + 1] = cs[i]; cs[i] = t; }
+      else return;
+      e.preventDefault(); find.customSort = cs; renderTable();
+    });
+  })();
 
   function sortIds(ids) {
     if (find.customSort && find.customSort.length) return ids.sort(cmpCustom);
