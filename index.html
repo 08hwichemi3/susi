@@ -1180,8 +1180,13 @@ window.SUSI_CFG = {
   var STUDENTS = [], PICKED = null, NOTACT = {};
 
   var $ = function (id) { return document.getElementById(id); };
-  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  // 작은따옴표·백틱까지 막는다. 지금은 모든 속성을 큰따옴표로 쓰고 있어 안 막아도
+  // 뚫리지 않지만, 나중에 누가 class='...' 한 줄만 써도 즉시 구멍이 된다.
+  // (학생이 자기 이름을 고칠 수 있으므로 선생님 화면으로 오는 저장형 XSS 경로가 실재한다)
+  var ESCMAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' };
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"'`]/g, function (c) { return ESCMAP[c]; });
+  };
   var nf = function (n) { return n ? (Math.round(n * 100) / 100).toString() : ''; };
 
   function say(id, msg, bad) {
@@ -1357,7 +1362,16 @@ window.SUSI_CFG = {
     $('pwSave').disabled = true;
     say('pwMsg', '바꾸는 중…');
     sb.auth.updateUser({ password: a })
-      .then(function (r) { if (r.error) throw r.error; return sb.rpc('mark_password_changed'); })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        // ★ 여기서부터는 비밀번호가 '이미 바뀐' 상태다. 뒤에서 무슨 일이 나든
+        //    '바꾸지 못했습니다' 라고 말하면 안 된다 — 옛 비밀번호로 다시 시도하다 잠긴다.
+        return sb.rpc('mark_password_changed').then(function (r2) {
+          // rpc 는 실패해도 거부하지 않고 {error} 를 준다. 안 보면 must_change_password 가
+          // 서버에 true 로 남아 다음 로그인 때 변경 화면이 또 뜬다.
+          if (r2 && r2.error) console.warn('mark_password_changed 실패', r2.error);
+        }, function (e2) { console.warn('mark_password_changed 실패', e2); });
+      })
       .then(function () {
         ME.must_change_password = false;
         if (PW_VOLUNTARY) {                 // 이미 들어와 있던 상태 — 화면만 되돌린다
@@ -1370,7 +1384,8 @@ window.SUSI_CFG = {
       })
       .catch(function (err) {
         $('pwSave').disabled = false;
-        say('pwMsg', '바꾸지 못했습니다: ' + (err && err.message || ''), true);
+        say('pwMsg', '바꾸지 못했습니다: ' + (err && err.message || '') +
+            ' — 기존 비밀번호는 그대로입니다.', true);
       });
   }
 
@@ -1421,7 +1436,8 @@ window.SUSI_CFG = {
       if (got) { c.u = got.u; c.t = got.t; c.j = got.j; c.d = got.d; }
       c.memo = r.memo || ''; c.verdictOverride = r.verdict_override || null;
       c.fillNo = r.fill_no || '';
-      c.passFail = (r.result === 'pass' || r.result === 'fail') ? r.result : null;
+      // 'wait' 를 떨어뜨리면, 학생이 로그인만 해도 다음 저장 때 선생님이 넣은 값이 지워진다
+      c.passFail = (r.result === 'pass' || r.result === 'fail' || r.result === 'wait') ? r.result : null;
       c.step1 = r.step1 || ''; c.interview = r.interview; c.essay = r.essay;
       c._slot = r.slot;
       (plan[r.area] || plan.main).push(c);
@@ -1452,8 +1468,18 @@ window.SUSI_CFG = {
   }
   function sync(t, k) { var s = $('syncState'); if (s) { s.textContent = t; s.className = 'sync ' + (k || ''); } }
 
+  /* ★ 저장이 겹쳐 돌면 방금 담은 전형이 지워진다.
+     flush 는 '올린 뒤 → 서버 목록을 다시 읽어 → 계획에 없는 줄을 지우는' 구조다.
+     저장 왕복 중에 학생이 카드를 하나 더 담으면 두 번째 flush 의 upsert 가 먼저 들어가고,
+     첫 번째 flush 의 '지우기' 단계가 그 새 카드를 '계획에 없는 줄' 로 보고 삭제한다.
+     화면에는 남아 있고 '저장됨' 까지 떠서, 다음 접속 때에야 사라진 걸 안다.
+     → 한 번에 하나만 돌게 하고, 도는 중에 들어온 변경은 끝난 뒤 이어서 처리한다. */
+  var flushing = false, flushAgain = false;
+
   function flush() {
     if (!dirty || !sb || !ME) return Promise.resolve();
+    if (flushing) { flushAgain = true; return Promise.resolve(); }
+    flushing = true;
     dirty = false;
     var rows = planToRows(window.SUSI.getPlan());
     var keep = rows.map(function (r) { return r.area + '#' + r.slot; });
@@ -1469,8 +1495,14 @@ window.SUSI_CFG = {
       var dead = (res.data || []).filter(function (r) {
         return keep.indexOf(r.area + '#' + r.slot) < 0; }).map(function (r) { return r.id; });
       if (dead.length) return sb.from('applications').delete().in('id', dead);
-    }).then(function () { sync('저장됨', 'ok'); })
-      .catch(function (e) { dirty = true; sync('저장 실패 — 다시 시도합니다', 'bad'); console.error(e); });
+    }).then(function () {
+      flushing = false;
+      if (flushAgain) { flushAgain = false; dirty = true; return flush(); }
+      sync('저장됨', 'ok');
+    }).catch(function (e) {
+      flushing = false; flushAgain = false;
+      dirty = true; sync('저장 실패 — 다시 시도합니다', 'bad'); console.error(e);
+    });
   }
   function scheduleSave() {
     dirty = true; sync('저장 중…', '');
@@ -1482,7 +1514,9 @@ window.SUSI_CFG = {
   });
 
   /* ═══════════ 선생님 ═══════════ */
-  var SCHOOL = { name: '', class_count: 9 };   // 반 개수는 화면 여러 곳에서 쓴다
+  // 반 개수는 화면 여러 곳에서 쓴다. loaded 가 false 면 '못 읽은 것' 이고,
+  // 그 상태로 저장하면 진짜 값을 기본값으로 덮어쓰므로 저장을 막는다.
+  var SCHOOL = { name: '', class_count: 9, loaded: false };
   var STAFF = [], STF_OPEN = false;
 
   function enterTeacher() {
@@ -1499,23 +1533,41 @@ window.SUSI_CFG = {
   /* 반 개수는 총관리자가 아니어도 필요하다(엑셀 올릴 때 반 범위 검사).
      schools 는 자기 학교만 읽히므로 그냥 첫 줄을 가져오면 된다. */
   function loadSchool() {
-    return sb.from('schools').select('*').limit(1).maybeSingle().then(function (r) {
-      if (r && r.data) {
-        SCHOOL.name = r.data.name || '';
-        SCHOOL.class_count = r.data.class_count || 9;
-      }
-    }).catch(function () { /* 못 읽어도 기본값 9로 굴러간다 */ });
+    /* ★ .limit(1) 로 집어 오지 않는다 — profiles 에서 똑같이 당했다.
+       반 개수를 못 읽으면 조용히 9가 되는데, 그 상태로 설정 화면에서 [저장]만 눌러도
+       진짜 반 개수(예: 12)를 9로 덮어쓰고 10~12반 담임 배정까지 정리해 버린다.
+       그래서 실패를 삼키지 않고 화면에 알린다. */
+    return sb.from('schools').select('*').eq('id', ME.school_id).single().then(function (r) {
+      if (r.error) throw r.error;
+      SCHOOL.name = r.data.name || '';
+      SCHOOL.class_count = r.data.class_count || 9;
+      SCHOOL.loaded = true;
+    }).catch(function (e) {
+      SCHOOL.loaded = false;
+      console.warn('학교 정보를 읽지 못했습니다', e);
+    });
   }
+
+  /* 목록을 '읽어서 0명' 인지 '못 읽어서 0명' 인지 구분해 둔다.
+     둘을 섞으면 빈 화면이 두 가지 뜻을 갖게 되고, 리셋 확인창까지 거짓말을 한다. */
+  var STUDENTS_OK = false;
 
   function loadStudents() {
     return Promise.all([
       sb.from('profiles').select('*').eq('role', 'student').order('student_no'),
       sb.from('students_not_activated').select('id')
     ]).then(function (r) {
+      if (r[0] && r[0].error) throw r[0].error;
       STUDENTS = (r[0] && r[0].data) || [];
+      STUDENTS_OK = true;
       NOTACT = {};
       ((r[1] && r[1].data) || []).forEach(function (x) { NOTACT[x.id] = 1; });
       renderStudentList();
+    }).catch(function (e) {
+      STUDENTS = []; STUDENTS_OK = false;
+      renderStudentList();
+      $('notActivated').innerHTML = '<b class="clashk">학생 목록을 읽지 못했습니다</b> — ' +
+        esc(e && e.message || '') + '<br>새로고침해 보시고, 계속 이러면 알려 주세요.';
     });
   }
 
@@ -1524,7 +1576,8 @@ window.SUSI_CFG = {
     var list = STUDENTS.filter(function (s) {
       return !q || String(s.student_no).indexOf(q) >= 0 || (s.name || '').toLowerCase().indexOf(q) >= 0;
     });
-    $('stCount').textContent = STUDENTS.length + '명';
+    $('stCount').textContent = (q && list.length !== STUDENTS.length)
+      ? list.length + ' / ' + STUDENTS.length + '명' : STUDENTS.length + '명';
     var na = Object.keys(NOTACT).length;
     $('notActivated').innerHTML = na
       ? '아직 <b class="clashk">' + na + '명</b>이 한 번도 로그인하지 않았습니다 — 목록에 <b>미접속</b>으로 표시됩니다. '
@@ -1534,23 +1587,39 @@ window.SUSI_CFG = {
       return '<li data-id="' + s.id + '" aria-selected="' + (PICKED === s.id) + '">' +
         '<span class="sno">' + s.student_no + '</span><span>' + esc(s.name) + '</span>' +
         (NOTACT[s.id] ? '<span class="newbadge">미접속</span>' : '') + '</li>';
-    }).join('') : '<li class="empty">' + (STUDENTS.length ? '찾는 학생이 없습니다' : '아직 등록된 학생이 없습니다') + '</li>';
+    }).join('') : '<li class="empty">' + (STUDENTS.length ? '찾는 학생이 없습니다'
+        : (STUDENTS_OK ? '아직 등록된 학생이 없습니다' : '목록을 읽지 못했습니다')) + '</li>';
   }
 
   var VN = { up: '상향', fit: '적정', down: '하향' };
   var AN = { main: '지원', cand: '후보', college: '전문대' };
 
+  /* ★ 늦게 도착한 응답이 화면을 덮으면 안 된다.
+     A → B 를 빠르게 누르면 A 의 응답이 나중에 도착해 'B 가 선택된 채 A 의 표' 가 그려진다.
+     표의 입력칸에는 A 의 applications.id 가 물려 있어서, 선생님이 B 라고 믿고 고친 값이
+     A 학생 기록에 저장된다. 요청마다 번호를 매겨 마지막 것만 그린다. */
+  var pickSeq = 0, planTimer = null;
+
   function pickStudent(id) {
     PICKED = id; renderStudentList();
     var st = STUDENTS.filter(function (s) { return s.id === id; })[0];
     if (!st) return;
+    clearTimeout(planTimer);        // 이전 학생의 예약 저장이 새 화면에 뜨는 것을 막는다
+    var seq = ++pickSeq;
     $('stDetail').innerHTML = '<p class="hint">불러오는 중…</p>';
     Promise.all([
       sb.from('applications').select('*').eq('student_id', id).eq('year', CFG.year),
       sb.from('student_grades').select('*').eq('student_id', id).maybeSingle(),
       sb.from('mock_exams').select('*').eq('student_id', id)
     ]).then(function (r) {
+      if (seq !== pickSeq) return;                       // 더 늦게 누른 학생이 있다
+      var err = (r[0] && r[0].error) || (r[1] && r[1].error) || (r[2] && r[2].error);
+      if (err) throw err;
       renderDetail(st, (r[0] && r[0].data) || [], (r[1] && r[1].data) || null, (r[2] && r[2].data) || []);
+    }).catch(function (e) {
+      if (seq !== pickSeq) return;
+      $('stDetail').innerHTML = '<p class="hint"><b class="clashk">불러오지 못했습니다</b> — ' +
+        esc(e && e.message || '') + '<br>잠시 뒤 다시 눌러 주세요.</p>';
     });
   }
 
@@ -1565,7 +1634,9 @@ window.SUSI_CFG = {
     if (!gr && !mock.length) h += '<p class="hint">아직 성적이 없습니다. <b>성적 입력</b>을 눌러 직접 넣거나 엑셀로 올리세요.</p>';
     if (gr) {
       h += '<table class="gt"><thead><tr><th>내신</th><th>1학년</th><th>2학년</th><th>3학년</th><th>평균</th></tr></thead><tbody>' +
-        gtRow('국·수·영·과', null, gr.nat_y2, gr.nat_y3, gr.nat_avg) +
+        // nat_y1 은 나중에 추가된 열이다. null 로 하드코딩돼 있어서
+        // 선생님이 넣은 1학년 값이 저장은 되는데 화면에서만 사라졌다.
+        gtRow('국·수·영·과', gr.nat_y1, gr.nat_y2, gr.nat_y3, gr.nat_avg) +
         gtRow('국·수·영·사', gr.hum_y1, gr.hum_y2, gr.hum_y3, gr.hum_avg) +
         gtRow('전과목', gr.all_y1, gr.all_y2, gr.all_y3, gr.all_avg) + '</tbody></table>';
     }
@@ -1630,6 +1701,9 @@ window.SUSI_CFG = {
             '<option value="">미정</option>' +
             '<option value="pass"' + (a.result === 'pass' ? ' selected' : '') + '>합격</option>' +
             '<option value="fail"' + (a.result === 'fail' ? ' selected' : '') + '>불합격</option>' +
+            // 'wait'(예비/대기) 는 데이터베이스 enum 에 있는 값이다. 여기에 항목이 없으면
+            // 브라우저가 첫 항목('미정')을 보여 주고, 그 줄을 한 번만 건드려도 null 로 지워진다.
+            '<option value="wait"' + (a.result === 'wait' ? ' selected' : '') + '>대기(예비)</option>' +
           '</select></td>' +
         '</tr>';
     });
@@ -1682,14 +1756,21 @@ window.SUSI_CFG = {
         if (!isFinite(n) || n < 1 || n > 9) { bad.push(el.dataset.g); return; }
         g[el.dataset.g] = n;
       });
-      var byMo = {};
+      /* 화면에 있는 모든 시험을 일단 훑는다.
+         값이 하나도 없는 시험은 '안 넣음' 이 아니라 '지움' 으로 다뤄야 한다.
+         예전에는 값이 있는 시험만 행을 만들어서, 잘못 넣은 6월 모의를 다 비우고
+         저장해도 DB 의 6월 행이 그대로 남았다 — 화면을 다시 그리면 되살아났고,
+         잘못 들어간 등급을 지울 방법이 아예 없었다. */
+      var byMo = {}, seenMo = {};
       APP_Q('#stDetail input[data-m]').forEach(function (el) {
         var parts = el.dataset.m.split('|'), v = el.value.trim();
+        seenMo[parts[0]] = 1;
         if (v === '') return;
         var n = parseInt(v, 10);
         if (!isFinite(n) || n < 1 || n > 9) { bad.push(el.dataset.m); return; }
         (byMo[parts[0]] = byMo[parts[0]] || { student_id: st.id, exam: parts[0] })[parts[1]] = n;
       });
+      var emptyMo = Object.keys(seenMo).filter(function (k) { return !byMo[k]; });
       if (bad.length) {
         var m = $('gMsg'); m.className = 'msg bad'; m.textContent = '등급은 1~9만 넣을 수 있습니다 (' + bad.length + '칸)';
         return;
@@ -1705,6 +1786,12 @@ window.SUSI_CFG = {
         })
         .then(function (r2) {
           if (r2 && r2.error) throw r2.error;
+          if (!emptyMo.length) return { error: null };
+          return sb.from('mock_exams').delete()
+                   .eq('student_id', st.id).in('exam', emptyMo);
+        })
+        .then(function (r3) {
+          if (r3 && r3.error) throw r3.error;
           pickStudent(st.id);
         })
         .catch(function (err) {
@@ -1717,7 +1804,7 @@ window.SUSI_CFG = {
 
   /* 선생님이 표에서 고친 값을 그 줄만 바로 저장한다.
      면접·논술은 '자료의 자동값과 같으면 비워 둔다' — 그래야 자료가 바뀌면 따라간다. */
-  var planTimer = null;
+  // planTimer 는 위(pickSeq 옆)에서 선언한다 — pickStudent 가 먼저 참조하기 때문
   function wirePlanEdit(st, apps) {
     var byId = {}; apps.forEach(function (a) { byId[a.id] = a; });
     var host = $('stDetail').querySelector('.plantbl.edit');
@@ -1740,7 +1827,13 @@ window.SUSI_CFG = {
       Object.keys(patch).forEach(function (k) { a[k] = patch[k]; });
       var m = $('planMsg');
       if (m) { m.className = 'msg'; m.textContent = '저장 중…'; }
-      sb.from('applications').update(patch).eq('id', id).then(function (r) {
+      /* Promise.resolve() 로 한 번 감싼다 — supabase-js 의 질의 빌더는 then 만 있고
+         .catch 가 없다. 빌더에 바로 .catch 를 붙이면 TypeError 가 난다(확인함).
+         오프라인·토큰만료는 r.error 가 아니라 '거부' 로 오므로 반드시 잡아야 한다.
+         안 잡으면 planMsg 가 '저장 중…' 에 멈춘 채 남아 저장된 줄 알게 된다. */
+      Promise.resolve(sb.from('applications').update(patch).eq('id', id))
+        .catch(function (e) { return { error: e || new Error('연결에 실패했습니다') }; })
+        .then(function (r) {
         if (!m) return;
         if (r && r.error) { m.className = 'msg bad'; m.textContent = '저장 실패: ' + r.error.message; }
         else { m.className = 'msg ok'; m.textContent = '저장됨'; }
@@ -1778,21 +1871,38 @@ window.SUSI_CFG = {
   function loadStaff() {
     return Promise.all([
       sb.from('profiles').select('*').neq('role', 'student').order('name'),
-      sb.from('teacher_classes').select('*')
+      sb.from('teacher_classes').select('*').order('grade').order('class_no')
     ]).then(function (r) {
+      if (r[0] && r[0].error) throw r[0].error;
+      if (r[1] && r[1].error) throw r[1].error;
+      /* teacher_classes 의 기본키는 (teacher_id, grade, class_no) 라 한 사람이 여러 반을
+         맡을 수 있다. 예전에는 tc[id] = x 로 마지막 줄만 남겨서, 어느 반이 표시될지가
+         비결정적이었다. 전부 들고 있다가 화면에 다 보여 준다. */
       var tc = {};
-      ((r[1] && r[1].data) || []).forEach(function (x) { tc[x.teacher_id] = x; });
+      ((r[1] && r[1].data) || []).forEach(function (x) {
+        (tc[x.teacher_id] = tc[x.teacher_id] || []).push(x);
+      });
       STAFF = ((r[0] && r[0].data) || []).map(function (p) {
-        return { id: p.id, name: p.name, role: p.role, cls: tc[p.id] ? tc[p.id].class_no : null,
-                 grade: tc[p.id] ? tc[p.id].grade : 3 };
+        var list = tc[p.id] || [];
+        return { id: p.id, name: p.name, role: p.role, classes: list,
+                 cls: list.length ? list[0].class_no : null,
+                 grade: list.length ? list[0].grade : 3 };
       });
       renderStaff();
+    }).catch(function (e) {
+      $('stfList').innerHTML = '<p class="hint"><b class="clashk">교직원 목록을 읽지 못했습니다</b> — ' +
+        esc(e && e.message || '') + '</p>';
     });
   }
 
   /* 어떤 상태인지 한 마디로 — 목록에서 바로 읽히게 */
   function staffTag(x) {
     if (x.role === 'super_admin') return { t: '관리자', c: 'all' };
+    if (x.classes && x.classes.length > 1) {
+      // 두 반 이상이면 숨기지 않고 다 적는다 — 화면에 한 반만 보이면 나머지가 유령이 된다
+      return { t: x.classes.map(function (c) { return c.grade + '' + pad(c.class_no); })
+                 .join('·') + '반 담임', c: 'hr' };
+    }
     if (x.cls) return { t: x.grade + '' + pad(x.cls) + '반 담임', c: 'hr' };
     return { t: '일반', c: 'gen' };
   }
@@ -1824,7 +1934,10 @@ window.SUSI_CFG = {
         '<div class="stfhead"><b>' + esc(x.name) + '</b>' +
           '<span class="rtag ' + tg.c + '">' + tg.t + '</span>' +
           '<span class="grow"></span>' +
-          '<button class="lnk" data-pw="' + x.id + '">비번초기화</button>' +
+          // 본인 계정은 뺀다. 총관리자는 강제 변경 화면을 안 만나므로,
+          // 자기를 1111 로 되돌리면 그대로 1111 로 남는다. 바꾸려면 [비밀번호] 를 쓴다.
+          (me ? '<span class="fh">비밀번호는 위 [비밀번호]로</span>'
+              : '<button class="lnk" data-pw="' + x.id + '">비번초기화</button>') +
         '</div>' + chips + '</div>';
     }).join('') || '<p class="hint">교직원 계정이 없습니다.</p>';
   }
@@ -1873,8 +1986,15 @@ window.SUSI_CFG = {
   }
 
   function resetStudents() {
-    var n = STUDENTS.length;
-    if (!confirm('학생 ' + n + '명의 계정과 성적·지원계획을 모두 지웁니다.\n되돌릴 수 없습니다. 계속할까요?')) return;
+    /* ★ 확인 문구에 STUDENTS.length 를 그냥 쓰면 안 된다.
+       목록 읽기가 실패하면 STUDENTS 가 조용히 [] 가 되어 '0명을 지웁니다' 라고 뜨는데,
+       서버의 reset_students 는 클라이언트 목록이 아니라 '학교 전체' 를 지운다.
+       되돌릴 수 없는 작업이라, 못 읽었으면 숫자를 말하지 않는다. */
+    var msg = STUDENTS_OK
+      ? '학생 ' + STUDENTS.length + '명의 계정과 성적·지원계획을 모두 지웁니다.'
+      : '이 학교 학생 전체의 계정과 성적·지원계획을 모두 지웁니다.\n' +
+        '(학생 목록을 읽지 못해 몇 명인지 확인하지 못했습니다.)';
+    if (!confirm(msg + '\n되돌릴 수 없습니다. 계속할까요?')) return;
     $('resetBtn').disabled = true;
     say('resetMsg', '지우는 중…');
     sb.rpc('reset_students', { p_confirm: '학생자료삭제' }).then(function (r) {
@@ -1911,16 +2031,21 @@ window.SUSI_CFG = {
 
   function buildCalendar() {
     $('calOut').innerHTML = '<p class="hint">불러오는 중…</p>';
-    var ids = STUDENTS.map(function (s) { return s.id; });
-    if (!ids.length) {
+    if (!STUDENTS.length) {
       CALST = { days: {}, months: seasonMonths(), sel: null };
       $('calHead').innerHTML = '';
       drawCalendar(0, 0);
       $('calDay').innerHTML = '<p class="hint">담당 학생이 없습니다. 달력만 보여 드립니다.</p>';
       return;
     }
-    sb.from('applications').select('*').in('student_id', ids).eq('year', CFG.year)
+    /* .in('student_id', ids) 를 쓰지 않는다.
+       접근 규칙(app_read = can_see_student)이 이미 같은 결과를 주는데,
+       UUID 36자를 학생 수만큼 주소창에 실으면 250명쯤에서 URL 길이 한계에 걸려
+       요청 자체가 실패한다. 그리고 그 실패가 '고사일이 없습니다' 로 보이면
+       선생님이 '우리 반은 면접이 없구나' 라고 잘못 읽는다. */
+    sb.from('applications').select('*').eq('year', CFG.year)
       .then(function (r) {
+        if (r && r.error) throw r.error;
         var apps = (r && r.data) || [];
         var byName = {};
         STUDENTS.forEach(function (s) { byName[s.id] = s; });
@@ -1975,6 +2100,12 @@ window.SUSI_CFG = {
         $('calDay').innerHTML = total
           ? '<p class="hint">날짜를 누르면 그 날 전체가 여기에 펼쳐집니다.</p>'
           : '<p class="hint">아직 고사일이 들어 있는 전형이 없습니다. 학생들이 전형을 담으면 여기에 찍힙니다.</p>';
+      }).catch(function (e) {
+        $('calHead').innerHTML = '';
+        $('calOut').innerHTML = '';
+        $('calDay').innerHTML = '<p class="hint"><b class="clashk">고사일을 읽지 못했습니다</b> — ' +
+          esc(e && e.message || '') + '<br>「고사일이 없음」이 아니라 <b>읽기에 실패한 것</b>입니다. ' +
+          '탭을 다시 눌러 주세요.</p>';
       });
   }
 
@@ -2055,7 +2186,10 @@ window.SUSI_CFG = {
       $('calDay').innerHTML = '<p class="hint">날짜를 누르면 그 날 전체가 여기에 펼쳐집니다.</p>';
       return;
     }
-    var dt = new Date(key), clash = isClash(key);
+    // new Date('2026-11-27') 은 UTC 자정으로 읽히는데 getDate() 는 로컬이라
+    // 시간대에 따라 하루가 밀린다. 달력 격자는 로컬 생성자를 쓰므로 여기도 맞춘다.
+    var kp = key.split('-');
+    var dt = new Date(+kp[0], +kp[1] - 1, +kp[2]), clash = isClash(key);
     var per = {};
     items.forEach(function (i) { (per[i.sid] = per[i.sid] || []).push(i); });
     $('calDay').innerHTML =
@@ -2321,10 +2455,17 @@ window.SUSI_CFG = {
       }).then(function () {
         // ② 성적 넣기 — 등록된 학생만
         var byKey = {};
-        STUDENTS.forEach(function (st) { byKey[st.class_no + '-' + st.number_no] = st.id; });
+        /* ★ 키에 반드시 '학년' 을 넣는다.
+           STUDENTS 에는 학교 전체 학생이 들어 있고(총관리자 기준), 키가 '반-번호' 뿐이면
+           2학년 명부를 올릴 때 '1-1' 이 3학년 1반 1번을 가리켜 그 학생의 내신·모의고사를
+           통째로 덮어써 버린다. 경고도 안 뜬다(키가 '찾아지긴' 하므로).
+           지금은 학교에 3학년만 있어서 안 터질 뿐이다. */
+        STUDENTS.forEach(function (st) {
+          byKey[st.grade + '-' + st.class_no + '-' + st.number_no] = st.id;
+        });
         var gRows = [], mRows = [], notFound = 0;
         rows.forEach(function (x) {
-          var sid = byKey[x.cls + '-' + x.num];
+          var sid = byKey[grade1 + '-' + x.cls + '-' + x.num];
           if (!sid) { notFound++; return; }
           var has = Object.keys(x.grades).some(function (k) { return x.grades[k] !== null; });
           if (has) {
@@ -2482,7 +2623,14 @@ window.SUSI_CFG = {
     sb.auth.getSession().then(function (r) {
       if (r && r.data && r.data.session) {
         busy('loginBtn', true, '들어가는 중…');
-        afterLogin().catch(function () { busy('loginBtn', false); });
+        // 예전에는 오류를 통째로 삼켜서, 프로필을 못 읽으면 아무 설명 없이
+        // 로그인 화면만 다시 보였다. 무엇이 실패했는지는 말해 줘야 한다.
+        afterLogin().catch(function (err) {
+          busy('loginBtn', false); busy('tLoginBtn', false);
+          $('gate').classList.remove('hidden');
+          say('loginMsg', '이전 로그인을 잇지 못했습니다: ' + (err && err.message || '') +
+              ' — 다시 로그인해 주세요.', true);
+        });
       }
     });
   });
@@ -2533,7 +2681,8 @@ window.SUSI_CFG = {
   ROWS.forEach(function (r, i) { var a = byUni.get(r[0]); if (!a) { a = []; byUni.set(r[0], a); } a.push(i); });
 
   var $ = function (id) { return document.getElementById(id); };
-  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var ESCMAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"'`]/g, function (c) { return ESCMAP[c]; }); };
   var nf = function (n) { return n ? (Math.round(n * 100) / 100).toString() : ''; };
   var clean = function (v) { return v == null ? '' : String(v).replace(/[\t\r\n]+/g, ' ').trim(); };
   var LSKEY = 'susi.plan.v1';
