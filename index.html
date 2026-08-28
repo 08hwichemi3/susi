@@ -547,12 +547,21 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 @media print{
   @page{size:A4 portrait;margin:12mm}
 
-  /* 달력만 남기고 전부 감춘다.
-     display:none 대신 visibility 를 쓰는 건, 부모를 감추면 안에 든 달력까지
+  /* 인쇄할 것이 둘이라(고사일 달력 / 학생 지원계획서) 무엇을 낼지 body 클래스로 가른다.
+     display:none 대신 visibility 를 쓰는 건, 부모를 감추면 안에 든 것까지
      같이 사라지기 때문이다(고전적인 인쇄 트릭). */
   body *{visibility:hidden}
-  #calPrint,#calPrint *{visibility:visible}
-  #calPrint{position:absolute;left:0;top:0;width:100%}
+
+  body.pmode-cal #calPrint, body.pmode-cal #calPrint *{visibility:visible}
+  body.pmode-cal #calPrint{position:absolute;left:0;top:0;width:100%}
+
+  body.pmode-plan #stPrint, body.pmode-plan #stPrint *{visibility:visible}
+  body.pmode-plan #stPrint{position:absolute;left:0;top:0;width:100%}
+
+  /* 어느 쪽도 아니면(브라우저 인쇄 단축키를 그냥 누른 경우) 달력을 낸다 */
+  body:not(.pmode-cal):not(.pmode-plan) #calPrint,
+  body:not(.pmode-cal):not(.pmode-plan) #calPrint *{visibility:visible}
+  body:not(.pmode-cal):not(.pmode-plan) #calPrint{position:absolute;left:0;top:0;width:100%}
 
   /* 종이에서는 색이 안 나올 수 있으니 검정 글씨에 테두리로 구분한다 */
   body{background:#fff;color:#000}
@@ -711,6 +720,57 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .gt.kv td b{color:var(--ink)}
 .gt.kv .or{color:var(--accent);font-size:11px}
 .yrrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+
+
+/* ═══════════ 학생 지원계획서 인쇄 ═══════════ */
+.signrow{display:none}
+
+@media print{
+  /* 화면에서는 입력칸이지만 종이에서는 '적힌 값' 으로 보여야 한다.
+     테두리·배경·화살표를 지우면 input/select 는 값 그대로 인쇄된다. */
+  body.pmode-plan .plantbl.edit input,
+  body.pmode-plan .plantbl.edit select{
+    border:0 !important; background:none !important; padding:0 !important;
+    font-size:9.5px !important; color:#000 !important; width:100% !important;
+    min-width:0 !important; height:auto !important;
+    -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    text-overflow:clip;
+  }
+  /* 안내용 흐린 글씨(placeholder)는 값이 아니다. 종이에 나오면 「직접 입력」·「번호」가
+     정말 적힌 것처럼 보인다. 인쇄할 때만 감춘다. */
+  body.pmode-plan .plantbl.edit input::placeholder{color:transparent !important}
+  body.pmode-plan .plantbl.edit input::-webkit-input-placeholder{color:transparent !important}
+  body.pmode-plan .plantbl.edit input::-moz-placeholder{color:transparent !important;opacity:0}
+
+  body.pmode-plan .plantbl.edit td.auto{background:#fff !important;color:#000 !important}
+  body.pmode-plan .plantbl{width:100%;border-collapse:collapse;font-size:9.5px}
+  body.pmode-plan .plantbl th,
+  body.pmode-plan .plantbl td{border:1px solid #777 !important;padding:4px 5px !important;
+    color:#000 !important;vertical-align:top}
+  body.pmode-plan .plantbl thead th{background:#eee !important;font-size:9px;font-weight:700}
+  body.pmode-plan .plantbl tr{break-inside:avoid}
+  body.pmode-plan .areatag{background:none !important;color:#000 !important;
+    border:1px solid #777;padding:0 4px}
+  body.pmode-plan .whyno{color:#555 !important;font-size:8.5px}
+
+  /* 성적표 */
+  body.pmode-plan .gt{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px}
+  body.pmode-plan .gt th,
+  body.pmode-plan .gt td{border:1px solid #777 !important;padding:3px 6px !important;color:#000 !important}
+  body.pmode-plan .gt thead th{background:#eee !important}
+
+  /* 화면 안내는 종이에 안 낸다 */
+  body.pmode-plan .hint,
+  body.pmode-plan #planMsg,
+  body.pmode-plan .tblwrap{overflow:visible !important}
+  body.pmode-plan .hint{display:none !important}
+
+  /* 확인란 */
+  body.pmode-plan .signrow{display:flex !important;gap:40px;margin-top:22px;
+    font-size:10.5px;color:#000}
+  body.pmode-plan .signrow .sigline{display:inline-block;width:120px;
+    border-bottom:1px solid #000;margin-left:8px}
+}
 
 </style></head><body><!-- ══════════ 로그인 ══════════ -->
 <div id="gate" class="gate">
@@ -1559,8 +1619,10 @@ window.SUSI_CFG = {
     $('teacherView').classList.remove('hidden');
     $('rosterOnly').textContent = ME.role === 'super_admin' ? '' : '총관리자만 올릴 수 있습니다';
     if (ME.role !== 'super_admin') {
-      $('pickRoster').disabled = true;
-      $('rosterGrade').disabled = true;
+      // ★ 없는 요소를 건드리면 여기서 예외가 나 담임이 아예 못 들어옵니다.
+      //    학년 고르는 칸(#rosterGrade)을 없앨 때 이 줄이 남아 있었습니다.
+      //    화면 요소를 지울 때는 반드시 참조하는 곳을 같이 지우세요.
+      var pk = $('pickRoster'); if (pk) pk.disabled = true;
     }
     if (ME.role === 'super_admin') $('tabAdmin').classList.remove('hidden');
     return Promise.all([loadSchool(), loadStudents()]);
@@ -1660,9 +1722,18 @@ window.SUSI_CFG = {
   }
 
   function renderDetail(st, apps, gr, mock) {
+    var now = new Date();
     var h = '<h3 class="sec">' + esc(st.name) + ' <span class="tag">' + st.student_no + ' · ' +
       st.grade + '학년 ' + st.class_no + '반 ' + st.number_no + '번</span>' +
-      '<button class="btn" id="gEdit">성적 입력</button></h3>';
+      '<button class="btn" id="gEdit">성적 입력</button>' +
+      '<button class="btn" id="stPrintBtn">인쇄</button></h3>';
+    // 여기서부터 인쇄에 나가는 부분. 종이에만 보이는 머리글을 맨 앞에 둔다.
+    h += '<div id="stPrint"><div class="printhead">' +
+      '<div class="pt">' + CFG.year + '학년도 수시 지원계획서 — ' + esc(st.name) + '</div>' +
+      '<div class="ps">' + st.student_no + ' · ' + st.grade + '학년 ' + st.class_no + '반 ' +
+        st.number_no + '번' + (SCHOOL.name ? ' · ' + esc(SCHOOL.name) : '') +
+        ' · 출력 ' + now.getFullYear() + '.' + pad(now.getMonth() + 1) + '.' + pad(now.getDate()) +
+      '</div></div>';
     h += '<p class="hint">' + (NOTACT[st.id]
       ? '<b class="clashk">아직 로그인하지 않았습니다.</b>'
       : '첫 로그인: ' + (st.first_login_at ? new Date(st.first_login_at).toLocaleString('ko-KR') : '—')) + '</p>';
@@ -1689,9 +1760,11 @@ window.SUSI_CFG = {
     var wire = function () {
       var eb = $('gEdit');
       if (eb) eb.addEventListener('click', function () { editGrades(st, gr, mock); });
+      var pb = $('stPrintBtn');
+      if (pb) pb.addEventListener('click', function () { printArea('plan'); });
     };
     if (!apps.length) {
-      h += '<p class="hint">아직 담은 전형이 없습니다.</p>';
+      h += '<p class="hint">아직 담은 전형이 없습니다.</p></div>';
       $('stDetail').innerHTML = h; wire(); return;
     }
     var order = { main: 0, cand: 1, college: 2 };
@@ -1744,6 +1817,11 @@ window.SUSI_CFG = {
         '</tr>';
     });
     h += '</tbody></table></div>';
+    h += '<div class="signrow">' +
+         '<span>담임 확인 <b class="sigline"></b></span>' +
+         '<span>학부모 확인 <b class="sigline"></b></span>' +
+         '</div>';
+    h += '</div>';                       // #stPrint 닫기
     h += '<span class="msg hidden" id="planMsg"></span>';
     $('stDetail').innerHTML = h;
     wire();
@@ -2244,6 +2322,22 @@ window.SUSI_CFG = {
   }
 
   function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+  /* 인쇄할 것이 두 가지(고사일 달력 / 학생 지원계획서)라 무엇을 낼지 알려 줘야 한다.
+     인쇄 CSS 는 'body * 를 감추고 대상만 보이게' 하는 방식이라, 대상이 둘이면
+     클래스로 갈라 주지 않으면 둘 다 나오거나 둘 다 안 나온다. */
+  function printArea(kind) {
+    var b = document.body;
+    b.classList.add('pmode-' + kind);
+    var clear = function () { b.classList.remove('pmode-cal', 'pmode-plan'); };
+    // 인쇄창이 닫힌 뒤 되돌린다. onafterprint 를 안 주는 브라우저가 있어 예비도 둔다.
+    if (window.onafterprint !== undefined) {
+      var once = function () { clear(); window.removeEventListener('afterprint', once); };
+      window.addEventListener('afterprint', once);
+    }
+    setTimeout(clear, 3000);
+    window.print();
+  }
 
   var WEEK = ['일','월','화','수','목','금','토'];
   function pad(n) { return String(n).length < 2 ? '0' + n : String(n); }
@@ -2806,7 +2900,7 @@ window.SUSI_CFG = {
         alert('인쇄할 고사일이 없습니다. 학생들의 지원계획에 면접·논술·실기 날짜가 있어야 합니다.');
         return;
       }
-      window.print();
+      printArea('cal');
     });
     /* ── 설정 화면 ── */
     $('schSave').addEventListener('click', saveSchool);
