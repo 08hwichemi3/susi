@@ -2877,8 +2877,46 @@ window.SUSI_CFG = {
 
   document.addEventListener('DOMContentLoaded', function () {
     if (!window.supabase) { say('loginMsg', '접속에 필요한 파일을 불러오지 못했습니다.', true); return; }
-    sb = window.supabase.createClient(CFG.url, CFG.key);
+    /* ★ 브라우저를 껐다 켜면 로그인이 풀리게 한다.
+       supabase 는 기본으로 localStorage 에 세션을 넣는데, 그러면 창을 닫았다 열어도
+       그대로 들어가 있다. 학교 공용 컴퓨터에서는 다음 사람이 앞사람 계정으로
+       들어가 있게 되므로 위험하다.
+
+       그렇다고 세션을 아예 안 남기면(persistSession:false) **새로고침만 해도** 로그아웃돼
+       불편하다 — 화면을 고친 뒤 Ctrl+Shift+R 하라고 안내하는 상황과도 부딪힌다.
+
+       그래서 sessionStorage 를 쓴다. 탭이 살아 있는 동안(새로고침 포함)은 유지되고,
+       탭이나 브라우저를 닫으면 사라진다. */
+    var SESSTORE = null;
+    try {
+        var t = '__susi_probe__';
+        window.sessionStorage.setItem(t, '1');
+        window.sessionStorage.removeItem(t);
+        SESSTORE = window.sessionStorage;
+    } catch (e) {
+        SESSTORE = null;   // 사생활 보호 모드 등에서 막히면 '메모리에만' 두고 간다
+    }
+
+    sb = window.supabase.createClient(CFG.url, CFG.key, {
+        auth: {
+            storage: SESSTORE || undefined,
+            persistSession: !!SESSTORE,
+            autoRefreshToken: true,
+            detectSessionInUrl: false
+        }
+    });
     window.SUSI_SB = sb;
+
+    /* 예전에 localStorage 에 남아 있던 세션을 지운다.
+       안 지우면 이미 로그인해 둔 분들은 이 판을 받아도 계속 자동 로그인된다. */
+    try {
+        var ls = window.localStorage, kill = [];
+        for (var i = 0; i < ls.length; i++) {
+            var k = ls.key(i);
+            if (k && (k.indexOf('sb-') === 0 || k.indexOf('supabase.auth') === 0)) kill.push(k);
+        }
+        kill.forEach(function (k) { ls.removeItem(k); });
+    } catch (e) { /* 막혀 있으면 그냥 넘어간다 */ }
 
     $('roleTabs').addEventListener('click', function (e) {
       var b = e.target.closest('.rt'); if (b) setRole(b.dataset.r);
