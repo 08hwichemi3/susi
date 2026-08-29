@@ -872,7 +872,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <p class="msg hidden" id="loginMsg"></p>
     <!-- 어느 판이 올라가 있는지 보여 준다. mk_site.py 가 만들 때 넣는 값이다.
          '새 파일을 올렸는데 사이트가 안 바뀐' 상황을 여기서 바로 알아볼 수 있다. -->
-    <p class="buildtag">판 <b id="buildTag">2026-08-29 08:45</b></p>
+    <p class="buildtag">판 <b id="buildTag">2026-08-29 09:25</b></p>
   </div>
 </div>
 
@@ -1612,6 +1612,13 @@ window.SUSI_CFG = {
     }).then(function (r) {
       if (r.error) throw r.error;
       ME = r.data;
+      /* 로그인한 시각을 남긴다. 실패해도 로그인을 막지 않는다 —
+         기록용일 뿐이라, 이것 때문에 못 들어가는 일이 있으면 안 된다.
+         (예전에는 '비밀번호를 바꿀 때' 만 남겼는데, 학생이 비밀번호를 안 바꾸게 되면서
+          학생의 '첫 로그인' 이 영영 비어 있었다 — susi_24 에서 바로잡음) */
+      Promise.resolve(sb.rpc('touch_login')).then(function (t) {
+        if (t && t.error) console.warn('touch_login 실패', t.error);
+      }, function (e2) { console.warn('touch_login 실패', e2); });
       // 첫 로그인 때 비밀번호를 바꾸게 하는 것은 '담임' 뿐이다.
       //  · 담임 — 초기 비밀번호가 1111 이라 안 바꾸면 옆자리에서 그대로 들어온다
       //  · 총관리자 — 이미 자기 비밀번호를 쓰고 있고, 강제로 막아 두면 관리자가
@@ -1941,7 +1948,8 @@ window.SUSI_CFG = {
     }).forEach(function (a) {
       var st = byId[a.student_id]; if (!st) return;      // 못 보는 학생은 건너뛴다
       aoa.push([st.student_no, st.class_no, st.number_no, st.name,
-        PLAN_AREA[a.area] || a.area, (a.slot || 0) + 1,
+        /* slot 은 서버에 이미 1부터 들어간다(저장할 때 i+1). 여기서 또 +1 하면 한 칸씩 밀린다. */
+        PLAN_AREA[a.area] || a.area, a.slot,
         a.uni_name || '', a.type_name || '', a.admission_name || '', a.dept_name || '',
         PLAN_VERDICT[a.verdict_override] || '', a.exam_no || '', a.step1 || '',
         a.interview === null || a.interview === undefined ? '' : a.interview,
