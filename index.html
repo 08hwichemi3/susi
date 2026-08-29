@@ -456,6 +456,13 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .stlist li[aria-selected="true"] .sno{color:var(--accent)}
 .stlist .newbadge{margin-left:auto;font-size:9.5px;padding:1px 6px;border-radius:999px;
   background:var(--rose-soft);color:var(--rose);font-weight:700}
+/* 학생 한 명의 등록만 되돌리는 단추. 줄을 누르면 학생이 골라지므로
+   이 단추는 눌러도 줄 선택이 안 되게 shell.js 에서 stopPropagation 한다. */
+.stlist .rsbtn{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:999px;
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink-3);
+  cursor:pointer;font-family:inherit;line-height:1.5;flex:none}
+.stlist .rsbtn:hover{border-color:var(--rose);color:var(--rose);background:var(--rose-soft)}
+.stlist li[aria-selected="true"] .rsbtn{background:var(--surface)}
 .stlist .empty{color:var(--ink-3);cursor:default;justify-content:center;padding:22px}
 .stlist .empty:hover{background:transparent}
 
@@ -947,9 +954,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
             빠진 게 있으면 <b>못 알아본 열</b>에 이름이 그대로 찍히니 알려 주세요.</p>
         </details>
         <p class="hint">이 한 파일로 <b>계정 만들기 · 내신 · 모의고사</b>가 한 번에 들어갑니다.
-          <b>생년월일·전화번호</b>가 있어야 계정이 만들어지고, 그 두 값이 첫 비밀번호가 됩니다.
+          <b>학번(반·번호)과 이름만 있어도 계정이 만들어집니다</b> —
+          생년월일·전화번호는 <b>학생이 처음 로그인할 때 본인이 넣습니다.</b>
+          넣기 전까지는 학생 목록에 <b>미등록</b>으로 표시됩니다.
+          엑셀에 미리 채워 두셔도 되고, 그때는 그 값이 바로 비밀번호가 됩니다.
           전화번호는 <b>-를 넣든 빼든</b> 상관없습니다.
-          이미 있는 학생은 이름·연락처와 성적만 갱신되고 계정·비밀번호는 그대로입니다.
+          이미 있는 학생은 이름·성적만 갱신되고 <b>학생이 등록해 둔 연락처와 비밀번호는 그대로</b>입니다.
           등급 칸의 <b>0</b> 이나 빈칸은 넣지 않고 건너뜁니다.</p>
         <div class="yrrow">
           <button class="btn primary" id="pickRoster">엑셀 고르기</button>
@@ -1305,6 +1315,17 @@ window.SUSI_CFG = {
     e.textContent = msg || '';
     e.className = 'msg' + (bad ? ' bad' : '') + (msg ? '' : ' hidden');
   }
+  /* 굵게·줄바꿈이 필요한 안내에만 쓴다. 넣는 값은 반드시 escHtml 로 감싼다. */
+  function sayHtml(id, html, bad) {
+    var e = $(id); if (!e) return;
+    e.innerHTML = html || '';
+    e.className = 'msg' + (bad ? ' bad' : '') + (html ? '' : ' hidden');
+  }
+  function escHtml(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
 
   /* ───────── 로그인 ───────── */
   var mode = 'first';   // first = 생년월일+전화번호 / pw = 비밀번호
@@ -1317,6 +1338,18 @@ window.SUSI_CFG = {
     if (b.length === 6) return b;
     return '';
   }
+  /* 서버(date 칸)에 보낼 'YYYY-MM-DD' 로 만든다. 못 알아보겠으면 빈 값을 준다. */
+  function birthYmd(birth) {
+    var b = String(birth || '').replace(/[^0-9]/g, ''), y, m, d;
+    if (b.length === 8) { y = b.slice(0, 4); m = b.slice(4, 6); d = b.slice(6, 8); }
+    else if (b.length === 6) {                       // 080101 → 2008-01-01
+      var yy = parseInt(b.slice(0, 2), 10);
+      y = String(yy <= 30 ? 2000 + yy : 1900 + yy); m = b.slice(2, 4); d = b.slice(4, 6);
+    } else return '';
+    if (+m < 1 || +m > 12 || +d < 1 || +d > 31) return '';
+    return y + '-' + m + '-' + d;
+  }
+
   /* 전화번호를 「010-1234-5678」 한 가지 모양으로 맞춘다.
      하이픈이 있든 없든, 공백·점이 섞였든, 엑셀이 숫자로 읽어 앞의 0 을 떨어뜨렸든
      같은 값이 되게 한다. 비밀번호는 어차피 '숫자만 뽑아 뒤 4자리' 라 바뀌지 않는다.
@@ -1387,9 +1420,43 @@ window.SUSI_CFG = {
     busy('loginBtn', true);
     say('loginMsg', '');
     lastTried = CFG.emailOf(no);
+    var birthV = $('inBirth').value, phoneV = ($('inPhone').value || '').trim();
+
+    /* ★ 순서가 중요하다: 먼저 '그냥 로그인' 을 해 본다.
+       이미 등록한 학생은 이 한 번으로 끝나고, 서버에 등록 요청이 가지 않는다.
+       실패했을 때만 '아직 아무도 등록 안 한 학번인가' 를 물어본다. */
     sb.auth.signInWithPassword({ email: lastTried, password: password })
-      .then(function (r) { if (r.error) throw r.error; return afterLogin(); })
+      .then(function (r) {
+        if (!r.error) return afterLogin();
+        if (mode === 'pw' || !/Invalid login credentials/i.test(String(r.error.message || ''))) throw r.error;
+        return claimThenLogin(no, birthV, phoneV, password);
+      })
       .catch(function (err) { busy('loginBtn', false); loginError(err); });
+  }
+
+  /* 명부에는 학번·이름만 올라와 있고, 생년월일·전화번호는 학생이 처음 들어올 때 넣는다.
+     그 값이 그대로 그 학생 정보가 되고, 그때부터 그것이 비밀번호가 된다. */
+  function claimThenLogin(no, birth, phone, password) {
+    say('loginMsg', '처음 들어오시는군요 — 등록하는 중…');
+    return sb.rpc('claim_student', {
+      p_student_no: Number(no),
+      p_birth: birthYmd(birth),
+      p_phone: normPhone(phone)
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var code = r.data;
+      if (code === 'ok') {
+        return sb.auth.signInWithPassword({ email: lastTried, password: password })
+          .then(function (r2) { if (r2.error) throw r2.error; return afterLogin(); });
+      }
+      if (code === 'already') throw new Error('CLAIM_ALREADY');
+      if (code === 'no_student') throw new Error('CLAIM_NO_STUDENT');
+      if (code === 'bad_input') throw new Error('CLAIM_BAD_INPUT');
+      /* ★ 모르는 대답이 오면 넘겨짚지 않는다.
+         '생년월일을 확인하세요' 라고 말해 버리면, 서버가 옛 판이라 이 함수가 없는 경우까지
+         학생 탓처럼 보인다. 그냥 원래의 로그인 실패로 되돌린다. */
+      throw new Error('Invalid login credentials');
+    });
   }
 
   function teacherLogin(e) {
@@ -1405,15 +1472,52 @@ window.SUSI_CFG = {
       .catch(function (err) { busy('tLoginBtn', false); loginError(err); });
   }
 
+  /* 학교 인터넷이 막고 있는 것인지 가려낸다.
+     이 서비스는 주소가 둘이다 — 화면(github.io)과 자료(supabase.co).
+     화면만 열리고 자료 쪽이 막히면 '로그인 화면은 뜨는데 로그인만 안 되는' 모습이 된다.
+     그때 브라우저가 주는 말은 'Failed to fetch' 같은 영어라 선생님이 알아볼 수 없다. */
+  function looksBlocked(m) {
+    return /failed to fetch|networkerror|load failed|network request failed|fetch failed|err_|timeout|timed out/i.test(m);
+  }
+
   function loginError(err) {
     var m = String(err && err.message || '');
+    if (looksBlocked(m)) {
+      var host = '';
+      try { host = String(CFG.url || '').replace(/^https?:\/\//, '').replace(/\/.*$/, ''); } catch (e2) { }
+      sayHtml('loginMsg',
+        '자료 서버에 연결하지 못했습니다. <b>비밀번호 문제가 아닙니다.</b><br>' +
+        '학교 인터넷(와이파이)이 이 주소를 막고 있을 수 있습니다 — <b>' +
+        escHtml(host || 'supabase.co') + '</b><br>' +
+        '휴대전화 데이터로 바꿔서 된다면 학교망 차단이 맞습니다. ' +
+        '그때는 정보부(전산실)에 이 주소를 열어 달라고 요청해 주세요.<br>' +
+        '<span class="tried">원래 메시지: ' + escHtml(m) + '</span>', true);
+      return;
+    }
+    if (/CLAIM_ALREADY/.test(m)) {
+      sayHtml('loginMsg',
+        '이 학번은 <b>이미 등록되어 있습니다.</b> 그때 넣은 생년월일·전화번호와 달라요.<br>' +
+        '숫자를 다시 확인해 보시고, 그래도 안 되면 <b>담임 선생님께 초기화를 부탁</b>하세요. ' +
+        '(선생님이 초기화하면 처음부터 다시 넣을 수 있습니다)', true);
+      return;
+    }
+    if (/CLAIM_NO_STUDENT/.test(m)) {
+      say('loginMsg', '그런 학번이 명부에 없습니다. 학번 5자리를 다시 확인해 주세요 (예: 30101).', true);
+      return;
+    }
+    if (/CLAIM_BAD_INPUT/.test(m)) {
+      say('loginMsg', '생년월일과 전화번호를 다시 확인해 주세요.', true);
+      return;
+    }
     if (/Invalid login credentials/i.test(m)) {
       var teacherTab = !$('fTeacher').classList.contains('hidden');
       say('loginMsg', teacherTab
         ? '아이디나 비밀번호가 맞지 않습니다.'
         : (mode === 'pw'
             ? '비밀번호가 맞지 않습니다.'
-            : '학번·생년월일·전화번호가 맞지 않습니다. 비밀번호를 이미 바꾸셨다면 아래를 눌러 주세요.'), true);
+            /* 학생은 비밀번호를 바꾸지 않는다(susi_20) — 예전의 '바꾸셨다면' 안내는 뺐다 */
+            : '학번·생년월일·전화번호 중 하나가 맞지 않습니다. ' +
+              '생년월일은 숫자 8자리(20080101), 전화번호는 등록된 번호여야 합니다.'), true);
     } else {
       say('loginMsg', '로그인하지 못했습니다: ' + m, true);
     }
@@ -1709,6 +1813,25 @@ window.SUSI_CFG = {
     });
   }
 
+  /* 학생 한 명의 '등록' 만 되돌린다 — 지원계획·성적은 그대로 둔다.
+     학생이 생년월일이나 전화번호를 잘못 넣어 들어올 수 없게 됐을 때 쓴다. */
+  function resetStudentLogin(id) {
+    var st = STUDENTS.filter(function (x) { return x.id === id; })[0];
+    if (!st) return;
+    if (!window.confirm(
+        st.student_no + ' ' + st.name + ' 학생의 등록을 되돌립니다.\n\n' +
+        '· 지금 넣어 둔 생년월일·전화번호가 지워집니다\n' +
+        '· 그 학생이 다음에 로그인할 때 다시 넣게 됩니다\n' +
+        '· 지원계획과 성적은 그대로 남습니다\n\n계속할까요?')) return;
+    sb.rpc('reset_student_login', { p_student: id }).then(function (r) {
+      if (r.error) throw r.error;
+      window.SUSI.toast(st.name + ' 학생의 등록을 되돌렸습니다.');
+      return loadStudents();
+    }).catch(function (e) {
+      window.alert('되돌리지 못했습니다: ' + (e && e.message || ''));
+    });
+  }
+
   function renderStudentList() {
     var q = ($('stFilter').value || '').trim().toLowerCase();
     var list = STUDENTS.filter(function (s) {
@@ -1718,13 +1841,20 @@ window.SUSI_CFG = {
       ? list.length + ' / ' + STUDENTS.length + '명' : STUDENTS.length + '명';
     var na = Object.keys(NOTACT).length;
     $('notActivated').innerHTML = na
-      ? '아직 <b class="clashk">' + na + '명</b>이 한 번도 로그인하지 않았습니다 — 목록에 <b>미접속</b>으로 표시됩니다. '
-        + '초기 비밀번호(생년월일+전화번호)는 친구도 알 수 있으니 빨리 들어와 바꾸게 해 주세요.'
-      : (STUDENTS.length ? '모든 학생이 비밀번호를 바꿨습니다.' : '');
+      ? '아직 <b class="clashk">' + na + '명</b>이 생년월일·전화번호를 넣지 않았습니다 — 목록에 <b>미등록</b>으로 표시됩니다. '
+        + '학생이 처음 로그인하며 직접 넣으면 사라집니다.'
+      : (STUDENTS.length ? '모든 학생이 등록을 마쳤습니다.' : '');
+    /* [초기화]는 이미 등록한 학생에게만 보인다 — 미등록 학생은 되돌릴 것이 없다.
+       총관리자만 보인다(담임이 눌러도 서버가 막지만, 애초에 안 보이는 편이 낫다). */
+    var canReset = (ME.role === 'super_admin');
     $('stList').innerHTML = list.length ? list.map(function (s) {
       return '<li data-id="' + s.id + '" aria-selected="' + (PICKED === s.id) + '">' +
         '<span class="sno">' + s.student_no + '</span><span>' + esc(s.name) + '</span>' +
-        (NOTACT[s.id] ? '<span class="newbadge">미접속</span>' : '') + '</li>';
+        (NOTACT[s.id]
+          ? '<span class="newbadge">미등록</span>'
+          : (canReset ? '<button type="button" class="rsbtn" data-reset="' + s.id +
+                        '" title="생년월일·전화번호를 지워 다시 등록하게 합니다">초기화</button>' : '')) +
+        '</li>';
     }).join('') : '<li class="empty">' + (STUDENTS.length ? '찾는 학생이 없습니다'
         : (STUDENTS_OK ? '아직 등록된 학생이 없습니다' : '목록을 읽지 못했습니다')) + '</li>';
   }
@@ -1775,8 +1905,9 @@ window.SUSI_CFG = {
         ' · 출력 ' + now.getFullYear() + '.' + pad(now.getMonth() + 1) + '.' + pad(now.getDate()) +
       '</div></div>';
     h += '<p class="hint">' + (NOTACT[st.id]
-      ? '<b class="clashk">아직 로그인하지 않았습니다.</b>'
-      : '첫 로그인: ' + (st.first_login_at ? new Date(st.first_login_at).toLocaleString('ko-KR') : '—')) + '</p>';
+      ? '<b class="clashk">아직 등록하지 않았습니다.</b> 학생이 처음 로그인할 때 생년월일·전화번호를 넣습니다.'
+      : '등록됨 · 생년월일 ' + esc(st.birth_date || '—') + ' · 연락처 ' + esc(st.phone || '—') +
+        ' · 첫 로그인 ' + (st.first_login_at ? new Date(st.first_login_at).toLocaleString('ko-KR') : '—')) + '</p>';
 
     if (!gr && !mock.length) h += '<p class="hint">아직 성적이 없습니다. <b>성적 입력</b>을 눌러 직접 넣거나 엑셀로 올리세요.</p>';
     if (gr) {
@@ -2780,12 +2911,17 @@ window.SUSI_CFG = {
         return;
       }
 
+      /* ★ 생년월일·전화번호가 없어도 계정을 만든다.
+         명부에는 학번·이름만 있어도 되고, 연락처는 학생이 처음 로그인할 때 스스로 넣는다.
+         (예전에는 연락처가 없는 줄을 통째로 건너뛰어서 계정이 아예 안 생겼다) */
       var forAcct = [], noContact = 0;
       rows.forEach(function (x) {
-        if (x.birth && String(x.phone).replace(/[^0-9]/g, '').length >= 4) {
-          forAcct.push({ student_no: grade1 * 10000 + x.cls * 100 + x.num,
-                         name: x.name, birth: x.birth, phone: x.phone });
-        } else noContact++;
+        var has = !!(x.birth && String(x.phone).replace(/[^0-9]/g, '').length >= 4);
+        if (!has) noContact++;
+        forAcct.push({ student_no: grade1 * 10000 + x.cls * 100 + x.num,
+                       name: x.name,
+                       birth: has ? x.birth : null,
+                       phone: has ? x.phone : null });
       });
 
       var step = (canMakeAccounts && forAcct.length)
@@ -2852,12 +2988,10 @@ window.SUSI_CFG = {
         ? '계정 <b>' + made + '명</b>'
         : '<span class="hint">계정 만들기는 총관리자만 됩니다 — 성적만 넣었습니다</span>') +
       ' · 내신 <b>' + nG + '명</b> · 모의고사 <b>' + nM + '건</b>';
-    if (noContact === rows.length) {
-      // 생년월일·전화번호가 아예 없는 파일 = 성적만 올리려는 것이므로 경고처럼 쓰지 않는다
-      h += '<br><span class="hint">생년월일·전화번호가 없어 <b>성적만</b> 넣었습니다. ' +
-           '계정까지 만들려면 그 두 칸을 채워 다시 올리세요.</span>';
-    } else if (noContact) {
-      h += '<br><span class="hint">생년월일·전화번호가 없는 ' + noContact + '줄은 계정을 못 만들었습니다(성적은 들어갑니다).</span>';
+    if (noContact) {
+      h += '<br><span class="hint">그중 <b>' + noContact + '명</b>은 생년월일·전화번호가 비어 있습니다 — ' +
+           '그 학생들은 <b>처음 로그인할 때 본인이 넣습니다.</b> ' +
+           '학생 목록에 <b>미등록</b>으로 표시되고, 넣고 나면 사라집니다.</span>';
     }
     /* 무엇을 어떻게 읽었는지 보여 준다.
        열 이름이 달라 못 알아본 칸이 있을 때, 「성적 0명」만 뜨면 원인을 알 수 없다. */
@@ -2880,12 +3014,15 @@ window.SUSI_CFG = {
       if (warn.length > 25) h += '<span class="hint">…외 ' + (warn.length - 25) + '건</span>';
     }
     if (canMakeAccounts && forAcct.length) {
-      h += '<p class="hint" style="margin-top:10px">각 학생의 <b>첫 비밀번호</b>는 <b>생년월일 6자리 + 전화번호 뒤 4자리</b>입니다.</p>' +
+      h += '<p class="hint" style="margin-top:10px">비밀번호는 <b>생년월일 6자리 + 전화번호 뒤 4자리</b>입니다. ' +
+        '비어 있는 학생은 <b>본인이 처음 로그인할 때</b> 정해집니다.</p>' +
         '<div class="pwlist"><table>' + forAcct.slice(0, 300).map(function (o) {
-          var b = o.birth.replace(/-/g, '').slice(2);
-          var pp = o.phone.replace(/[^0-9]/g, '').slice(-4);
-          return '<tr><td>' + o.student_no + '</td><td>' + esc(o.name) + '</td><td>' + b + pp + '</td></tr>';
+          var pw = (o.birth && o.phone)
+            ? (String(o.birth).replace(/-/g, '').slice(2) + String(o.phone).replace(/[^0-9]/g, '').slice(-4))
+            : '<span class="hint">학생이 직접 등록</span>';
+          return '<tr><td>' + o.student_no + '</td><td>' + esc(o.name) + '</td><td>' + pw + '</td></tr>';
         }).join('') + '</table></div>';
+      if (forAcct.length > 300) h += '<span class="hint">…외 ' + (forAcct.length - 300) + '명 (화면에만 300명까지 보여 줍니다)</span>';
     }
     $('rosterOut').innerHTML = h + '</div>';
     if (PICKED) pickStudent(PICKED);
@@ -2958,6 +3095,8 @@ window.SUSI_CFG = {
     });
     $('stFilter').addEventListener('input', renderStudentList);
     $('stList').addEventListener('click', function (e) {
+      var rb = e.target.closest('[data-reset]');
+      if (rb) { e.stopPropagation(); resetStudentLogin(rb.dataset.reset); return; }
       var li = e.target.closest('li[data-id]'); if (li) pickStudent(li.dataset.id);
     });
     $('tTabs').addEventListener('click', function (e) {
