@@ -798,6 +798,22 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     border-bottom:1px solid #000;margin-left:8px}
 }
 
+
+/* 엑셀을 어떻게 읽었는지 펼쳐 보이는 상자 (열을 못 찾았을 때만 나온다) */
+.peek{margin:10px 0 0;border:1px solid var(--line-2);border-radius:8px;background:var(--surface-2);padding:8px 10px}
+.peek>summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-2)}
+.peek .or{color:var(--ink-3)}
+.peekt{font-size:10.5px;table-layout:auto;display:block;overflow-x:auto;white-space:nowrap}
+.peekt th{background:var(--surface);position:sticky;left:0;font-size:10px}
+.peekt td{min-width:44px;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+
+
+/* 시작할 때 터진 오류를 화면 맨 위에 보여 주는 띠.
+   이게 없으면 '아무 것도 안 눌리는' 상태만 남아 원인을 알 수 없다. */
+.booterr{background:#7f1d1d;color:#fff;padding:10px 14px;font-size:12.5px;line-height:1.6}
+.booterr code{background:rgba(255,255,255,.18);padding:1px 5px;border-radius:4px;
+  font-size:11.5px;word-break:break-all}
+
 </style></head><body><!-- ══════════ 로그인 ══════════ -->
 <div id="gate" class="gate">
   <div class="gatebox">
@@ -1302,6 +1318,46 @@ window.SUSI_CFG = {
   var STUDENTS = [], PICKED = null, NOTACT = {};
 
   var $ = function (id) { return document.getElementById(id); };
+
+  /* ★ 조용히 죽지 않게 한다.
+     이 파일은 화면을 그리는 코드라, 시작할 때 한 군데만 터져도 그 뒤의 '단추 연결' 이
+     통째로 안 되고, 화면은 멀쩡한데 **아무 것도 안 눌리는** 상태가 된다.
+     선생님 눈에는 '로그인이 안 된다' 로만 보이고 원인을 알 길이 없다(실제로 겪음).
+     그래서 ① 없는 요소에 연결하려 하면 건너뛰고 적어 두고,
+            ② 시작 코드를 통째로 try 로 감싸고,
+            ③ 그래도 새어 나온 오류는 화면 맨 위에 빨간 띠로 보여 준다. */
+  var BOOTBAD = [];
+
+  function showFatal(what, err) {
+    try {
+      var box = document.getElementById('bootErr');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'bootErr';
+        box.className = 'booterr';
+        document.body.insertBefore(box, document.body.firstChild);
+      }
+      box.innerHTML = '<b>화면을 여는 중 문제가 생겼습니다.</b> 이 줄을 그대로 캡처해 주세요.<br>' +
+        '<code>' + escHtml(what) + ': ' + escHtml(err && (err.message || err) || '') + '</code>' +
+        (BOOTBAD.length ? '<br><code>없는 칸: ' + escHtml(BOOTBAD.join(', ')) + '</code>' : '') +
+        '<br>새로고침(Ctrl+F5)을 해 보시고, 그래도 같으면 이 화면을 알려 주세요.';
+    } catch (e2) { /* 오류 표시하다 또 터지면 조용히 포기 */ }
+  }
+
+  // 없는 요소면 연결을 건너뛴다 — 한 군데 때문에 나머지가 다 죽지 않게
+  function on(id, ev, fn) {
+    var el = $(id);
+    if (!el) { BOOTBAD.push('#' + id); return null; }
+    el.addEventListener(ev, fn);
+    return el;
+  }
+
+  window.addEventListener('error', function (e) {
+    showFatal('오류', e && (e.error || e.message));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    showFatal('처리 못한 오류', e && e.reason);
+  });
   // 작은따옴표·백틱까지 막는다. 지금은 모든 속성을 큰따옴표로 쓰고 있어 안 막아도
   // 뚫리지 않지만, 나중에 누가 class='...' 한 줄만 써도 즉시 구멍이 된다.
   // (학생이 자기 이름을 고칠 수 있으므로 선생님 화면으로 오는 저장형 XSS 경로가 실재한다)
@@ -2136,8 +2192,8 @@ window.SUSI_CFG = {
       '<span class="msg hidden" id="gMsg"></span></div>';
     $('stDetail').innerHTML = h;
 
-    $('gCancel').addEventListener('click', function () { pickStudent(st.id); });
-    $('gSave').addEventListener('click', function () {
+    on('gCancel', 'click', function () { pickStudent(st.id); });
+    on('gSave', 'click', function () {
       var bad = [];
       var g = { student_id: st.id };
       APP_Q('#stDetail input[data-g]').forEach(function (el) {
@@ -2949,13 +3005,26 @@ window.SUSI_CFG = {
       });
     }
 
-    // 무엇을 어떻게 읽었는지 알려 준다 — 열이 안 잡혔을 때 원인을 바로 볼 수 있게
+    /* 무엇을 어떻게 읽었는지 알려 준다 — 열이 안 잡혔을 때 원인을 바로 볼 수 있게.
+       ★ peek 은 '파서가 실제로 본 줄' 을 그대로 담는다.
+          열을 못 찾았다는 말만으로는 파일이 문제인지 읽는 쪽이 문제인지 알 수 없어서,
+          어느 줄을 머리글로 골랐고 그 줄에 무엇이 있었는지를 화면에 그대로 내보낸다. */
+    var peek = function (arr) {
+      return (arr || []).slice(0, 20).map(function (v) {
+        return String(v == null ? '' : v).trim().slice(0, 10);
+      });
+    };
     var found = {
       naesin: Object.keys(naesinCol).length,
       mock: Object.keys(mockCol).length,
       birth: col.birth >= 0, phone: col.phone >= 0,
       bySno: col.sno >= 0 && col.cls < 0,
-      unknown: unknown.filter(function (v, ix, a) { return v && a.indexOf(v) === ix; }).slice(0, 12)
+      unknown: unknown.filter(function (v, ix, a) { return v && a.indexOf(v) === ix; }).slice(0, 12),
+      // 진단용
+      hRow: hRow, rows: aoa.length, width: width, looksSub: !!looksSub,
+      topLen: (top || []).length, subLen: (sub || []).length,
+      top: peek(top), sub: peek(sub),
+      colAt: col
     };
     return { rows: out, warn: warn, found: found };
   }
@@ -3138,6 +3207,25 @@ window.SUSI_CFG = {
           found.unknown.map(function (u) { return '<code>' + esc(u) + '</code>'; }).join(' ') +
           ' — 성적 열인데 빠졌다면 이름을 알려 주세요.</p>';
       }
+      /* ★ 뭔가 어긋났을 때는 '파서가 본 것' 을 그대로 펼쳐 둔다.
+         「0칸 · 없음」 만 보여 주면 파일이 문제인지 읽는 쪽이 문제인지 알 수 없다.
+         이 상자를 통째로 캡처해 보내 주시면 원인을 바로 알 수 있다. */
+      var odd = (!found.naesin && !found.mock) || !found.birth || !found.phone;
+      if (odd) {
+        h += '<details class="peek" open><summary>파일을 어떻게 읽었는지 (이 상자를 그대로 캡처해 주세요)</summary>' +
+          '<p class="hint">머리글로 고른 줄: <b>' + (found.hRow + 1) + '번째 줄</b>' +
+          ' · 전체 <b>' + found.rows + '</b>줄 · 칸 너비 <b>' + found.width + '</b>' +
+          ' · 묶음줄 길이 ' + found.topLen + ' · 머리글줄 길이 ' + found.subLen +
+          ' · 묶음이 아래에 있다고 봄: ' + (found.looksSub ? '예' : '아니오') + '</p>' +
+          '<p class="hint">찾은 칸 번호 — 반 ' + found.colAt.cls + ' · 번호 ' + found.colAt.num +
+          ' · 학번 ' + found.colAt.sno + ' · 이름 ' + found.colAt.name +
+          ' · 생년월일 ' + found.colAt.birth + ' · 전화번호 ' + found.colAt.phone +
+          ' <span class="or">(-1 은 못 찾았다는 뜻)</span></p>' +
+          '<table class="gt peekt"><tbody>' +
+          '<tr><th>묶음줄</th>' + found.top.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>' +
+          '<tr><th>머리글줄</th>' + found.sub.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>' +
+          '</tbody></table><p class="hint">앞 20칸만 보여 줍니다.</p></details>';
+      }
     }
     if (warn.length) {
       h += '<ul>' + warn.slice(0, 25).map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>';
@@ -3166,6 +3254,12 @@ window.SUSI_CFG = {
   };
 
   document.addEventListener('DOMContentLoaded', function () {
+    try { boot(); }
+    catch (e) { showFatal('시작', e); }
+    if (BOOTBAD.length) showFatal('화면 칸이 빠졌습니다', new Error('연결하지 못한 곳이 있습니다'));
+  });
+
+  function boot() {
     if (!window.supabase) { say('loginMsg', '접속에 필요한 파일을 불러오지 못했습니다.', true); return; }
     /* ★ 브라우저를 껐다 켜면 로그인이 풀리게 한다.
        supabase 는 기본으로 localStorage 에 세션을 넣는데, 그러면 창을 닫았다 열어도
@@ -3208,29 +3302,29 @@ window.SUSI_CFG = {
         kill.forEach(function (k) { ls.removeItem(k); });
     } catch (e) { /* 막혀 있으면 그냥 넘어간다 */ }
 
-    $('roleTabs').addEventListener('click', function (e) {
+    on('roleTabs', 'click', function (e) {
       var b = e.target.closest('.rt'); if (b) setRole(b.dataset.r);
     });
-    $('fStudent').addEventListener('submit', studentLogin);
-    $('fTeacher').addEventListener('submit', teacherLogin);
-    $('fPw').addEventListener('submit', changePw);
-    $('toggleMode').addEventListener('click', function () { setMode(mode === 'first' ? 'pw' : 'first'); });
-    $('pwCancel').addEventListener('click', closeChangePw);
-    $('myPw').addEventListener('click', function () {
+    on('fStudent', 'submit', studentLogin);
+    on('fTeacher', 'submit', teacherLogin);
+    on('fPw', 'submit', changePw);
+    on('toggleMode', 'click', function () { setMode(mode === 'first' ? 'pw' : 'first'); });
+    on('pwCancel', 'click', closeChangePw);
+    on('myPw', 'click', function () {
       if (ME && ME.role === 'student') return;      // 학생은 못 바꾼다 (아래에서 숨기지만 이중으로)
       showChangePw(true);
     });
-    $('logout').addEventListener('click', function () {
+    on('logout', 'click', function () {
       flush().then(function () { return sb.auth.signOut(); }).then(function () { location.reload(); });
     });
-    $('stFilter').addEventListener('input', renderStudentList);
-    $('stXlsx').addEventListener('click', downloadAllXlsx);
-    $('stList').addEventListener('click', function (e) {
+    on('stFilter', 'input', renderStudentList);
+    on('stXlsx', 'click', downloadAllXlsx);
+    on('stList', 'click', function (e) {
       var rb = e.target.closest('[data-reset]');
       if (rb) { e.stopPropagation(); resetStudentLogin(rb.dataset.reset); return; }
       var li = e.target.closest('li[data-id]'); if (li) pickStudent(li.dataset.id);
     });
-    $('tTabs').addEventListener('click', function (e) {
+    on('tTabs', 'click', function (e) {
       var b = e.target.closest('button[data-t]'); if (!b) return;
       [].forEach.call($('tTabs').children, function (x) { x.setAttribute('aria-selected', String(x === b)); });
       ['students', 'cal', 'upload', 'admin'].forEach(function (v) {
@@ -3241,15 +3335,15 @@ window.SUSI_CFG = {
       if (b.dataset.t === 'cal') buildCalendar();
       if (b.dataset.t === 'admin') enterAdmin();
     });
-    $('calOut').addEventListener('click', function (e) {
+    on('calOut', 'click', function (e) {
       var c = e.target.closest('.calcell[data-d]'); if (c) showCalDay(c.dataset.d);
     });
-    $('calOut').addEventListener('keydown', function (e) {
+    on('calOut', 'keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       var c = e.target.closest('.calcell[data-d]'); if (!c) return;
       e.preventDefault(); showCalDay(c.dataset.d);
     });
-    $('calPrintBtn').addEventListener('click', function () {
+    on('calPrintBtn', 'click', function () {
       if (!document.querySelectorAll('#calOut .calcell.has').length) {
         alert('인쇄할 고사일이 없습니다. 학생들의 지원계획에 면접·논술·실기 날짜가 있어야 합니다.');
         return;
@@ -3257,9 +3351,9 @@ window.SUSI_CFG = {
       printArea('cal');
     });
     /* ── 설정 화면 ── */
-    $('schSave').addEventListener('click', saveSchool);
-    $('stfToggle').addEventListener('click', function () { STF_OPEN = !STF_OPEN; renderStaff(); });
-    $('stfList').addEventListener('click', function (e) {
+    on('schSave', 'click', saveSchool);
+    on('stfToggle', 'click', function () { STF_OPEN = !STF_OPEN; renderStaff(); });
+    on('stfList', 'click', function (e) {
       var c = e.target.closest('.rchip[data-k]');
       if (c && !c.disabled) { setStaffRole(c.dataset.id, c.dataset.k); return; }
       var pw = e.target.closest('[data-pw]');
@@ -3277,20 +3371,20 @@ window.SUSI_CFG = {
       }
     });
     // 확인 문구를 정확히 쳤을 때만 지우기 단추가 열린다
-    $('resetWord').addEventListener('input', function (e) {
+    on('resetWord', 'input', function (e) {
       $('resetBtn').disabled = (e.target.value.trim() !== '학생자료삭제');
     });
-    $('resetBtn').addEventListener('click', resetStudents);
+    on('resetBtn', 'click', resetStudents);
 
-    $('pickRoster').addEventListener('click', function () { $('rosterFile').click(); });
-    $('rosterFile').addEventListener('change', function (e) {
+    on('pickRoster', 'click', function () { $('rosterFile').click(); });
+    on('rosterFile', 'change', function (e) {
       var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) uploadStudentData(f); });
 
     // 학번·생년월일 칸은 숫자만 들어가게. 길이 제한은 여기서 건다 —
     // HTML 의 maxlength 를 쓰면 '2008-06-06' 을 붙여넣을 때 하이픈까지 세어
     // 8자에서 잘라 버리는 바람에 뒷자리가 날아간다(실제로 겪음).
     [['inNo', 5], ['inBirth', 8]].forEach(function (x) {
-      $(x[0]).addEventListener('input', function (e) {
+      on(x[0], 'input', function (e) {
         var v = e.target.value.replace(/[^0-9]/g, '').slice(0, x[1]);
         if (v !== e.target.value) e.target.value = v;
       });
@@ -3311,7 +3405,7 @@ window.SUSI_CFG = {
         });
       }
     });
-  });
+  }
 })();
 
 </script><script id="APPJS">
