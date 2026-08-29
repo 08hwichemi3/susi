@@ -814,6 +814,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .booterr code{background:rgba(255,255,255,.18);padding:1px 5px;border-radius:4px;
   font-size:11.5px;word-break:break-all}
 
+
+/* 어느 판인지 보여 주는 작은 표시 (로그인 상자 맨 아래) */
+.buildtag{margin:14px 0 0;text-align:center;font-size:10.5px;color:var(--ink-3);letter-spacing:.02em}
+.buildtag b{font-weight:600;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
 </style></head><body><!-- ══════════ 로그인 ══════════ -->
 <div id="gate" class="gate">
   <div class="gatebox">
@@ -865,6 +870,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     </form>
 
     <p class="msg hidden" id="loginMsg"></p>
+    <!-- 어느 판이 올라가 있는지 보여 준다. mk_site.py 가 만들 때 넣는 값이다.
+         '새 파일을 올렸는데 사이트가 안 바뀐' 상황을 여기서 바로 알아볼 수 있다. -->
+    <p class="buildtag">판 <b id="buildTag">2026-08-29 08:45</b></p>
   </div>
 </div>
 
