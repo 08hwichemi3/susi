@@ -899,7 +899,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <section class="tview" id="tv-students">
       <div class="cols3">
         <div class="panel pad">
-          <h3 class="sec">담당 학생 <span class="tag" id="stCount"></span></h3>
+          <h3 class="sec">담당 학생 <span class="tag" id="stCount"></span>
+            <button class="btn" id="stXlsx" title="지금 화면에 있는 학생 자료를 올릴 때와 같은 모양의 엑셀로 받습니다">엑셀로 받기</button></h3>
           <input type="text" id="stFilter" placeholder="이름·학번으로 찾기" autocomplete="off">
           <ul class="stlist" id="stList"></ul>
           <p class="hint" id="notActivated"></p>
@@ -1810,6 +1811,111 @@ window.SUSI_CFG = {
       renderStudentList();
       $('notActivated').innerHTML = '<b class="clashk">학생 목록을 읽지 못했습니다</b> — ' +
         esc(e && e.message || '') + '<br>새로고침해 보시고, 계속 이러면 알려 주세요.';
+    });
+  }
+
+  /* ───────── 학생 자료를 엑셀로 받기 ─────────
+     ★ 올릴 때 쓰는 「학생자료양식」과 **똑같은 모양**으로 만든다.
+        머리글 두 줄(위: 국수영과·3월 / 아래: 1학년·국) · 47칸 · 맨 끝 생년월일·전화번호.
+        그래야 받아서 고친 뒤 그대로 다시 올릴 수 있다(왕복).
+        학생이 로그인하며 넣은 생년월일·전화번호도 여기에 채워져 나온다. */
+  var NAESIN_TRACKS = [['nat', '국수영과'], ['hum', '국수영사'], ['all', '전과목']];
+  var NAESIN_YEARS = [['_y1', '1학년'], ['_y2', '2학년'], ['_y3', '3학년'], ['_avg', '평균']];
+  var MOCK_EXAMS = ['3월', '5월', '6월', '7월', '9월', '수능'];
+
+  function rosterAoa(grades, mocks) {
+    var top = ['', '', ''], head = ['반', '번호', '이름'], c;
+    NAESIN_TRACKS.forEach(function (t) {
+      NAESIN_YEARS.forEach(function (y, i) { top.push(i === 0 ? t[1] : ''); head.push(y[1]); });
+    });
+    MOCK_EXAMS.forEach(function (e) {
+      SUBJ.forEach(function (sj, i) { top.push(i === 0 ? e : ''); head.push(sj[1]); });
+    });
+    top.push('', ''); head.push('생년월일', '전화번호');
+
+    var gBy = {}, mBy = {};
+    (grades || []).forEach(function (g) { gBy[g.student_id] = g; });
+    (mocks || []).forEach(function (m) { (mBy[m.student_id] = mBy[m.student_id] || {})[m.exam] = m; });
+
+    var aoa = [top, head];
+    STUDENTS.slice().sort(function (a, b) { return a.student_no - b.student_no; }).forEach(function (st) {
+      var r = [st.class_no, st.number_no, st.name], g = gBy[st.id] || {}, mm = mBy[st.id] || {};
+      NAESIN_TRACKS.forEach(function (t) {
+        NAESIN_YEARS.forEach(function (y) {
+          var v = g[t[0] + y[0]];
+          r.push(v === null || v === undefined ? '' : v);
+        });
+      });
+      MOCK_EXAMS.forEach(function (e) {
+        var m = mm[e] || {};
+        SUBJ.forEach(function (sj) {
+          var v = m[sj[0]];
+          r.push(v === null || v === undefined ? '' : v);
+        });
+      });
+      // 생년월일은 20080101 여덟 자리로 — 올릴 때 쓰는 모양 그대로
+      r.push(st.birth_date ? String(st.birth_date).replace(/-/g, '') : '');
+      r.push(st.phone || '');
+      aoa.push(r);
+    });
+    return aoa;
+  }
+
+  var PLAN_AREA = { main: '수시지원', cand: '후보', college: '전문대' };
+  var PLAN_RESULT = { pass: '합격', fail: '불합격', wait: '충원대기' };
+  var PLAN_VERDICT = { up: '상향', fit: '적정', down: '하향' };
+
+  function planAoa(apps) {
+    var byId = {};
+    STUDENTS.forEach(function (st) { byId[st.id] = st; });
+    var aoa = [['학번', '반', '번호', '이름', '구분', '칸', '대학', '전형유형', '전형명', '학과',
+                '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '충원합격', '합불', '메모']];
+    (apps || []).slice().sort(function (a, b) {
+      var sa = byId[a.student_id], sb2 = byId[b.student_id];
+      return ((sa && sa.student_no) || 0) - ((sb2 && sb2.student_no) || 0)
+          || String(a.area).localeCompare(String(b.area)) || (a.slot - b.slot);
+    }).forEach(function (a) {
+      var st = byId[a.student_id]; if (!st) return;      // 못 보는 학생은 건너뛴다
+      aoa.push([st.student_no, st.class_no, st.number_no, st.name,
+        PLAN_AREA[a.area] || a.area, (a.slot || 0) + 1,
+        a.uni_name || '', a.type_name || '', a.admission_name || '', a.dept_name || '',
+        PLAN_VERDICT[a.verdict_override] || '', a.exam_no || '', a.step1 || '',
+        a.interview === null || a.interview === undefined ? '' : a.interview,
+        a.fill_no || '', PLAN_RESULT[a.result] || '', a.memo || '']);
+    });
+    return aoa;
+  }
+
+  function downloadAllXlsx() {
+    if (typeof XLSX === 'undefined') { window.alert('엑셀 기능을 불러오지 못했습니다.'); return; }
+    if (!STUDENTS.length) { window.alert('내려받을 학생이 없습니다.'); return; }
+    var btn = $('stXlsx'); if (btn) { btn.disabled = true; btn.textContent = '만드는 중…'; }
+    /* 접근 규칙(RLS)이 알아서 걸러 준다 — 담임은 자기 반만, 총관리자는 전부. */
+    Promise.all([
+      sb.from('student_grades').select('*'),
+      sb.from('mock_exams').select('*'),
+      sb.from('applications').select('*').eq('year', CFG.year)
+    ]).then(function (r) {
+      var err = (r[0] && r[0].error) || (r[1] && r[1].error) || (r[2] && r[2].error);
+      if (err) throw err;
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,
+        XLSX.utils.aoa_to_sheet(rosterAoa(r[0].data, r[1].data)), '내신');
+      XLSX.utils.book_append_sheet(wb,
+        XLSX.utils.aoa_to_sheet(planAoa(r[2].data)), '지원계획');
+      var buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+      var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var d = new Date();
+      var nm = '학생자료_' + CFG.year + '_' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.xlsx';
+      var url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = nm; document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      window.SUSI.toast(STUDENTS.length + '명을 ' + nm + ' 으로 저장했습니다.');
+    }).catch(function (e) {
+      window.alert('엑셀을 만들지 못했습니다: ' + (e && e.message || ''));
+    }).then(function () {
+      if (btn) { btn.disabled = false; btn.textContent = '엑셀로 받기'; }
     });
   }
 
@@ -3118,6 +3224,7 @@ window.SUSI_CFG = {
       flush().then(function () { return sb.auth.signOut(); }).then(function () { location.reload(); });
     });
     $('stFilter').addEventListener('input', renderStudentList);
+    $('stXlsx').addEventListener('click', downloadAllXlsx);
     $('stList').addEventListener('click', function (e) {
       var rb = e.target.closest('[data-reset]');
       if (rb) { e.stopPropagation(); resetStudentLogin(rb.dataset.reset); return; }
