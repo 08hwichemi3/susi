@@ -898,7 +898,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <p class="msg hidden" id="loginMsg"></p>
     <!-- 어느 판이 올라가 있는지 보여 준다. mk_site.py 가 만들 때 넣는 값이다.
          '새 파일을 올렸는데 사이트가 안 바뀐' 상황을 여기서 바로 알아볼 수 있다. -->
-    <p class="buildtag">판 <b id="buildTag">2026-08-29 12:40</b></p>
+    <p class="buildtag">판 <b id="buildTag">2026-08-29 14:10</b></p>
   </div>
 </div>
 
@@ -1754,6 +1754,7 @@ window.SUSI_CFG = {
   /* ═══════════ 학생 ═══════════ */
   function enterStudent() {
     PLAN_OWNER = ME;
+    setFormWho(ME);
     $('appwrap').classList.remove('hidden');
     window.SUSI.hideTabs(['data']);
     window.SUSI.hide(['persist']);
@@ -2005,6 +2006,65 @@ window.SUSI_CFG = {
     return aoa;
   }
 
+  var LIST_COLS_PLAN = [8, 5, 6, 10, 9, 5, 15, 12, 20, 19, 13, 12, 14, 16, 10, 8, 26]
+    .map(function (w) { return { wch: w }; });
+  var ROSTER_COLS = (function () {
+    var c = [{ wch: 5 }, { wch: 5 }, { wch: 11 }];
+    for (var i = 0; i < 42; i++) c.push({ wch: 7 });
+    c.push({ wch: 12 }); c.push({ wch: 15 });
+    return c;
+  })();
+
+  /* 학생마다 「지원계획서 양식」 한 벌씩 만들어 한 시트에 밑으로 쌓는다.
+     ★ 사이에 빈 줄을 넉넉히 두고 구분선을 넣는다 — 엑셀 파일에는 인쇄 경계를
+       넣을 수 없어서, 종이로 뽑으실 거면 화면의 [인쇄]가 더 정확합니다. */
+  function formSheetAoa(grades, mocks, apps) {
+    if (!window.SUSI_FORM) return [['엑셀 양식을 불러오지 못했습니다']];
+    var gBy = {}, mBy = {}, aBy = {};
+    (grades || []).forEach(function (g) { gBy[g.student_id] = g; });
+    (mocks || []).forEach(function (m) { (mBy[m.student_id] = mBy[m.student_id] || {})[m.exam] = m; });
+    (apps || []).forEach(function (a) { (aBy[a.student_id] = aBy[a.student_id] || []).push(a); });
+
+    var order = { main: 0, cand: 1, college: 2 };
+    var out = [], first = true;
+    STUDENTS.slice().sort(function (a, b) { return a.student_no - b.student_no; }).forEach(function (st) {
+      var mine = (aBy[st.id] || []).slice().sort(function (a, b) {
+        return (order[a.area] - order[b.area]) || (a.slot - b.slot); });
+      if (!first) {
+        out.push([]);
+        out.push(['', '──────── 다음 학생 ────────']);
+        out.push([]);
+      }
+      first = false;
+      var g = gBy[st.id] || {};
+      var gg = {
+        nat: { y1: g.nat_y1, y2: g.nat_y2, y3: g.nat_y3, avg: g.nat_avg },
+        hum: { y1: g.hum_y1, y2: g.hum_y2, y3: g.hum_y3, avg: g.hum_avg },
+        all: { y1: g.all_y1, y2: g.all_y2, y3: g.all_y3, avg: g.all_avg }
+      };
+      var rows = mine.map(function (a) {
+        var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name) || {};
+        var cut = info.cut70 || info.cut50 || null;
+        var my = g ? pickGrade(g, a.dept_name) : null;
+        var vd = window.SUSI_VERDICT(cut, my, 0.3);
+        var row = [];
+        function put(i, v) { while (row.length <= i) row.push(''); row[i] = (v === null || v === undefined) ? '' : v; }
+        put(2, a.uni_name); put(3, a.admission_name); put(4, a.dept_name);
+        put(5, my); put(6, info.cut50); put(7, info.cut70);
+        put(8, a.type_name); put(9, a.exam_no || ''); put(10, info.min || '');
+        put(11, ''); put(12, a.step1 || ''); put(13, a.interview || '');
+        put(14, ''); put(15, vd ? VN[vd.v] : ''); put(16, info.n); put(17, info.rate);
+        put(18, (AN[a.area] || a.area) + ' ' + a.slot);
+        put(19, a.fill_no || ''); put(20, a.result ? (PLAN_RESULT[a.result] || '') : '');
+        put(21, a.verdict_override ? (VN[a.verdict_override] || '') : '');
+        return row;
+      });
+      var who = { name: st.name, no: st.student_no, grade: st.grade, cls: st.class_no, num: st.number_no };
+      window.SUSI_FORM.aoa(who, gg, mBy[st.id] || {}, rows).forEach(function (r) { out.push(r); });
+    });
+    return out.length ? out : [['담긴 전형이 있는 학생이 없습니다']];
+  }
+
   function downloadAllXlsx() {
     if (typeof XLSX === 'undefined') { window.alert('엑셀 기능을 불러오지 못했습니다.'); return; }
     if (!STUDENTS.length) { window.alert('내려받을 학생이 없습니다.'); return; }
@@ -2018,10 +2078,17 @@ window.SUSI_CFG = {
       var err = (r[0] && r[0].error) || (r[1] && r[1].error) || (r[2] && r[2].error);
       if (err) throw err;
       var wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb,
-        XLSX.utils.aoa_to_sheet(rosterAoa(r[0].data, r[1].data)), '내신');
-      XLSX.utils.book_append_sheet(wb,
-        XLSX.utils.aoa_to_sheet(planAoa(r[2].data)), '지원계획');
+      function add(name, aoa, cols) {
+        var ws = XLSX.utils.aoa_to_sheet(aoa);
+        if (cols) ws['!cols'] = cols;          // 너비를 안 주면 글자가 잘려 보인다
+        XLSX.utils.book_append_sheet(wb, ws, name);
+      }
+      /* '내신' 을 앞에 둔다 — 이 시트가 다시 올릴 때 쓰는 것이다.
+         (읽는 쪽도 시트를 훑도록 고쳤지만, 차례까지 맞춰 두면 사람이 헷갈리지 않는다) */
+      add('내신', rosterAoa(r[0].data, r[1].data), ROSTER_COLS);
+      add('학생별', formSheetAoa(r[0].data, r[1].data, r[2].data),
+          window.SUSI_FORM ? window.SUSI_FORM.cols : null);
+      add('지원계획', planAoa(r[2].data), LIST_COLS_PLAN);
       var buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
       var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       var d = new Date();
@@ -2045,6 +2112,12 @@ window.SUSI_CFG = {
        앞 학생의 변경이 뒤 학생에게 저장된다. */
   var PLAN_BAR = null;
 
+  function setFormWho(st) {
+    if (!window.SUSI_FORM || !window.SUSI_FORM.setWho) return;
+    window.SUSI_FORM.setWho(st ? { name: st.name, no: st.student_no,
+      grade: st.grade, cls: st.class_no, num: st.number_no } : null);
+  }
+
   function openPlanFor(st) {
     if (!st) return;
     var box = $('stDetail');
@@ -2058,6 +2131,7 @@ window.SUSI_CFG = {
       if (err) throw err;
       PLAN = rowsToPlan((r[0] && r[0].data) || [], (r[1] && r[1].data) || null);
       PLAN_OWNER = st;
+      setFormWho(st);                    // 대신 짜는 동안 저장하면 그 학생 이름으로 나간다
       window.SUSI.setPlan(PLAN);
       window.SUSI.showTabs(['plan']);
       window.SUSI.hideTabs(['data']);           // 학생이 보는 화면과 똑같이 (자료 교체는 감춘다)
@@ -2098,7 +2172,7 @@ window.SUSI_CFG = {
       $('appwrap').classList.add('hidden');
       $('teacherView').classList.remove('hidden');
       window.SUSI.hideTabs(['plan']);
-      PLAN_OWNER = null; PLAN = null;
+      PLAN_OWNER = null; PLAN = null; setFormWho(null);
       if (st) pickStudent(st.id);            // 방금 고친 내용이 표에 반영된다
       if (dirty) window.alert('아직 저장되지 않은 변경이 있습니다. 인터넷을 확인하고 다시 열어 주세요.');
     });
@@ -2810,14 +2884,21 @@ window.SUSI_CFG = {
 
   /* ───────── 엑셀 올리기 ───────── */
   // 머리글이 두 줄이라 이름표를 붙여 읽지 않고 '배열의 배열'로 통째로 읽는다
-  function readSheetAoa(file) {
+  /* ★ 첫 시트만 읽으면 안 된다.
+     [엑셀로 받기] 가 만든 파일은 시트가 셋(학생별·내신·지원계획)이고,
+     선생님이 주신 지원계획서도 셋(개인별·전형데이터·목록)이다.
+     첫 시트를 집으면 엉뚱한 시트를 읽고 "머리글을 못 찾았습니다" 가 뜬다(실제로 그랬다).
+     그래서 시트를 다 꺼내 두고, 명부처럼 읽히는 첫 시트를 골라 쓴다. */
+  function readSheetsAoa(file) {
     return new Promise(function (res, rej) {
       var fr = new FileReader();
       fr.onload = function () {
         try {
           var wb = XLSX.read(new Uint8Array(fr.result), { type: 'array' });
-          var ws = wb.Sheets[wb.SheetNames[0]];
-          res(XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false, blankrows: true }));
+          res(wb.SheetNames.map(function (n) {
+            return { name: n, aoa: XLSX.utils.sheet_to_json(wb.Sheets[n],
+              { header: 1, defval: '', raw: false, blankrows: true }) };
+          }));
         } catch (e) { rej(e); }
       };
       fr.onerror = function () { rej(new Error('파일을 읽지 못했습니다')); };
@@ -3153,6 +3234,7 @@ window.SUSI_CFG = {
       birth: col.birth >= 0, phone: col.phone >= 0,
       bySno: col.sno >= 0 && col.cls < 0,
       unknown: unknown.filter(function (v, ix, a) { return v && a.indexOf(v) === ix; }).slice(0, 12),
+      sheet: '',
       // 진단용
       hRow: hRow, rows: aoa.length, width: width, looksSub: !!looksSub,
       topLen: (top || []).length, subLen: (sub || []).length,
@@ -3171,8 +3253,17 @@ window.SUSI_CFG = {
     var box = $('rosterOut');
     box.innerHTML = '<p class="hint">읽는 중…</p>';
 
-    readSheetAoa(file).then(function (aoa) {
-      var parsed = parseSheet(aoa);
+    readSheetsAoa(file).then(function (sheets) {
+      /* 명부처럼 읽히는 시트를 고른다. 줄이 실제로 나오는 시트를 먼저 쓰고,
+         하나도 없으면 머리글이라도 찾은 시트를 써서 무엇이 문제인지 보여 준다. */
+      var parsed = null, half = null, used = '';
+      for (var si = 0; si < sheets.length; si++) {
+        var got = parseSheet(sheets[si].aoa);
+        if (got && got.rows.length) { parsed = got; used = sheets[si].name; break; }
+        if (got && !half) { half = got; used = sheets[si].name; }
+      }
+      if (!parsed) parsed = half;
+      if (parsed && sheets.length > 1 && parsed.found) parsed.found.sheet = used;
       if (!parsed) {
         box.innerHTML = '<div class="upres"><span class="badline">머리글을 찾지 못했습니다.</span>' +
           '<p class="hint">어느 한 줄에 <b>반 · 번호 · 이름</b>(또는 <b>학번 · 이름</b>)이 있어야 합니다.<br>' +
@@ -3334,6 +3425,7 @@ window.SUSI_CFG = {
       bits.push('생년월일 ' + (found.birth ? '찾음' : '<b class="clashk">없음</b>'));
       bits.push('전화번호 ' + (found.phone ? '찾음' : '<b class="clashk">없음</b>'));
       if (found.bySno) bits.push('<b>학번</b> 칸으로 읽음');
+      if (found.sheet) bits.push('시트 <b>' + esc(found.sheet) + '</b>');
       h += '<p class="hint" style="margin-top:8px">읽은 열: ' + bits.join(' · ') + '</p>';
       if (found.unknown.length) {
         h += '<p class="hint">못 알아본 열: ' +
@@ -4326,7 +4418,11 @@ window.SUSI_CFG = {
     if (typeof XLSX === 'undefined') { toast('xlsx 기능을 불러오지 못했습니다. CSV로 저장해 주세요.'); return; }
     try {
       var wb = XLSX.utils.book_new();
-      sheets.forEach(function (s) { XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s.aoa), s.name.slice(0, 31)); });
+      sheets.forEach(function (s) {
+        var ws = XLSX.utils.aoa_to_sheet(s.aoa);
+        if (s.cols) ws['!cols'] = s.cols;          // 칸 너비를 안 주면 글자가 잘려 보인다
+        XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31));
+      });
       var buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
       var blob = new Blob([buf], { type: XLSX_MIME });
       if (!localDownloadBlob(base + '.xlsx', blob, XLSX_MIME, '저장했습니다')) {
@@ -4337,11 +4433,11 @@ window.SUSI_CFG = {
   $('saveXlsx').addEventListener('click', function () {
     var ids = sortIds(filtered());
     if (!ids.length) { toast('저장할 결과가 없습니다'); return; }
-    saveXlsxFile('전형데이터_' + YEAR + '_결과', [{ name: '전형데이터', aoa: [hdr16()].concat(rowsOf(ids)) }]);
+    saveXlsxFile('전형데이터_' + YEAR + '_결과', [{ name: '전형데이터', aoa: [hdr16()].concat(rowsOf(ids)), cols: DATA_COLS }]);
   });
   $('saveAllXlsx').addEventListener('click', function () {
     var ids = sortIds(ROWS.map(function (_, i) { return i; }));
-    saveXlsxFile('전형데이터_' + YEAR + '_전체', [{ name: '전형데이터', aoa: [hdr16()].concat(rowsOf(ids)) }]);
+    saveXlsxFile('전형데이터_' + YEAR + '_전체', [{ name: '전형데이터', aoa: [hdr16()].concat(rowsOf(ids)), cols: DATA_COLS }]);
   });
 
   /* ───────── 내 지원계획 ───────── */
@@ -4826,6 +4922,116 @@ window.SUSI_CFG = {
     });
     return out;
   }
+  /* ───────── 지원계획서 양식으로 만들기 ─────────
+     선생님이 주신 「학생용 수시지원계획서」의 개인별 시트와 **같은 자리**에 맞춘다.
+     ★ 자리를 바꾸면 안 된다 — 「엑셀 불러오기」가 C11='대학', E11='학과' 를 보고
+       그 양식인지 판단하고, 13번째 줄부터 읽는다. 한 줄만 밀려도 못 읽는다.
+       (그래서 12번째 줄은 원본의 '예시' 자리라 비워 둔다) */
+  var FORM_HEAD = ['대학', '전형명', '학과', '본인내신', '최초합격컷', '70%컷', '전형유형', '수험번호',
+    '수능최저', '전형요소(단계전형 등)', '1단계', '면접, 실기, 논술', '최종', '상향/적정/하향',
+    '현인원(+/-)', '작년경쟁률', '구분', '충원합격', '합불', '판정(직접지정)'];
+  var FORM_COLS = [4, 6, 15, 20, 19, 9, 11, 9, 7, 12, 24, 30, 16, 18, 12, 15, 12, 11, 8, 10, 8, 12]
+    .map(function (w) { return { wch: w }; });
+  // 전형데이터 16칸 너비 (hdr16 차례와 같다)
+  var DATA_COLS = [10, 14, 8, 20, 22, 32, 9, 26, 12, 8, 8, 12, 10, 13, 8, 12]
+    .map(function (w) { return { wch: w }; });
+  // 나열식(지원계획) 시트 21칸 너비 — planRows() 의 머리글 차례와 같다
+  var LIST_COLS = [7, 5, 15, 11, 20, 19, 9, 8, 8, 10, 10, 8, 10, 26, 16, 18, 18, 12, 9, 8, 24]
+    .map(function (w) { return { wch: w }; });
+  var FORM_MOCKS = ['3월', '5월', '6월', '7월', '9월', '수능'];
+  var FORM_TRACKS = [['nat', '국수영과'], ['hum', '국수영사'], ['all', '전과목']];
+
+  function blank(n) { var a = []; while (a.length < n) a.push(''); return a; }
+  function put(row, ix, v) { while (row.length <= ix) row.push(''); row[ix] = v; return row; }
+
+  /* who: {name, no, grade, cls, num}  ·  g: {nat:{y1,y2,y3,avg}, hum, all}
+     mocks: {'3월': {korean,math,english,sci1,sci2}, …}  ·  rows: 아래 formRow() 가 만든 것 */
+  function formAoa(who, g, mocks, rows) {
+    who = who || {}; g = g || {}; mocks = mocks || {};
+    var a = [];
+    a.push(blank(22));                                    // 1줄
+    var t = blank(22);
+    put(t, 1, YEAR + '학년도 대입 수시 지원');
+    put(t, 12, (who.grade || 3) + '학년');
+    put(t, 13, (who.cls || '') + '반');
+    put(t, 14, (who.num || '') + '번');
+    put(t, 16, '이름 : ' + (who.name || ''));
+    a.push(t);                                            // 2줄
+    a.push(blank(22));                                    // 3줄
+    var h = blank(22);
+    ['1학년', '2학년', '3학년', '평균'].forEach(function (x, i) { put(h, 4 + i, x); });
+    put(h, 12, '모의고사 등급');
+    ['국', '수', '영', '탐1', '탐2'].forEach(function (x, i) { put(h, 13 + i, x); });
+    a.push(h);                                            // 4줄
+    for (var i = 0; i < 6; i++) {                         // 5~10줄
+      var r = blank(22);
+      if (i < 3) {
+        var tr = FORM_TRACKS[i], gv = g[tr[0]] || {};
+        put(r, 3, tr[1]);
+        ['y1', 'y2', 'y3', 'avg'].forEach(function (k, j) {
+          put(r, 4 + j, gv[k] === null || gv[k] === undefined ? '' : gv[k]);
+        });
+      }
+      var mn = FORM_MOCKS[i], mv = mocks[mn] || {};
+      put(r, 12, mn);
+      ['korean', 'math', 'english', 'sci1', 'sci2'].forEach(function (k, j) {
+        put(r, 13 + j, mv[k] === null || mv[k] === undefined ? '' : mv[k]);
+      });
+      a.push(r);
+    }
+    a.push(blank(22));                                    // 11줄 자리 → 아래에서 머리글로 덮음
+    var head = blank(22);
+    FORM_HEAD.forEach(function (x, i) { put(head, 2 + i, x); });
+    a[10] = head;                                         // ★ 11번째 줄 = 머리글
+    a.push(blank(22));                                    // 12줄: 원본의 '예시' 자리 (비움)
+    (rows || []).forEach(function (r) { a.push(r); });     // 13줄부터
+    return a;
+  }
+
+  /* 카드 하나 → 양식 한 줄 (C~V) */
+  function formRow(area, ix, c, r, vd) {
+    var row = blank(22);
+    put(row, 2, U[r[C.U]]);                               // C 대학
+    put(row, 3, J[r[C.J]]);                               // D 전형명
+    put(row, 4, DP[r[C.D]]);                              // E 학과
+    put(row, 5, vd ? vd.mine : '');                       // F 본인내신
+    put(row, 6, nf(r[C.A]));                              // G 최초합격컷(50%)
+    put(row, 7, nf(r[C.B]));                              // H 70%컷
+    put(row, 8, TYPEFULL[T[r[C.T]]] || T[r[C.T]]);        // I 전형유형
+    put(row, 9, '');                                      // J 수험번호 (사람이 적는 칸)
+    put(row, 10, r[C.M] >= 0 ? M[r[C.M]] : '');           // K 수능최저
+    put(row, 11, r[C.W] >= 0 ? W[r[C.W]] : '');           // L 전형요소
+    put(row, 12, c.step1 || '');                          // M 1단계
+    put(row, 13, (c.interview !== null && c.interview !== undefined) ? c.interview : examText(r[C.F])); // N 면접·실기·논술
+    put(row, 14, '');                                     // O 최종
+    put(row, 15, vd ? VN[vd.v] : '');                     // P 상향/적정/하향(자동)
+    put(row, 16, r[C.N] || '');                           // Q 현인원(모집인원)
+    put(row, 17, nf(r[C.C]));                             // R 작년경쟁률
+    put(row, 18, AREA_LABEL[area] + ' ' + (ix + 1));      // S 구분
+    put(row, 19, c.fillNo || '');                         // T 충원합격
+    put(row, 20, c.passFail ? PF_LABEL[c.passFail] : ''); // U 합불
+    put(row, 21, c.verdictOverride ? VN[c.verdictOverride] : ''); // V 판정(직접지정)
+    return row.map(clean);
+  }
+
+  function planFormRows() {
+    var out = [];
+    ['main', 'cand', 'college'].forEach(function (area) {
+      plan[area].forEach(function (c, ix) {
+        var r = rowOf(c); if (!r) return;
+        out.push(formRow(area, ix, c, r, verdict(r)));
+      });
+    });
+    return out;
+  }
+  function planGrades() {
+    return { nat: { avg: plan.g.nat }, hum: { avg: plan.g.hum }, all: { avg: plan.g.all } };
+  }
+
+  var WHO = null;
+  // 셸(로그인 화면)이 '누구 것인지' 알려 준다. 인터넷 없이 쓰는 파일에서는 비어 있다.
+  window.SUSI_FORM = { aoa: formAoa, cols: FORM_COLS, setWho: function (w) { WHO = w || null; } };
+
   function planTable() { return planRows().map(function (row) { return row.join('\t'); }); }
   $('copyPlan').addEventListener('click', function (e) {
     var rows = planTable();
@@ -4841,9 +5047,15 @@ window.SUSI_CFG = {
     saveFile('수시지원계획_' + YEAR, csv);
   });
   $('savePlanXlsx').addEventListener('click', function () {
-    var rows = planRows();
-    if (rows.length < 2) { toast('담긴 전형이 없습니다'); return; }
-    saveXlsxFile('수시지원계획_' + YEAR, [{ name: '지원계획', aoa: rows }]);
+    var rows = planFormRows();
+    if (!rows.length) { toast('담긴 전형이 없습니다'); return; }
+    /* 양식 시트를 앞에 두고, 정렬해서 보기 좋은 나열식 시트를 뒤에 같이 넣는다.
+       양식 시트는 자리가 고정돼 있어 「엑셀 불러오기」로 그대로 다시 읽힌다. */
+    var base = '수시지원계획_' + YEAR + (WHO && WHO.name ? '_' + WHO.name : '');
+    saveXlsxFile(base, [
+      { name: '개인별', aoa: formAoa(WHO, planGrades(), {}, rows), cols: FORM_COLS },
+      { name: '지원계획', aoa: planRows(), cols: LIST_COLS }
+    ]);
   });
 
   /* ───────── 지원계획 엑셀 불러오기 (12번) ─────────
