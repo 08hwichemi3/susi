@@ -898,7 +898,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <p class="msg hidden" id="loginMsg"></p>
     <!-- 어느 판이 올라가 있는지 보여 준다. mk_site.py 가 만들 때 넣는 값이다.
          '새 파일을 올렸는데 사이트가 안 바뀐' 상황을 여기서 바로 알아볼 수 있다. -->
-    <p class="buildtag">판 <b id="buildTag">2026-08-31 02:03</b></p>
+    <p class="buildtag">판 <b id="buildTag">2026-08-31 04:52</b></p>
   </div>
 </div>
 
@@ -3193,7 +3193,7 @@ window.SUSI_CFG = {
     if (col.sno < 0 && (col.cls < 0 || col.num < 0)) return null;
 
     // ── 줄 읽기 ──
-    var out = [], warn = [], seen = {};
+    var out = [], warn = [], seen = {}, dup = [];
     for (var r = hRow + 1; r < aoa.length; r++) {
       var row2 = aoa[r] || [];
       var at = function (idx) { return idx < 0 ? '' : row2[idx]; };
@@ -3213,7 +3213,9 @@ window.SUSI_CFG = {
 
       var key2 = cls + '-' + num;
       if (seen[key2]) {
-        warn.push('· ' + cls + '반 ' + num + '번 ' + name + ': 같은 반·번호가 여러 줄 (뒤의 줄은 건너뜀)');
+        /* ★ 한 줄씩 늘어놓지 않는다. 선생님 파일에는 명부가 통째로 한 번 더 들어 있어서
+           (아래쪽에 다른 파일을 참조하는 수식 덩어리) 이 줄이 192개나 나왔다. */
+        dup.push(cls + '반 ' + num + '번 ' + name);
         continue;
       }
       seen[key2] = 1;
@@ -3263,6 +3265,10 @@ window.SUSI_CFG = {
       top: peek(top), sub: peek(sub),
       colAt: col
     };
+    if (dup.length) {
+      warn.push('· 같은 반·번호가 겹치는 줄 ' + dup.length + '개는 건너뛰었습니다 (' +
+        dup.slice(0, 3).join(', ') + (dup.length > 3 ? ' 외' : '') + ') — 명부가 두 번 들어 있는 파일입니다');
+    }
     return { rows: out, warn: warn, found: found };
   }
 
