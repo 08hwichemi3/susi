@@ -898,7 +898,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <p class="msg hidden" id="loginMsg"></p>
     <!-- 어느 판이 올라가 있는지 보여 준다. mk_site.py 가 만들 때 넣는 값이다.
          '새 파일을 올렸는데 사이트가 안 바뀐' 상황을 여기서 바로 알아볼 수 있다. -->
-    <p class="buildtag">판 <b id="buildTag">2026-08-29 14:10</b></p>
+    <p class="buildtag">판 <b id="buildTag">2026-08-31 01:35</b></p>
   </div>
 </div>
 
@@ -1760,8 +1760,11 @@ window.SUSI_CFG = {
     window.SUSI.hide(['persist']);
     return Promise.all([
       sb.from('applications').select('*').eq('student_id', ME.id).eq('year', CFG.year),
-      sb.from('student_grades').select('*').eq('student_id', ME.id).maybeSingle()
+      sb.from('student_grades').select('*').eq('student_id', ME.id).maybeSingle(),
+      sb.from('mock_exams').select('*').eq('student_id', ME.id)
     ]).then(function (r) {
+      // 내신·모의고사는 양식으로 저장할 때 쓴다 (없으면 그 자리만 빈다)
+      setFormWho(ME, (r[1] && r[1].data) || null, (r[2] && r[2].data) || null);
       PLAN = rowsToPlan((r[0] && r[0].data) || [], (r[1] && r[1].data) || null);
       window.SUSI.setPlan(PLAN);
       sync('저장됨', 'ok');
@@ -2080,7 +2083,11 @@ window.SUSI_CFG = {
       var wb = XLSX.utils.book_new();
       function add(name, aoa, cols) {
         var ws = XLSX.utils.aoa_to_sheet(aoa);
-        if (cols) ws['!cols'] = cols;          // 너비를 안 주면 글자가 잘려 보인다
+        /* ★ 너비는 손으로 정하지 않고 들어간 글자를 세어서 맞춘다.
+           손으로 정해 두면 '학생부종합' 이 '학생부종' 에서 잘리는 일이 반드시 생긴다. */
+        var auto = (window.SUSI_FORM && window.SUSI_FORM.autoCols)
+          ? window.SUSI_FORM.autoCols(aoa, cols) : cols;
+        if (auto) ws['!cols'] = auto;          // 너비를 안 주면 글자가 잘려 보인다
         XLSX.utils.book_append_sheet(wb, ws, name);
       }
       /* '내신' 을 앞에 둔다 — 이 시트가 다시 올릴 때 쓰는 것이다.
@@ -2112,10 +2119,23 @@ window.SUSI_CFG = {
        앞 학생의 변경이 뒤 학생에게 저장된다. */
   var PLAN_BAR = null;
 
-  function setFormWho(st) {
+  /* g: student_grades 한 줄 · mk: mock_exams 여러 줄
+     ★ 학생이 자기 계획을 xlsx 로 저장할 때 양식 윗부분(내신·모의고사)이
+       비어 나가지 않도록, 서버에서 읽은 것을 그대로 넘겨준다. */
+  function setFormWho(st, g, mk) {
     if (!window.SUSI_FORM || !window.SUSI_FORM.setWho) return;
-    window.SUSI_FORM.setWho(st ? { name: st.name, no: st.student_no,
-      grade: st.grade, cls: st.class_no, num: st.number_no } : null);
+    if (!st) { window.SUSI_FORM.setWho(null); return; }
+    var w = { name: st.name, no: st.student_no,
+      grade: st.grade, cls: st.class_no, num: st.number_no };
+    if (g) {
+      w.g = { nat: { y1: g.nat_y1, y2: g.nat_y2, y3: g.nat_y3, avg: g.nat_avg },
+              hum: { y1: g.hum_y1, y2: g.hum_y2, y3: g.hum_y3, avg: g.hum_avg },
+              all: { y1: g.all_y1, y2: g.all_y2, y3: g.all_y3, avg: g.all_avg } };
+    }
+    if (mk && mk.length) {
+      var by = {}; mk.forEach(function (m) { by[m.exam] = m; }); w.mocks = by;
+    }
+    window.SUSI_FORM.setWho(w);
   }
 
   function openPlanFor(st) {
@@ -2124,14 +2144,16 @@ window.SUSI_CFG = {
     return Promise.resolve(flush()).then(function () {
       return Promise.all([
         sb.from('applications').select('*').eq('student_id', st.id).eq('year', CFG.year),
-        sb.from('student_grades').select('*').eq('student_id', st.id).maybeSingle()
+        sb.from('student_grades').select('*').eq('student_id', st.id).maybeSingle(),
+        sb.from('mock_exams').select('*').eq('student_id', st.id)
       ]);
     }).then(function (r) {
       var err = (r[0] && r[0].error) || (r[1] && r[1].error);
       if (err) throw err;
       PLAN = rowsToPlan((r[0] && r[0].data) || [], (r[1] && r[1].data) || null);
       PLAN_OWNER = st;
-      setFormWho(st);                    // 대신 짜는 동안 저장하면 그 학생 이름으로 나간다
+      // 대신 짜는 동안 저장하면 그 학생 이름·내신·모의고사로 나간다
+      setFormWho(st, (r[1] && r[1].data) || null, (r[2] && r[2].data) || null);
       window.SUSI.setPlan(PLAN);
       window.SUSI.showTabs(['plan']);
       window.SUSI.hideTabs(['data']);           // 학생이 보는 화면과 똑같이 (자료 교체는 감춘다)
@@ -4414,13 +4436,60 @@ window.SUSI_CFG = {
     if (anchorBlobDownload(name, blob)) { toast(okMsg || '저장했습니다 — 다운로드 폴더를 확인하세요'); return true; }
     return false;
   }
+  /* ───────── 칸 너비를 글자에 맞춘다 ─────────
+     ★ 너비를 손으로 정해 두면 반드시 넘치는 글자가 나온다.
+       '학생부종합'(5자=10칸)을 7칸 자리에 넣어 두면 '학생부종' 에서 잘린다 —
+       실제로 그렇게 보인다는 지적을 받았다. 그래서 **들어간 글자를 세어서** 정한다.
+       한글·한자는 두 칸으로 센다. 손으로 정한 값은 '최소 너비'로만 쓴다. */
+  function textW(v) {
+    var t = (v === null || v === undefined) ? '' : String(v), n = 0;
+    for (var i = 0; i < t.length; i++) {
+      var c = t.charCodeAt(i);
+      n += (c >= 0x1100 && !(c >= 0x2000 && c < 0x2E80)) ? 2 : 1;   // 한글·한자·가나는 두 칸
+    }
+    return n;
+  }
+  var COL_MIN = 4, COL_MAX = 42;
+  function autoCols(aoa, base) {
+    var w = [];
+    (aoa || []).forEach(function (row) {
+      if (!row) return;
+      // 구분선 줄(──────── 다음 학생 ────────)은 너비 계산에서 뺀다
+      var sep = false;
+      for (var k = 0; k < row.length; k++) if (typeof row[k] === 'string' && row[k].indexOf('─') === 0) sep = true;
+      if (sep) return;
+      for (var i = 0; i < row.length; i++) {
+        /* ★ 오른쪽 칸이 비어 있으면 엑셀이 글자를 그리로 흘려 준다 — 안 잘린다.
+           (원본 양식의 제목 줄이 그렇다) 그런 칸까지 넓히면 표가 우스워진다.
+           오른쪽에 글자가 있어서 **잘리는 칸**만 세어서 넓힌다. */
+        var nx = row[i + 1];
+        if (nx === undefined || nx === null || nx === '') continue;
+        var t = textW(row[i]);
+        // 줄바꿈이 있으면 가장 긴 줄만 본다
+        if (typeof row[i] === 'string' && row[i].indexOf('\n') >= 0) {
+          t = 0; row[i].split('\n').forEach(function (ln) { t = Math.max(t, textW(ln)); });
+        }
+        if (t > (w[i] || 0)) w[i] = t;
+      }
+      // 맨 끝 칸은 오른쪽이 없으니 따로 본다
+      var last = row.length - 1;
+      if (last >= 0) { var tl = textW(row[last]); if (tl > (w[last] || 0)) w[last] = tl; }
+    });
+    var out = [];
+    for (var i = 0; i < w.length; i++) {
+      var min = (base && base[i] && base[i].wch) || COL_MIN;
+      var v = Math.max(min, Math.min(COL_MAX, (w[i] || 0) + 2));
+      out.push({ wch: v });
+    }
+    return out;
+  }
   function saveXlsxFile(base, sheets) {
     if (typeof XLSX === 'undefined') { toast('xlsx 기능을 불러오지 못했습니다. CSV로 저장해 주세요.'); return; }
     try {
       var wb = XLSX.utils.book_new();
       sheets.forEach(function (s) {
         var ws = XLSX.utils.aoa_to_sheet(s.aoa);
-        if (s.cols) ws['!cols'] = s.cols;          // 칸 너비를 안 주면 글자가 잘려 보인다
+        ws['!cols'] = autoCols(s.aoa, s.cols);     // 칸 너비를 안 주면 글자가 잘려 보인다
         XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31));
       });
       var buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
@@ -4985,7 +5054,13 @@ window.SUSI_CFG = {
     a[10] = head;                                         // ★ 11번째 줄 = 머리글
     a.push(blank(22));                                    // 12줄: 원본의 '예시' 자리 (비움)
     (rows || []).forEach(function (r) { a.push(r); });     // 13줄부터
-    return a;
+    /* ★ 빈 칸은 '' 가 아니라 아예 비워서 넘긴다.
+       '' 를 넣으면 엑셀이 '내용이 있는 칸'으로 보고 옆 글자를 흘려보내지 않아,
+       '학생부종합' 이 '학생부종' 에서 잘려 보인다(실제로 그렇게 보인다는 지적을 받았다).
+       진짜로 비어 있으면 원본 양식처럼 옆으로 흘러서 다 보인다. */
+    return a.map(function (row) {
+      return (row || []).map(function (v) { return (v === '' || v === undefined) ? null : v; });
+    });
   }
 
   /* 카드 하나 → 양식 한 줄 (C~V) */
@@ -5030,7 +5105,8 @@ window.SUSI_CFG = {
 
   var WHO = null;
   // 셸(로그인 화면)이 '누구 것인지' 알려 준다. 인터넷 없이 쓰는 파일에서는 비어 있다.
-  window.SUSI_FORM = { aoa: formAoa, cols: FORM_COLS, setWho: function (w) { WHO = w || null; } };
+  window.SUSI_FORM = { aoa: formAoa, cols: FORM_COLS, autoCols: autoCols,
+    setWho: function (w) { WHO = w || null; } };
 
   function planTable() { return planRows().map(function (row) { return row.join('\t'); }); }
   $('copyPlan').addEventListener('click', function (e) {
@@ -5052,8 +5128,21 @@ window.SUSI_CFG = {
     /* 양식 시트를 앞에 두고, 정렬해서 보기 좋은 나열식 시트를 뒤에 같이 넣는다.
        양식 시트는 자리가 고정돼 있어 「엑셀 불러오기」로 그대로 다시 읽힌다. */
     var base = '수시지원계획_' + YEAR + (WHO && WHO.name ? '_' + WHO.name : '');
+    /* 셸이 학생의 내신·모의고사를 넘겨줬으면 그걸 쓴다 —
+       안 그러면 양식 윗부분(내신 3줄·모의고사 6줄)이 통째로 비어서 나간다. */
+    var gg = planGrades();
+    if (WHO && WHO.g) {
+      /* 1·2·3학년 칸은 선생님이 올린 값에서, 평균은 학생이 지원계획에 적은 값이 있으면 그것을 쓴다
+         (판정에 쓰는 값과 양식에 찍히는 값이 달라 보이면 안 된다). */
+      ['nat', 'hum', 'all'].forEach(function (k) {
+        var srv = WHO.g[k] || {}, mine = gg[k] || {};
+        gg[k] = { y1: srv.y1, y2: srv.y2, y3: srv.y3,
+                  avg: (mine.avg === '' || mine.avg === null || mine.avg === undefined) ? srv.avg : mine.avg };
+      });
+    }
+    var mm = (WHO && WHO.mocks) ? WHO.mocks : {};
     saveXlsxFile(base, [
-      { name: '개인별', aoa: formAoa(WHO, planGrades(), {}, rows), cols: FORM_COLS },
+      { name: '개인별', aoa: formAoa(WHO, gg, mm, rows), cols: FORM_COLS },
       { name: '지원계획', aoa: planRows(), cols: LIST_COLS }
     ]);
   });
