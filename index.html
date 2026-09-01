@@ -1111,6 +1111,27 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 #tv-upload.flash{outline:2px solid var(--accent);outline-offset:3px;
   transition:outline-color .4s}
 
+
+/* ───────── 달력을 A4 세로 비율로 ─────────
+   칸 높이만 키우면 화면이 넓을 때 달력이 옆으로 퍼져(1362×793) 오히려 가로로 납작해집니다.
+   폭을 840px 로 묶어야 세로로 긴 한 장이 됩니다 — 840×923, 한 칸 117×176.
+   min-height 만 두므로 고사가 몰린 주는 그 줄이 알아서 늘어납니다. */
+.calgrid{max-width:840px;margin-left:auto;margin-right:auto}
+.calmonhead{max-width:840px;margin-left:auto;margin-right:auto}
+.calcell{min-height:176px}
+
+/* 좁은 화면은 건수만 찍는 쪽을 그대로 둔다 (위에서 56px 로 잡아 둔 것) */
+@media(max-width:700px){
+  .calgrid,.calmonhead{max-width:none;margin-left:0;margin-right:0}
+  .calcell{min-height:56px}
+}
+
+@media print{
+  /* 종이에서는 폭 제한을 풀고, 6줄 × 38mm 로 A4 세로 한 장을 꽉 채운다 */
+  .calgrid,.calmonhead{max-width:none;margin-left:0;margin-right:0}
+  .calcell{min-height:38mm}
+}
+
 </style></head><body><!-- ══════════ 로그인 ══════════ -->
 <div id="gate" class="gate">
   <div class="gatebox">
