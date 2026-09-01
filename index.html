@@ -908,11 +908,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 /* ───────── ② 지역 = 작은 한국 지도 ─────────
    가나다순 목록 대신 실제 자리에 가깝게 칸을 잡습니다.
    0건인 지역도 자리는 남겨 둡니다 — 사라지면 지도 모양이 무너집니다.
-   뒷배경에는 한국 지도 윤곽을 옅게 깔아 '실제 위치' 임이 한눈에 보이게 합니다. */
+   (뒷배경 지도는 아래 「지역: 뒷배경 한국 지도」의 .mapwrap/.mapbg 인라인 SVG 가 그립니다) */
 .mapchips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-  grid-auto-rows:minmax(34px,auto);gap:4px;position:relative;isolation:isolate;padding:4px 2px}
-.mapchips::before{content:'';position:absolute;inset:-6px -2px;z-index:-1;pointer-events:none;
-  opacity:.8;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 800' preserveAspectRatio='none'%3E%3Cpath d='M110,10 C160,2 250,8 330,20 C360,26 385,45 395,75 C400,150 392,260 396,360 C398,430 390,470 398,480 C392,540 392,600 388,650 C386,675 388,688 382,694 C340,672 305,655 298,668 C278,700 262,712 250,704 C226,690 210,682 200,694 C186,712 170,724 158,716 C138,704 122,696 110,704 C96,712 84,704 76,690 C64,650 62,622 66,606 C78,580 88,568 82,556 C68,532 56,514 60,498 C70,472 80,458 74,446 C56,418 44,398 50,384 C62,356 74,342 68,330 C52,304 46,282 54,268 C70,244 86,234 80,222 C64,200 58,186 64,174 C78,150 92,138 90,124 C86,100 92,74 100,52 C104,34 106,18 110,10 Z M70,758 C70,744 92,738 114,738 C136,738 156,746 156,758 C156,770 134,778 112,778 C90,778 70,770 70,758 Z' fill='%23809383' fill-opacity='.10' stroke='%23809383' stroke-opacity='.55' stroke-width='4'/%3E%3C/svg%3E") no-repeat center/100% 100%}
+  grid-auto-rows:minmax(34px,auto);gap:4px}
 .mapchip{display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:0;padding:4px 3px;border:1px solid var(--line-2);border-radius:8px;
   background:var(--surface);color:var(--ink-2);font-family:inherit;font-size:12px;
