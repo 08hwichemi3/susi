@@ -472,6 +472,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   border:1px solid var(--line-2);background:var(--surface);color:var(--ink-3);
   cursor:pointer;font-family:inherit;line-height:1.5;flex:none}
 .stlist .rsbtn:hover{border-color:var(--rose);color:var(--rose);background:var(--rose-soft)}
+.stlist .rsbtn.gbtn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+/* 한 줄에 단추가 둘이면 첫 단추만 오른쪽으로 밀고 나머지는 붙인다 */
+.stlist .rsbtn~.rsbtn,.stlist .rsbtn~.newbadge{margin-left:0}
 .stlist li[aria-selected="true"] .rsbtn{background:var(--surface)}
 .stlist .empty{color:var(--ink-3);cursor:default;justify-content:center;padding:22px}
 .stlist .empty:hover{background:transparent}
@@ -512,7 +515,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calhd.sun{color:var(--rose)}
 .calhd.sat{color:#3b6fb5}
 
-.calcell{min-width:0;min-height:96px;max-height:96px;overflow:hidden;
+.calcell{min-width:0;min-height:150px;overflow:hidden;
   border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--surface);
   display:flex;flex-direction:column}
 .calcell.blank{background:transparent;border-color:transparent}
@@ -529,11 +532,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calcell[data-d][tabindex]:hover{background:var(--surface-2)}
 .calcell.clash[data-d][tabindex]:hover{background:var(--rose-soft)}
 
-/* .its 를 '딱 세 줄'(16px × 3)로 못박는다.
-   flex:1 로 남는 만큼 늘렸더니 마지막 줄이 반쯤 잘려 보여서 — 글자가 중간에서
-   싹둑 잘린 꼴이라 고장난 것처럼 보인다 — 줄 높이의 정수배로 고정했다.
-   아래 「+N건」 줄은 flex:0 0 auto 라 어떤 경우에도 안 잘린다. */
-.calcell .its{min-width:0;flex:0 0 auto;height:48px;overflow:hidden}
+/* 칸을 세로로 길게 쓴다 — 여섯 줄(16px × 6)까지 칸 안에 그대로 적고,
+   그보다 많으면 「+N건」으로 접는다. 칸 높이는 min-height 만 두어
+   내용이 많은 주는 줄 전체가 같이 늘어난다(격자라 옆 칸과 높이가 맞는다). */
+.calcell .its{min-width:0;flex:0 0 auto;overflow:hidden}
 .calcell .it{font-size:10.5px;line-height:16px;color:var(--ink-2);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .calcell .it b{color:var(--ink);font-weight:600}
@@ -687,6 +689,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
 .setrow{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-top:12px}
 .setrow label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2)}
+.setrow .lt{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.setrow .setrow-note{flex-basis:100%}
 .setrow input{padding:7px 10px;border:1px solid var(--line);border-radius:8px;
   background:var(--surface);color:var(--ink);font-family:inherit;font-size:13.5px}
 .setrow input[type=number]{width:96px}
@@ -707,6 +711,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .stfhead .lnk{border:0;background:transparent;color:var(--ink-3);font-family:inherit;
   font-size:11.5px;cursor:pointer;text-decoration:underline}
 .stfhead .lnk:hover{color:var(--accent)}
+.stfhead .lnk.del{color:var(--rose);opacity:.75}
+.stfhead .lnk.del:hover{color:var(--rose);opacity:1}
+.btn.ghostish.del{color:var(--rose)}
 
 /* 역할·반 고르는 칩. 반이 20개까지 갈 수 있어 줄바꿈으로 흐르게 둔다.
    이름을 .rchip 으로 둔 이유: app.css 에 이미 `.chip`(전형 찾기의 지역·구분 필터)이
@@ -889,9 +896,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
 /* ───────── ② 지역 = 작은 한국 지도 ─────────
    가나다순 목록 대신 실제 자리에 가깝게 칸을 잡습니다.
-   0건인 지역도 자리는 남겨 둡니다 — 사라지면 지도 모양이 무너집니다. */
+   0건인 지역도 자리는 남겨 둡니다 — 사라지면 지도 모양이 무너집니다.
+   뒷배경에는 한국 지도 윤곽을 옅게 깔아 '실제 위치' 임이 한눈에 보이게 합니다. */
 .mapchips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-  grid-auto-rows:minmax(34px,auto);gap:4px}
+  grid-auto-rows:minmax(34px,auto);gap:4px;position:relative;isolation:isolate;padding:4px 2px}
+.mapchips::before{content:'';position:absolute;inset:-6px -2px;z-index:-1;pointer-events:none;
+  opacity:.8;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 800' preserveAspectRatio='none'%3E%3Cpath d='M110,10 C160,2 250,8 330,20 C360,26 385,45 395,75 C400,150 392,260 396,360 C398,430 390,470 398,480 C392,540 392,600 388,650 C386,675 388,688 382,694 C340,672 305,655 298,668 C278,700 262,712 250,704 C226,690 210,682 200,694 C186,712 170,724 158,716 C138,704 122,696 110,704 C96,712 84,704 76,690 C64,650 62,622 66,606 C78,580 88,568 82,556 C68,532 56,514 60,498 C70,472 80,458 74,446 C56,418 44,398 50,384 C62,356 74,342 68,330 C52,304 46,282 54,268 C70,244 86,234 80,222 C64,200 58,186 64,174 C78,150 92,138 90,124 C86,100 92,74 100,52 C104,34 106,18 110,10 Z M70,758 C70,744 92,738 114,738 C136,738 156,746 156,758 C156,770 134,778 112,778 C90,778 70,770 70,758 Z' fill='%23809383' fill-opacity='.10' stroke='%23809383' stroke-opacity='.55' stroke-width='4'/%3E%3C/svg%3E") no-repeat center/100% 100%}
 .mapchip{display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:0;padding:4px 3px;border:1px solid var(--line-2);border-radius:8px;
   background:var(--surface);color:var(--ink-2);font-family:inherit;font-size:12px;
@@ -963,8 +973,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .ddl{display:block;font-size:9.5px;line-height:13px;color:var(--ink-3);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .calcell.has .ddl{color:var(--ink-2)}
-/* D-day 두 줄이 붙는 만큼 칸을 키운다 (원래 96px) */
-.calcell{min-height:124px;max-height:124px}
+/* D-day 줄이 붙어도 넉넉하게 — 세로로 긴 칸 */
+.calcell{min-height:150px}
 
 /* ───────── ⑤ 좁은 화면(모바일) ───────── */
 @media(max-width:900px){
@@ -1053,15 +1063,25 @@ td.c-cut70{font-weight:600;color:var(--ink)}
      (학사 일정표로도 쓰이므로 '아무 것도 없는 달' 자체가 정보다). */
   .calmon.empty{display:block}
   .calnav,.ddset{display:none !important}
-  .calmonhead{display:flex !important;border-bottom:2px solid #000;padding-bottom:6px;margin:0 0 8px}
-  .cm-no{font-size:34px;color:#000 !important}
-  .cm-no span{color:#000 !important}
-  .cm-t b{font-size:13px;color:#000 !important}
-  .cm-t span{color:#333 !important}
-  .cm-cnt{background:none !important;color:#333 !important;padding:0}
-  .calcell{min-height:92px;max-height:none !important}
+  /* 컬러로 인쇄한다 — 면접/논술/실기 배지와 ⚠ 경고색이 종이에서도 그대로 나오게.
+     다크 모드에서 인쇄해도 종이는 흰색이므로, 인쇄 때는 밝은 판의 색으로 되돌린다. */
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"]{
+    --ground:#FFFFFF; --surface:#FFFFFF; --surface-2:#F4F2EC;
+    --line:#D8D5CC; --line-2:#C4C0B4;
+    --ink:#17201C; --ink-2:#4A544E; --ink-3:#7C857E;
+    --accent:#1F5D4C; --accent-ink:#FFFFFF; --accent-soft:#DFEAE4; --accent-line:#A9C7BB;
+    --amber:#8A5A0E; --amber-soft:#F6EBD6;
+    --rose:#8C2F39; --rose-soft:#F6E2E3;
+    --blue:#25506E; --blue-soft:#DEE8F0;
+  }
+  #calPrint, #calPrint *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  .calmonhead{display:flex !important;border-bottom:2px solid var(--ink);padding-bottom:6px;margin:0 0 8px}
+  .cm-no{font-size:34px}
+  .cm-t b{font-size:13px}
+  .cm-cnt{padding:2px 10px}
+  .calcell{min-height:120px;max-height:none !important}
   .calcell .dd{display:block !important}
-  .ddl{font-size:8px;color:#333 !important;line-height:1.25}
+  .ddl{font-size:8px;line-height:1.25}
   .calcell[data-n]::after{content:none !important}
 }
 
@@ -1118,7 +1138,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <p class="msg hidden" id="loginMsg"></p>
     <!-- 어느 판이 올라가 있는지 보여 준다. mk_site.py 가 만들 때 넣는 값이다.
          '새 파일을 올렸는데 사이트가 안 바뀐' 상황을 여기서 바로 알아볼 수 있다. -->
-    <p class="buildtag">판 <b id="buildTag">2026-08-31 04:52</b></p>
+    <p class="buildtag">판 <b id="buildTag">2026-09-01</b></p>
   </div>
 </div>
 
@@ -1231,9 +1251,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <label>학교 이름
             <input type="text" id="schName" placeholder="○○고등학교" autocomplete="off">
           </label>
-          <label>반 개수
+          <label><span class="lt">반 개수 <span class="fh">1~20</span></span>
             <input type="number" id="schClasses" min="1" max="20" step="1">
-            <span class="fh">1~20</span>
           </label>
           <button class="btn primary" id="schSave">저장</button>
           <span class="msg hidden" id="schMsg"></span>
@@ -1251,7 +1270,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <label>이름
             <input type="text" id="ntName" placeholder="김담임" autocomplete="off">
           </label>
-          <label>아이디 <span class="fh">비워 두면 자동</span>
+          <label><span class="lt">아이디 <span class="fh">비워 두면 자동</span></span>
             <input type="text" id="ntLogin" placeholder="자동 (teacher10 …)" autocomplete="off">
           </label>
           <label>담당
@@ -1268,7 +1287,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         </h3>
         <p class="hint"><b>일반</b>은 담당 학생이 없고, <b>전체</b>는 학교 모든 학생을 봅니다.
           <b>반 번호</b>를 고르면 그 반 담임이 되어 <b>그 반 학생만</b> 보입니다. 누르면 바로 저장됩니다.
-          <b>[비밀번호 초기화]</b> 를 누르면 초기 비밀번호로 되돌아가고, 그 선생님은 다음에 들어갈 때 새로 정하게 됩니다.</p>
+          <b>[비밀번호 초기화]</b> 를 누르면 초기 비밀번호로 되돌아가고, 그 선생님은 다음에 들어갈 때 새로 정하게 됩니다.
+          <b>[계정 삭제]</b> 는 그 선생님 계정을 완전히 지웁니다 — 되돌릴 수 없습니다.</p>
         <div id="stfList"></div>
       </div>
 
@@ -1279,7 +1299,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           학생이 못 들어온다고 하면 —
           <b>[비밀번호 초기화]</b> 는 등록해 둔 생년월일·전화번호로 비밀번호를 <b>다시 맞춰</b> 줍니다(연락처는 그대로).
           <b>[등록 초기화]</b> 는 생년월일·전화번호를 <b>지워서</b> 학생이 다음 로그인 때 다시 넣게 합니다.
-          성적과 지원계획은 어느 쪽도 지우지 않습니다.</p>
+          성적과 지원계획은 어느 쪽도 지우지 않습니다.
+          <b>[계정 삭제]</b> 는 전학 등으로 나간 학생의 계정을 성적·지원계획까지 <b>완전히</b> 지웁니다 — 되돌릴 수 없습니다.</p>
         <input type="text" id="sacFilter" placeholder="이름·학번으로 찾기" autocomplete="off">
         <div id="sacList"></div>
       </div>
@@ -1331,10 +1352,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <div class="setrow">
           <label>확인 문구
             <input type="text" id="resetWord" placeholder="학생자료삭제" autocomplete="off">
-            <span class="fh">위 다섯 글자를 그대로 입력해야 단추가 눌립니다</span>
           </label>
           <button class="btn danger" id="resetBtn" disabled>학생 자료 모두 지우기</button>
           <span class="msg hidden" id="resetMsg"></span>
+          <span class="fh setrow-note">위 다섯 글자를 그대로 입력해야 단추가 눌립니다</span>
         </div>
       </div>
 
@@ -2516,6 +2537,8 @@ window.SUSI_CFG = {
     $('stList').innerHTML = list.length ? list.map(function (s) {
       return '<li data-id="' + s.id + '" aria-selected="' + (PICKED === s.id) + '">' +
         '<span class="sno">' + s.student_no + '</span><span>' + esc(s.name) + '</span>' +
+        '<button type="button" class="rsbtn gbtn" data-grade="' + s.id +
+          '" title="이 학생의 성적 입력 화면을 바로 엽니다">성적</button>' +
         (NOTACT[s.id]
           ? '<span class="newbadge">미등록</span>'
           : (canReset ? '<button type="button" class="rsbtn" data-reset="' + s.id +
@@ -2534,7 +2557,7 @@ window.SUSI_CFG = {
      A 학생 기록에 저장된다. 요청마다 번호를 매겨 마지막 것만 그린다. */
   var pickSeq = 0, planTimer = null;
 
-  function pickStudent(id) {
+  function pickStudent(id, openGrades) {
     PICKED = id; renderStudentList();
     var st = STUDENTS.filter(function (s) { return s.id === id; })[0];
     if (!st) return;
@@ -2550,6 +2573,8 @@ window.SUSI_CFG = {
       var err = (r[0] && r[0].error) || (r[1] && r[1].error) || (r[2] && r[2].error);
       if (err) throw err;
       renderDetail(st, (r[0] && r[0].data) || [], (r[1] && r[1].data) || null, (r[2] && r[2].data) || []);
+      // 목록의 [성적] 단추로 들어왔으면 성적 입력 화면을 바로 연다
+      if (openGrades) { var ge = $('gEdit'); if (ge) ge.click(); }
     }).catch(function (e) {
       if (seq !== pickSeq) return;
       $('stDetail').innerHTML = '<p class="hint"><b class="clashk">불러오지 못했습니다</b> — ' +
@@ -2561,7 +2586,7 @@ window.SUSI_CFG = {
     var now = new Date();
     var h = '<h3 class="sec">' + esc(st.name) + ' <span class="tag">' + st.student_no + ' · ' +
       st.grade + '학년 ' + st.class_no + '반 ' + st.number_no + '번</span>' +
-      '<button class="btn" id="gEdit">성적 입력</button>' +
+      '<button class="btn primary" id="gEdit">성적 입력</button>' +
       '<button class="btn" id="planEditBtn">지원계획 짜기</button>' +
       '<button class="btn" id="stPrintBtn">인쇄</button></h3>';
     // 여기서부터 인쇄에 나가는 부분. 종이에만 보이는 머리글을 맨 앞에 둔다.
@@ -2961,6 +2986,7 @@ window.SUSI_CFG = {
         (na ? '<span class="fh">학생이 아직 안 넣었습니다</span>'
             : '<button type="button" class="btn" data-pwstu="' + s2.id + '">비밀번호 초기화</button>') +
         '<button type="button" class="btn ghostish" data-restu="' + s2.id + '">등록 초기화</button>' +
+        '<button type="button" class="btn ghostish del" data-delstu="' + s2.id + '">계정 삭제</button>' +
         '</div>';
     }).join('') + '</div>' +
     (list.length > 400 ? '<p class="hint">…외 ' + (list.length - 400) + '명. 위 칸에 이름이나 학번을 넣어 찾으세요.</p>' : '');
@@ -2977,6 +3003,47 @@ window.SUSI_CFG = {
       if (r.error) throw r.error;
       window.SUSI.toast(st.name + ' 학생의 비밀번호를 되돌렸습니다 (생년월일 6자리 + 전화번호 뒤 4자리).');
     }).catch(function (e) { window.alert(rpcErr(e, '비밀번호를 되돌리지')); });
+  }
+
+  /* ───────── 계정 삭제 (학생·교직원) ─────────
+     auth.users 는 클라이언트가 직접 못 지운다 — 서버 함수(추가기능.sql)가 지운다.
+     되돌릴 수 없는 일이라 확인 창에 무엇이 같이 지워지는지 다 적는다. */
+  function deleteStudent(id, btn) {
+    var st = STUDENTS.filter(function (x) { return x.id === id; })[0];
+    if (!st) return;
+    if (!window.confirm(
+        st.student_no + ' ' + st.name + ' 학생의 계정을 완전히 지웁니다.\n\n' +
+        '· 내신·모의고사 성적과 지원계획도 함께 지워집니다\n' +
+        '· 되돌릴 수 없습니다 (전학 등으로 나간 학생에게 쓰세요)\n\n정말 지울까요?')) return;
+    if (btn) btn.disabled = true;
+    Promise.resolve(sb.rpc('delete_student', { p_student: id })).then(function (r) {
+      if (r.error) throw r.error;
+      window.SUSI.toast(st.name + ' 학생 계정을 지웠습니다.');
+      if (PICKED === id) { PICKED = null; $('stDetail').innerHTML = '<p class="hint">왼쪽에서 학생을 고르세요.</p>'; }
+      return loadStudents();
+    }).then(function () { renderStudentAccounts(); }).catch(function (e) {
+      if (btn) btn.disabled = false;
+      window.alert(rpcErr(e, '계정을 지우지'));
+    });
+  }
+
+  function deleteStaff(id, btn) {
+    var x = STAFF.filter(function (o) { return o.id === id; })[0];
+    if (!x) return;
+    if (x.id === ME.id) { window.alert('본인 계정은 지울 수 없습니다.'); return; }
+    if (!window.confirm(
+        x.name + ' 선생님의 계정을 완전히 지웁니다.\n\n' +
+        '· 담당 반 설정도 함께 지워집니다 (학생 자료는 그대로 남습니다)\n' +
+        '· 되돌릴 수 없습니다\n\n정말 지울까요?')) return;
+    if (btn) btn.disabled = true;
+    Promise.resolve(sb.rpc('delete_staff', { p_staff: id })).then(function (r) {
+      if (r.error) throw r.error;
+      window.SUSI.toast(x.name + ' 선생님 계정을 지웠습니다.');
+      return loadStaff();
+    }).catch(function (e) {
+      if (btn) btn.disabled = false;
+      window.alert(rpcErr(e, '계정을 지우지'));
+    });
   }
 
   /* 아이디(로그인 이름)는 auth.users 에 있어 클라이언트가 직접 못 읽는다.
@@ -3062,7 +3129,8 @@ window.SUSI_CFG = {
           // 본인 계정은 뺀다. 총관리자는 강제 변경 화면을 안 만나므로,
           // 자기를 1111 로 되돌리면 그대로 1111 로 남는다. 바꾸려면 [비밀번호] 를 쓴다.
           (me ? '<span class="fh">비밀번호는 위 [비밀번호]로</span>'
-              : '<button class="lnk" data-pw="' + x.id + '">비밀번호 초기화</button>') +
+              : '<button class="lnk" data-pw="' + x.id + '">비밀번호 초기화</button>' +
+                '<button class="lnk del" data-del="' + x.id + '">계정 삭제</button>') +
         '</div>' + chips + '</div>';
     }).join('') || '<p class="hint">교직원 계정이 없습니다.</p>';
   }
@@ -3145,7 +3213,7 @@ window.SUSI_CFG = {
        2) 칸 자체는 세로로 안 늘어나고(고정 높이), 글자는 넘치면 …으로 자릅니다
      날짜를 누르면 아래에 그 날 전체가 펼쳐집니다(여기는 길어지면 스크롤).
      인쇄할 때는 접힌 것 없이 전부 나오고 칸이 늘어납니다. */
-  var CAL_MAX = 3;                     // 한 칸에 적는 최대 건수
+  var CAL_MAX = 6;                     // 한 칸에 적는 최대 건수 (칸을 세로로 키워서 늘림)
   /* cur = 지금 보고 있는 달(months 안의 자리). 한 화면에 한 달만 그린다 —
      여섯 달을 한꺼번에 늘어놓으면 화면에서도 종이에서도 아무 달도 제대로 안 보인다.
      인쇄하면 '보고 있는 달' 한 장만 나간다(그리는 것이 하나뿐이라 저절로 그렇게 된다). */
@@ -3297,9 +3365,24 @@ window.SUSI_CFG = {
       });
   }
 
+  /* 달력 칸은 좁다 — 대학 이름을 통용 약칭으로 줄이고(홍익대학교→홍대),
+     전문대는 앞에 (전) 을 붙여 4년제와 바로 구분되게 한다. */
+  var UNI_NICK = { '연세대': '연대', '고려대': '고대', '홍익대': '홍대', '이화여대': '이대',
+                   '성균관대': '성대', '중앙대': '중대', '한국외국어대': '외대',
+                   '서울시립대': '시립대', '건국대': '건대', '숙명여대': '숙대' };
+  function calUni(name) {
+    var v = String(name || '').trim();
+    var col = /\(전문대\)/.test(v);
+    v = v.replace(/\s*\(전문대\)\s*/g, '');
+    v = v.replace(/여자대학교/g, '여대').replace(/대학교/g, '대');
+    for (var k in UNI_NICK) {
+      if (v.indexOf(k) === 0) { v = UNI_NICK[k] + v.slice(k.length); break; }
+    }
+    return (col ? '(전)' : '') + v;
+  }
   function itLine(it) {
     return '<div class="it"><b>' + esc(it.who) + '</b> ' +
-      '<span class="who">' + esc(it.uni) + '</span> ' +
+      '<span class="who">' + esc(calUni(it.uni)) + '</span> ' +
       '<span class="kd k-' + it.kind + '">' + it.kind + '</span></div>';
   }
 
@@ -3440,7 +3523,7 @@ window.SUSI_CFG = {
           '<b>' + esc(g[0].who) + '</b>' +
           '<div>' + g.map(function (i) {
             return '<div class="cdit"><span class="kd k-' + i.kind + '">' + i.kind + '</span> ' +
-              esc(i.uni) + ' <span class="who">' + esc(i.dept || '') + '</span></div>';
+              esc(calUni(i.uni)) + ' <span class="who">' + esc(i.dept || '') + '</span></div>';
           }).join('') + '</div></div>';
       }).join('') + '</div>';
   }
@@ -4197,6 +4280,8 @@ window.SUSI_CFG = {
     on('stList', 'click', function (e) {
       var rb = e.target.closest('[data-reset]');
       if (rb) { e.stopPropagation(); resetStudentLogin(rb.dataset.reset); return; }
+      var gb = e.target.closest('[data-grade]');
+      if (gb) { e.stopPropagation(); pickStudent(gb.dataset.grade, true); return; }
       var li = e.target.closest('li[data-id]'); if (li) pickStudent(li.dataset.id);
     });
     on('tTabs', 'click', function (e) {
@@ -4238,12 +4323,16 @@ window.SUSI_CFG = {
       var a = e.target.closest('[data-pwstu]');
       if (a) { resetStudentPassword(a.dataset.pwstu); return; }
       var b = e.target.closest('[data-restu]');
-      if (b) resetStudentLogin(b.dataset.restu);
+      if (b) { resetStudentLogin(b.dataset.restu); return; }
+      var d = e.target.closest('[data-delstu]');
+      if (d) deleteStudent(d.dataset.delstu, d);
     });
     on('stfToggle', 'click', function () { STF_OPEN = !STF_OPEN; renderStaff(); });
     on('stfList', 'click', function (e) {
       var c = e.target.closest('.rchip[data-k]');
       if (c && !c.disabled) { setStaffRole(c.dataset.id, c.dataset.k); return; }
+      var del = e.target.closest('[data-del]');
+      if (del) { deleteStaff(del.dataset.del, del); return; }
       var pw = e.target.closest('[data-pw]');
       if (pw) {
         var x = STAFF.filter(function (o) { return o.id === pw.dataset.pw; })[0];
@@ -4441,9 +4530,14 @@ window.SUSI_CFG = {
     if (dq) ids = ids.filter(function (i) { return DP[ROWS[i][C.D]].replace(/\s+/g, '').toLowerCase().indexOf(dq) >= 0; });
     return ids;
   }
+  /* '농어촌' 같은 대상 제한(특별) 전형은 아래로 — 대부분의 학생이 먼저 찾는
+     일반 전형을 위에 둔다. 이름으로 판별한다(자료에 구분 열이 따로 없다). */
+  var SPECIAL_JH = /농어촌|기회균형|기회균등|고른기회|사회통합|사회배려|사회다양|사회기여|특성화고|마이스터|재직자|특수교육|장애|보훈|기초생활|차상위|한부모|다자녀|다문화|북한이탈|새터민|서해\s*5\s*도|도서[·ㆍ]?벽지|만학도|성인학습|평생학습|검정고시|취업자/;
+  function jhRank(name) { return SPECIAL_JH.test(String(name || '')) ? 1 : 0; }
   function cmpDef(a, b) {
     return (U[ROWS[a][C.U]] || '').localeCompare(U[ROWS[b][C.U]] || '')
       || ROWS[a][C.T] - ROWS[b][C.T]
+      || jhRank(J[ROWS[a][C.J]]) - jhRank(J[ROWS[b][C.J]])
       || (J[ROWS[a][C.J]] || '').localeCompare(J[ROWS[b][C.J]] || '')
       || (DP[ROWS[a][C.D]] || '').localeCompare(DP[ROWS[b][C.D]] || '');
   }
@@ -4722,7 +4816,11 @@ window.SUSI_CFG = {
     if (find.types.size) ids = ids.filter(function (i) { return find.types.has(ROWS[i][C.T]); });
     var m = new Map();
     ids.forEach(function (i) { var j = ROWS[i][C.J]; m.set(j, (m.get(j) || 0) + 1); });
-    var arr = Array.from(m.entries()).sort(function (a, b) { return (J[a[0]] || '').localeCompare(J[b[0]] || ''); });
+    var arr = Array.from(m.entries()).sort(function (a, b) {
+      var ja = J[a[0]] || '', jb = J[b[0]] || '';
+      // 일반 전형 먼저, 농어촌 등 대상 제한 전형은 아래에 — 각 묶음 안은 가나다순
+      return jhRank(ja) - jhRank(jb) || ja.localeCompare(jb);
+    });
     if (!arr.length) { el.innerHTML = '<li class="empty">해당 전형이 없습니다</li>'; return; }
     el.innerHTML = arr.map(function (x) {
       return '<li role="option" tabindex="0" data-j="' + x[0] + '" aria-selected="' + (find.jh === x[0]) + '">' +

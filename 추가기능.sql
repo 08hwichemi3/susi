@@ -10,6 +10,8 @@
 --    ③ reset_teacher_password() 되돌린 초기 비밀번호를 화면에 알려 주도록 고칩니다
 --    ④ reset_student_password() 학생 비밀번호를 생년월일·전화번호로 다시 맞춥니다
 --    ⑤ set_student_contact()    선생님이 학생의 생년월일·전화번호를 바로잡습니다
+--    ⑥ delete_staff()            교직원 계정을 완전히 지웁니다 (되돌릴 수 없음)
+--    ⑦ delete_student()          학생 계정을 성적·지원계획까지 지웁니다 (되돌릴 수 없음)
 --
 --  모두 **총관리자(super_admin)만** 부를 수 있습니다. 담임이 불러도 서버가 막습니다.
 -- ═══════════════════════════════════════════════════════════════
@@ -250,6 +252,61 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- ───────── ⑥ 교직원 계정 삭제 ─────────
+-- 학교를 떠난 선생님의 계정을 완전히 지웁니다. 담당 반 설정도 같이 지웁니다.
+-- 본인 계정은 못 지웁니다(마지막 총관리자가 사라지는 사고를 막습니다).
+create or replace function public.delete_staff(p_staff uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare v_school uuid;
+begin
+  v_school := public.assert_super_admin();
+
+  if p_staff = auth.uid() then
+    raise exception '본인 계정은 지울 수 없습니다. 다른 분을 총관리자로 올린 뒤 그분에게 부탁하세요';
+  end if;
+  if not exists (select 1 from public.profiles
+                  where id = p_staff and school_id = v_school and role <> 'student') then
+    raise exception '우리 학교 교직원이 아닙니다';
+  end if;
+
+  delete from public.teacher_classes where teacher_id = p_staff;
+  delete from public.profiles        where id = p_staff;
+  delete from auth.users             where id = p_staff;
+
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- ───────── ⑦ 학생 계정 삭제 ─────────
+-- 전학 등으로 나간 학생의 계정을 지웁니다.
+-- 성적(내신·모의고사)과 지원계획도 같이 지워지며, 되돌릴 수 없습니다.
+create or replace function public.delete_student(p_student uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare v_school uuid;
+begin
+  v_school := public.assert_super_admin();
+
+  if not exists (select 1 from public.profiles
+                  where id = p_student and school_id = v_school and role = 'student') then
+    raise exception '우리 학교 학생이 아닙니다';
+  end if;
+
+  delete from public.applications   where student_id = p_student;
+  delete from public.mock_exams     where student_id = p_student;
+  delete from public.student_grades where student_id = p_student;
+  delete from public.profiles       where id = p_student;
+  delete from auth.users            where id = p_student;
+
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- ───────── 부를 수 있는 사람 ─────────
 -- 함수 안에서 총관리자인지 다시 확인하므로, 실행 권한은 로그인한 사람에게 열어 둡니다.
 revoke all on function public.admin_create_teacher(text, text, text, smallint, smallint) from public, anon;
@@ -258,12 +315,16 @@ revoke all on function public.reset_teacher_password(uuid) from public, anon;
 revoke all on function public.reset_student_password(uuid) from public, anon;
 revoke all on function public.set_student_contact(uuid, date, text) from public, anon;
 revoke all on function public.assert_super_admin() from public, anon;
+revoke all on function public.delete_staff(uuid) from public, anon;
+revoke all on function public.delete_student(uuid) from public, anon;
 
 grant execute on function public.admin_create_teacher(text, text, text, smallint, smallint) to authenticated;
 grant execute on function public.staff_logins() to authenticated;
 grant execute on function public.reset_teacher_password(uuid) to authenticated;
 grant execute on function public.reset_student_password(uuid) to authenticated;
 grant execute on function public.set_student_contact(uuid, date, text) to authenticated;
+grant execute on function public.delete_staff(uuid) to authenticated;
+grant execute on function public.delete_student(uuid) to authenticated;
 
 -- PostgREST 가 새 함수를 알아보게 한다 (안 하면 잠깐 "찾을 수 없습니다" 가 뜹니다)
 notify pgrst, 'reload schema';
