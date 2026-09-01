@@ -223,6 +223,17 @@ td.jh{color:var(--ink-2)}
 .sumtile .v{font-size:19px;font-weight:600}
 .warn{margin-top:12px;padding:9px 12px;border-radius:8px;background:var(--rose-soft);color:var(--rose);font-size:12.5px}
 .plansec{margin:18px 0}
+/* 간단히 보기 인덱스 — 일반대/전문대만 골라 본다 */
+.planidx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 0}
+.planidx .pi-label{font-size:12px;font-weight:700;color:var(--ink-3)}
+.pib{padding:7px 14px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);
+  color:var(--ink-2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.pib .n{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums;margin-left:2px}
+.pib:hover{border-color:var(--accent-line);color:var(--accent)}
+.pib[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pib[aria-pressed="true"] .n{color:var(--accent-ink);opacity:.85}
+#v-plan.pi-only-uni .plansec.pi-college{display:none}
+#v-plan.pi-only-college .plansec.pi-uni{display:none}
 .plansec .sec{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
 .plansec .sec .tag{text-transform:none;letter-spacing:0;font-size:11.5px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:14px}
@@ -1142,8 +1153,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <!-- 선생님: 이메일 + 비밀번호 -->
     <form class="gform hidden" id="fTeacher" autocomplete="off">
       <label>아이디
-        <input type="text" id="inEmail" placeholder="teacher1" autocomplete="username">
-        <span class="fh">학교에서 정한 아이디. 이메일 주소를 쓰셔도 됩니다.</span>
+        <input type="text" id="inEmail" placeholder="김담임" autocomplete="username">
+        <span class="fh">본인 이름이 곧 아이디입니다 (한글). 예전 아이디(teacher1)나 이메일도 됩니다.</span>
       </label>
       <label>비밀번호
         <input type="password" id="inTpw" autocomplete="current-password">
@@ -1280,7 +1291,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
       <div class="panel pad">
         <h3 class="sec">교직원 계정 만들기</h3>
-        <p class="hint"><b>이름만 넣고 [만들기]</b> 를 누르면 아이디가 자동으로 만들어집니다.
+        <p class="hint"><b>이름만 넣고 [만들기]</b> 를 누르면 <b>이름이 그대로 아이디</b>가 됩니다 (한글 그대로 로그인).
+          같은 이름이 이미 있으면 아이디 칸에 「김담임2」 처럼 구분해 넣어 주세요.
           초기 비밀번호는 정해진 값이고, 그 선생님이 <b>처음 들어갈 때 바로 바꾸게</b> 됩니다.
           만든 아이디와 초기 비밀번호는 아래에 한 번 보여 드리니 <b>그때 적어 두고 전해 주세요.</b>
           담당 반은 여기서 바로 고르거나, 나중에 아래 <b>교직원 계정</b>에서 바꿀 수 있습니다.</p>
@@ -1288,8 +1300,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <label>이름
             <input type="text" id="ntName" placeholder="김담임" autocomplete="off">
           </label>
-          <label><span class="lt">아이디 <span class="fh">비워 두면 자동</span></span>
-            <input type="text" id="ntLogin" placeholder="자동 (teacher10 …)" autocomplete="off">
+          <label><span class="lt">아이디 <span class="fh">비워 두면 이름이 아이디</span></span>
+            <input type="text" id="ntLogin" placeholder="자동 (이름 그대로)" autocomplete="off">
           </label>
           <label>담당
             <select id="ntRole"></select>
@@ -1547,7 +1559,14 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     </div>
   </div>
 
-  <div class="plansec">
+  <div class="planidx" id="planIdx" role="tablist" aria-label="간단히 보기">
+    <span class="pi-label">간단히 보기</span>
+    <button type="button" class="pib" data-pi="uni" aria-pressed="false">일반대 <span class="n" id="piUniN"></span></button>
+    <button type="button" class="pib" data-pi="college" aria-pressed="false">전문대 <span class="n" id="piColN"></span></button>
+    <span class="fh">누르면 그쪽만 보입니다 · 다시 누르면 전체</span>
+  </div>
+
+  <div class="plansec pi-uni">
     <h3 class="sec">일반대 수시 지원<span class="tag">6칸 — 전형 찾기에서 <b>담기</b> 한 것이 여기에 들어옵니다</span></h3>
     <!-- 대학 목록. 카드마다 넣으면 수천 줄이 되므로 여기 한 번만 둔다.
          수시·후보 칸은 일반대만, 전문대 칸은 전문대만 보여 준다. -->
@@ -1555,11 +1574,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <datalist id="dl-uni-col"></datalist>
     <div class="cards" id="cardsMain"></div>
   </div>
-  <div class="plansec">
+  <div class="plansec pi-uni">
     <h3 class="sec">예비<span class="tag">최대 3칸 · 지원칸과 자리 바꾸기 가능</span></h3>
     <div class="cards cand" id="cardsCand"></div>
   </div>
-  <div class="plansec">
+  <div class="plansec pi-college">
     <h3 class="sec">전문대<span class="tag">칸 수 제한 없음 · 담은 만큼 늘어납니다</span></h3>
     <div class="cards" id="cardsCollege"></div>
   </div>
@@ -2963,9 +2982,9 @@ window.SUSI_CFG = {
     var kind = $('ntRole').value || 'general';
     var out = $('ntOut');
     if (!name) { out.innerHTML = '<div class="upres"><span class="badline">이름을 넣어 주세요.</span></div>'; return; }
-    if (login && !/^[a-z0-9_.@-]{2,40}$/.test(login)) {
-      out.innerHTML = '<div class="upres"><span class="badline">아이디는 영문 소문자·숫자로 2~40자입니다. ' +
-        '(비워 두면 자동으로 지어 드립니다)</span></div>';
+    if (login && !/^[a-z0-9가-힣_.@-]{2,40}$/.test(login)) {
+      out.innerHTML = '<div class="upres"><span class="badline">아이디는 한글·영문 소문자·숫자로 2~40자입니다. ' +
+        '(비워 두면 이름이 그대로 아이디가 됩니다)</span></div>';
       return;
     }
     var btn = $('ntMake'); btn.disabled = true;
@@ -3825,11 +3844,29 @@ window.SUSI_CFG = {
       if (t && (naesinTrack(t) || mockName(t))) topGroupN++;
     });
 
+    /* ★ 찾은 머리글 줄에서 반·번호·이름·학번·생년월일·전화가 어느 칸인지 먼저 기억해 둔다.
+       그 칸 아래에 있는 값은 (그 값이 또 이름표가 아닌 한) 자료다 —
+       「반」 아래의 '3', 「이름」 아래의 '김하늘' 이 그렇다.
+       예전에는 '3'·'1' 을 「1학년을 그렇게 적는 양식이 있다」며 숫자로 안 셌는데,
+       그래서 성적 열이 있는 양식에서 첫 학생의 성적·생년월일·전화가 모두 비어 있으면
+       (미등록 학생이 맨 앞이면 흔한 일) 그 자료 줄을 세부 머리글로 잘못 잡아
+       파일 전체를 「읽어낼 수 있는 줄이 없습니다」 로 버렸다. */
+    var isLabel = function (t) {
+      return isPerson(t) || hasAny(t, FIELD.birth) || hasAny(t, FIELD.phone) ||
+             !!naesinYear(t) || !!mockSubj(t) || !!naesinTrack(t) || !!mockName(t);
+    };
+    var headPersonAt = [];
+    for (c = 0; c < head.length; c++) {
+      var hn2 = norm(head[c]);
+      headPersonAt[c] = !!hn2 && (isPerson(hn2) ||
+        hasAny(hn2, FIELD.birth) || hasAny(hn2, FIELD.phone));
+    }
     var looksSub = false, filled = 0, subish = 0, personish = 0, numeric = 0;
     for (c = 0; c < below.length; c++) {
       var bn = norm(below[c]);
       if (!bn) continue;
-      if (/^[0-9.]+$/.test(bn) && !/^[123]$/.test(bn)) { numeric++; continue; }
+      if (/^[0-9.]+$/.test(bn) && (!/^[123]$/.test(bn) || headPersonAt[c])) { numeric++; continue; }
+      if (headPersonAt[c] && !isLabel(bn)) { numeric++; continue; }   // 「이름」 아래의 사람 이름 등
       filled++;
       // 생년월일·전화번호도 이름표다 — 안 세면 '못 알아본 칸' 으로 잡혀 판단이 흐려진다
       if (isPerson(bn) || hasAny(bn, FIELD.birth) || hasAny(bn, FIELD.phone)) { personish++; continue; }
@@ -5655,6 +5692,9 @@ window.SUSI_CFG = {
     }
     tally('main'); tally('cand'); tally('college');
     $('planCnt').innerHTML = '<b>일반대 ' + mainFilled + '/6</b> · <b>예비 ' + candFilled + '/3</b> · <b>전문대 ' + collegeFilled + '</b>개';
+    var pu = $('piUniN'), pc = $('piColN');
+    if (pu) pu.textContent = (mainFilled + candFilled) + '건';
+    if (pc) pc.textContent = collegeFilled + '건';
     $('planSum').innerHTML = [['상향', cnt.up], ['적정', cnt.fit], ['하향', cnt.down], ['판정 불가', cnt.none]]
       .map(function (x) { return '<div class="sumtile"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join('');
     var clash = Object.keys(dates).filter(function (k) { return dates[k].length > 1; });
@@ -6094,6 +6134,20 @@ window.SUSI_CFG = {
     setWho: function (w) { WHO = w || null; } };
 
   function planTable() { return planRows().map(function (row) { return row.join('\t'); }); }
+  /* 간단히 보기 인덱스 — 일반대/전문대 한쪽만 보기. 다시 누르면 전체로 돌아온다. */
+  $('planIdx').addEventListener('click', function (e) {
+    var b = e.target.closest('.pib[data-pi]'); if (!b) return;
+    var view = $('v-plan');
+    var was = b.getAttribute('aria-pressed') === 'true';
+    Array.prototype.forEach.call(document.querySelectorAll('#planIdx .pib'),
+      function (x) { x.setAttribute('aria-pressed', 'false'); });
+    view.classList.remove('pi-only-uni', 'pi-only-college');
+    if (!was) {
+      b.setAttribute('aria-pressed', 'true');
+      view.classList.add(b.dataset.pi === 'uni' ? 'pi-only-uni' : 'pi-only-college');
+    }
+  });
+
   $('copyPlan').addEventListener('click', function (e) {
     var rows = planTable();
     if (rows.length < 2) { toast('담긴 전형이 없습니다'); return; }

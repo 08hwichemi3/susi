@@ -39,7 +39,8 @@ begin
 end $$;
 
 -- ───────── ① 교직원 계정 만들기 ─────────
--- 이름만 주면 아이디를 스스로 짓습니다(teacher10, teacher11 …).
+-- 이름만 주면 **이름이 그대로 아이디**가 됩니다(한글 그대로 로그인 가능).
+-- 같은 이름이 이미 있으면 아이디를 「김담임2」 처럼 구분해서 넣어야 합니다.
 -- 되돌려 주는 값: {"login": "...", "password": "...", "name": "...", "id": "..."}
 create or replace function public.admin_create_teacher(
   p_name  text,
@@ -67,18 +68,15 @@ begin
 
   v_login := lower(btrim(coalesce(p_login, '')));
   if v_login = '' then
-    -- teacher1, teacher2 … 중 비어 있는 첫 번호를 찾는다
-    n := 1;
-    loop
-      v_login := 'teacher' || n;
-      exit when not exists (
-        select 1 from auth.users where email = v_login || '@susi.local');
-      n := n + 1;
-      if n > 999 then raise exception '아이디를 지을 수 없습니다'; end if;
-    end loop;
+    -- 아이디를 안 정했으면 이름이 그대로 아이디가 된다 (한글 로그인 확인함)
+    v_login := lower(btrim(p_name));
+    if exists (select 1 from auth.users
+                where email = v_login || '@susi.local') then
+      raise exception '같은 이름의 아이디가 이미 있습니다 — 아이디 칸에 「%2」 처럼 구분해서 넣어 주세요', v_login;
+    end if;
   else
-    if v_login !~ '^[a-z0-9_.@-]{2,40}$' then
-      raise exception '아이디는 영문 소문자·숫자로 2~40자여야 합니다';
+    if v_login !~ '^[a-z0-9가-힣_.@-]{2,40}$' then
+      raise exception '아이디는 한글·영문 소문자·숫자로 2~40자여야 합니다';
     end if;
     if exists (select 1 from auth.users
                 where email = case when v_login like '%@%' then v_login
