@@ -491,7 +491,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .at-college{background:var(--blue-soft);color:var(--blue)}
 .tblwrap{overflow-x:auto}
 
-/* ───────── 고사일 달력 ─────────
+/* ───────── 수시 달력 ─────────
    달력은 늘 떠 있고 고사가 그 위에 얹힌다.
    칸이 터지지 않게 하는 장치가 세 개 있다 —
      · 칸 높이 고정(min/max-height) + overflow:hidden → 세로로 안 늘어난다
@@ -576,14 +576,14 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .tried{display:inline-block;margin-top:5px;font-size:11px;color:var(--ink-3);
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
-/* ══════════ 고사일 달력 인쇄 ══════════ */
+/* ══════════ 수시 달력 인쇄 ══════════ */
 .sec #calPrintBtn{margin-left:10px;font-size:11.5px;padding:3px 10px}
-.printhead{display:none}          /* 화면에서는 감추고 인쇄할 때만 나온다 */
+.printhead,.printfoot{display:none}   /* 화면에서는 감추고 인쇄할 때만 나온다 */
 
 @media print{
   @page{size:A4 portrait;margin:12mm}
 
-  /* 인쇄할 것이 둘이라(고사일 달력 / 학생 지원계획서) 무엇을 낼지 body 클래스로 가른다.
+  /* 인쇄할 것이 둘이라(수시 달력 / 학생 지원계획서) 무엇을 낼지 body 클래스로 가른다.
      display:none 대신 visibility 를 쓰는 건, 부모를 감추면 안에 든 것까지
      같이 사라지기 때문이다(고전적인 인쇄 트릭). */
   body *{visibility:hidden}
@@ -845,6 +845,226 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .forbar .btn{margin-left:0}
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   여기부터는 뒤에 덧붙인 손질입니다. 같은 규칙이 위에도 있으면
+   **아래 것이 이깁니다** — 위의 원본을 그대로 두고 덮어쓰는 방식입니다.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ───────── ① 결과 표를 넓게 · 잘리지 않게 ─────────
+   원래는 열 너비를 px 로 못박아 두어(학과 198px · 수능최저 264px …) 열 폭의 합이
+   화면보다 넓었습니다. 그래서 오른쪽 끝의 「담기」 단추가 가로로 밀려 나가
+   옆으로 스크롤해야만 보였습니다.
+   이제 표를 **화면 폭에 맞추고**(table-layout:fixed + %) 글자는 두 줄까지 보인 뒤
+   …으로 줄입니다. 열이 잘려 나가는 일이 없으니 담기 단추는 늘 제자리에 있습니다. */
+.wrap{max-width:1560px}
+.cols{grid-template-columns:250px minmax(0,1fr)}
+.cols.railoff{grid-template-columns:minmax(0,1fr)}
+.cols.railoff>.rail{display:none}
+.railtog{flex:0 0 auto}
+@media(max-width:900px){.railtog{display:none}}
+
+#v-find .tablewrap table{table-layout:fixed;width:100%;min-width:820px;font-size:13.5px}
+#v-find .tablewrap th,#v-find .tablewrap td{padding:9px 10px}
+/* 열 너비는 비율로 준다. 열을 감추면 남은 열들이 그만큼 나눠 갖는다. */
+#v-find th.c-uni{width:9%}      #v-find th.c-type{width:6%}
+#v-find th.c-jh{width:13%}      #v-find th.c-dept{width:15%}
+#v-find th.c-n{width:4.5%}      #v-find th.c-min{width:13%}
+#v-find th.c-rate{width:5.5%}   #v-find th.c-cut50{width:5.5%}
+#v-find th.c-cut70{width:5.5%}  #v-find th.c-day{width:9%}
+#v-find th.c-way{width:8.5%}    #v-find th.c-add{width:5%}
+/* px 로 묶어 둔 옛 너비를 푼다 — 위의 비율이 일하게 한다 */
+.lcw.c-jh,.lcw.c-dept,.lcw.c-min,.lcw.c-way,.lcw.c-day{width:auto;max-width:100%}
+#v-find .tablewrap td{overflow:hidden}
+#v-find td.c-uni{white-space:normal;overflow-wrap:anywhere;line-height:1.35}
+/* 한 줄짜리 짧은 값(유형·모집·경쟁률·컷)은 줄바꿈 없이, 넘치면 … */
+#v-find td.c-n,#v-find td.c-rate,#v-find td.c-cut50,#v-find td.c-cut70{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 수능최저는 문장이 길다. 두 줄까지만 보이고 나머지는 눌러서 편다(.lc 가 처리) */
+#v-find td.c-min .min-txt{overflow-wrap:anywhere}
+#v-find td.c-add{padding-left:4px;padding-right:8px}
+#v-find .addbtn{width:100%;padding:5px 6px;font-size:12px;
+  border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent);font-weight:600}
+#v-find .addbtn:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* ───────── ② 지역 = 작은 한국 지도 ─────────
+   가나다순 목록 대신 실제 자리에 가깝게 칸을 잡습니다.
+   0건인 지역도 자리는 남겨 둡니다 — 사라지면 지도 모양이 무너집니다. */
+.mapchips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-auto-rows:minmax(34px,auto);gap:4px}
+.mapchip{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;padding:4px 3px;border:1px solid var(--line-2);border-radius:8px;
+  background:var(--surface);color:var(--ink-2);font-family:inherit;font-size:12px;
+  line-height:1.2;cursor:pointer;min-width:0;text-align:center}
+.mapchip .n{font-size:9.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.mapchip:hover{border-color:var(--accent-line);color:var(--accent)}
+.mapchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink);font-weight:700}
+.mapchip[aria-pressed="true"] .n{color:var(--accent-ink);opacity:.8}
+.mapchip.off{opacity:.28;border-style:dashed;cursor:default}
+
+/* ───────── ③ 설정 화면에 새로 붙은 것들 ───────── */
+.stflogin{font-size:11px;padding:1px 7px;border-radius:6px;background:var(--surface-2);
+  border:1px solid var(--line);color:var(--ink-3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.newacct .gt.kv{max-width:360px}
+.newacct .pickme{font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:var(--accent);letter-spacing:.04em;user-select:all}
+#ntOut{margin-top:10px}
+#ntRole{min-width:170px}
+
+.saclist{margin-top:10px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.sacrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:8px 11px;border-bottom:1px solid var(--line);background:var(--surface);font-size:13px}
+.sacrow:last-child{border-bottom:0}
+.sacrow .sno{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;min-width:44px}
+.sacrow .sacinfo{font-size:11.5px;color:var(--ink-3)}
+.sacrow .btn{font-size:11.5px;padding:4px 9px}
+.btn.ghostish{background:var(--surface-2);border-color:var(--line-2);color:var(--ink-3)}
+.btn.ghostish:hover{background:var(--rose-soft);border-color:var(--rose);color:var(--rose)}
+#sacFilter{margin-top:10px}
+
+/* ───────── ④ 수시 달력 — 한 화면에 한 달 ───────── */
+.calnav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 2px}
+.calarrow{width:36px;height:36px;flex:0 0 auto;border:1px solid var(--line-2);border-radius:9px;
+  background:var(--surface);color:var(--ink-2);font-size:11px;cursor:pointer;font-family:inherit}
+.calarrow:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.calarrow:disabled{opacity:.32;cursor:default}
+.calnav select{width:auto;min-width:170px;font-weight:600;font-size:14px;padding:8px 10px}
+.calcnt{font-size:12.5px;color:var(--ink-2)}
+.calcnt b{color:var(--accent)}
+.calcnt .none{color:var(--ink-3)}
+
+.ddset{margin:10px 0 0;border:1px solid var(--line);border-radius:9px;background:var(--surface-2)}
+.ddset>summary{cursor:pointer;padding:8px 12px;font-size:12px;font-weight:600;color:var(--ink-2);list-style:none}
+.ddset>summary::-webkit-details-marker{display:none}
+.ddset>summary::before{content:'▸ ';color:var(--ink-3)}
+.ddset[open]>summary::before{content:'▾ '}
+.ddrow{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:0 12px 12px}
+.ddrow label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink-2)}
+.ddrow input{width:auto;min-width:150px}
+.ddrow .fh{flex-basis:100%}
+
+/* 종이 일정표처럼 큰 달 숫자를 앞세운다 — 어느 달인지 한눈에 */
+.calmonhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  border-bottom:2px solid var(--ink);padding-bottom:8px;margin:14px 0 10px}
+.cm-no{font-family:"Gowun Batang",serif;font-size:42px;line-height:1;font-weight:700;color:var(--accent)}
+.cm-no span{font-size:15px;margin-left:2px;color:var(--ink-2)}
+.cm-t{min-width:0}
+.cm-t b{display:block;font-size:15px;font-weight:700;color:var(--ink)}
+.cm-t span{font-size:12px;color:var(--ink-3)}
+.cm-cnt{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent);
+  background:var(--accent-soft);border-radius:999px;padding:3px 11px;white-space:nowrap}
+.calmon.empty .cm-cnt{color:var(--ink-3);background:var(--surface-2)}
+.calmon{margin:0}
+
+/* D-day 줄 (수능 D-79 …). 지난 일정은 아예 안 그린다. */
+.calcell .dd{flex:0 0 auto;margin-bottom:2px}
+.ddl{display:block;font-size:9.5px;line-height:13px;color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.calcell.has .ddl{color:var(--ink-2)}
+/* D-day 두 줄이 붙는 만큼 칸을 키운다 (원래 96px) */
+.calcell{min-height:124px;max-height:124px}
+
+/* ───────── ⑤ 좁은 화면(모바일) ───────── */
+@media(max-width:900px){
+  .wrap{padding:14px 14px 32px}
+  /* ★ 위(원본)의 같은 규칙을 여기서 다시 적어 준다 —
+     이 파일 뒤쪽에 쓴 `.cols{grid-template-columns:250px …}` 이 화면 크기와 상관없이
+     이겨 버려서, 좁은 화면에서 조건 줄과 표가 나란히 놓여 표가 잘렸다. */
+  .cols,.cols2,.cols3{grid-template-columns:minmax(0,1fr)}
+  /* 표는 위쪽 규칙이 이미 카드로 바꾼다. 고정 폭만 풀어 준다. */
+  #v-find .tablewrap table{min-width:0;table-layout:auto;display:block}
+  #v-find .tablewrap th{width:auto}
+  #v-find td.c-uni,#v-find td.c-n,#v-find td.c-rate,
+  #v-find td.c-cut50,#v-find td.c-cut70{white-space:normal;overflow:visible}
+  #v-find .tablewrap td{overflow:visible}
+  #v-find td.c-add{padding-left:0;padding-right:0}
+  #v-find .addbtn{padding:11px;font-size:14px;border-radius:9px}
+}
+
+@media(max-width:700px){
+  /* 달력: 칸이 작아 이름을 담을 수 없다. 건수만 점으로 찍고, 누르면 아래에 펼친다. */
+  .calgrid{min-width:0;gap:3px}
+  .calcell{min-height:56px;max-height:56px;padding:3px 4px;border-radius:6px}
+  .calcell .its,.calcell .dd,.calcell .calmore{display:none}
+  .calcell .dn{font-size:12px;margin-bottom:0}
+  .calcell[data-n]::after{content:attr(data-n);display:inline-flex;align-items:center;
+    justify-content:center;min-width:17px;height:17px;margin-top:2px;padding:0 4px;
+    border-radius:999px;background:var(--accent);color:var(--accent-ink);
+    font-size:10px;font-weight:700;line-height:1}
+  .calcell.clash[data-n]::after{background:var(--rose);color:#fff}
+  .calhd{font-size:10.5px}
+  .cm-no{font-size:32px}
+  .calnav select{flex:1;min-width:0}
+  .calnav .grow{display:none}
+  .calcnt{flex-basis:100%;order:5}
+  .calday-panel{max-height:none}
+  .cdrow{grid-template-columns:minmax(0,1fr)}
+}
+
+@media(max-width:560px){
+  /* iOS 는 글자가 16px 보다 작은 칸을 누르면 화면을 확대해 버린다 — 눌 때마다 튄다 */
+  input[type=text],input[type=number],input[type=tel],input[type=password],
+  input[type=date],select,textarea{font-size:16px}
+  .wrap{padding:12px 12px 84px}
+  .top-in{padding:9px 12px;gap:8px}
+  .brand{font-size:17px}
+  /* 학생 화면 탭은 한 줄을 다 쓰게 — 손가락으로 누르기 좋게 */
+  header.top .tabs{flex:1 1 100%;order:3}
+  header.top .tab{flex:1;text-align:center;padding:9px 6px;font-size:13px}
+  .tabs-t .tab{padding-top:9px;padding-bottom:9px}
+  .userbar{padding:7px 12px;gap:7px}
+  .ub-sub{flex-basis:100%;order:5}
+  .resbar,.planbar{gap:6px;padding:9px 10px}
+  .resbar .btn,.planbar .btn{font-size:12px;padding:7px 10px}
+  .mapchip{font-size:11.5px;min-height:38px}
+  .stat{flex:1 1 46%;padding:9px 11px}
+  .stat .v{font-size:17px}
+  .step{padding:11px 12px}
+  .chip{padding:7px 12px}
+  .card{padding:11px 12px}
+  .cards,#impList{grid-template-columns:minmax(0,1fr)}
+  .grades{grid-template-columns:minmax(0,1fr)}
+  .sacrow{font-size:12.5px}
+  .sacrow .btn{flex:1 1 auto}
+  /* 카드로 바뀐 결과 표: 이름표와 값을 한 줄에 나란히 놓아 카드 길이를 줄인다 */
+  #v-find td[data-label]{display:grid;grid-template-columns:74px minmax(0,1fr);
+    gap:8px;align-items:baseline;padding:4px 0}
+  #v-find td[data-label]::before{margin-bottom:0;font-size:11px;text-transform:none;letter-spacing:0}
+  #v-find td.actd{display:block}
+  .gt.ed input{min-width:0}
+  .edbtns .btn{flex:1}
+  /* 성적 입력 표는 칸이 많다 — 줄바꿈으로 뭉개지는 대신 옆으로 넘긴다 */
+  .gt.ed{display:block;overflow-x:auto;white-space:nowrap}
+  .toast{bottom:16px;font-size:12.5px}
+}
+
+/* 손가락으로 누르는 화면에서는 작은 단추를 키운다 */
+@media(hover:none){
+  .btn,.ghost,.vpreset,.vcol,.chip,.tab{min-height:34px}
+  .stlist li{padding-top:12px;padding-bottom:12px}
+  .list li{padding-top:10px;padding-bottom:10px}
+}
+
+/* ───────── ⑥ 달력 인쇄: 보고 있는 한 달이 한 장 ───────── */
+@media print{
+  /* 그리는 달이 하나뿐이라 저절로 한 장이 된다. 빈 달도 그대로 낸다
+     (학사 일정표로도 쓰이므로 '아무 것도 없는 달' 자체가 정보다). */
+  .calmon.empty{display:block}
+  .calnav,.ddset{display:none !important}
+  .calmonhead{display:flex !important;border-bottom:2px solid #000;padding-bottom:6px;margin:0 0 8px}
+  .cm-no{font-size:34px;color:#000 !important}
+  .cm-no span{color:#000 !important}
+  .cm-t b{font-size:13px;color:#000 !important}
+  .cm-t span{color:#333 !important}
+  .cm-cnt{background:none !important;color:#333 !important;padding:0}
+  .calcell{min-height:92px;max-height:none !important}
+  .calcell .dd{display:block !important}
+  .ddl{font-size:8px;color:#333 !important;line-height:1.25}
+  .calcell[data-n]::after{content:none !important}
+}
+
 </style></head><body><!-- ══════════ 로그인 ══════════ -->
 <div id="gate" class="gate">
   <div class="gatebox">
@@ -890,7 +1110,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       </label>
       <label>비밀번호
         <input type="password" id="inTpw" autocomplete="current-password">
-        <span class="fh">처음이면 <b>1111</b> — 들어가면 바로 바꾸게 됩니다</span>
+        <span class="fh">학교에서 받은 비밀번호를 넣어 주세요. 처음 들어가면 바로 바꾸게 됩니다.</span>
       </label>
       <button type="submit" class="gbtn" id="tLoginBtn">로그인</button>
     </form>
@@ -939,9 +1159,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   <div class="wrap">
     <nav class="tabs tabs-t" id="tTabs">
       <button class="tab" data-t="students" aria-selected="true">학생</button>
-      <button class="tab" data-t="cal" aria-selected="false">고사일 달력</button>
-      <button class="tab" data-t="upload" aria-selected="false">엑셀 올리기</button>
       <button class="tab" data-t="find" aria-selected="false">전형 찾기</button>
+      <button class="tab" data-t="cal" aria-selected="false">수시 달력</button>
       <button class="tab hidden" data-t="admin" id="tabAdmin" aria-selected="false">설정</button>
     </nav>
 
@@ -961,28 +1180,112 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       </div>
     </section>
 
-    <!-- 달력 -->
+    <!-- 수시 달력 -->
     <section class="tview hidden" id="tv-cal">
       <div class="panel pad">
-        <h3 class="sec">고사일 달력
-          <button class="btn" id="calPrintBtn">인쇄</button>
+        <h3 class="sec">수시 달력
+          <button class="btn" id="calPrintBtn">이 달 인쇄</button>
         </h3>
-        <p class="hint">수시 시즌 달력이 늘 떠 있고, 그 위에 담당 학생들의 <b>면접·논술·실기</b> 날짜가 얹힙니다.
-          <b class="clashk">한 학생이 같은 날 두 곳 이상</b>이면 그 칸이 빨갛게(인쇄하면 굵은 테두리와 ⚠로) 표시됩니다.
-          한 칸에 <b>세 건까지</b> 적고 넘치면 <b>+N건</b>으로 접습니다 — <b>날짜를 누르면</b> 그 날 전체가 달력 아래에 펼쳐집니다.
-          인쇄하면 접힌 것 없이 전부 나옵니다.</p>
+        <p class="hint">한 화면에 <b>한 달만</b> 보여 줍니다 — 화살표로 달을 옮기세요.
+          담당 학생들의 <b>면접·논술·실기</b> 날짜가 달력 위에 얹히고,
+          <b class="clashk">한 학생이 같은 날 두 곳 이상</b>이면 그 칸이 빨갛게 표시됩니다.
+          <b>날짜를 누르면</b> 그 날 전체가 달력 아래에 펼쳐집니다.
+          인쇄하면 <b>보고 있는 달 한 장</b>이 접힌 것 없이 나옵니다.</p>
+
+        <div class="calnav" id="calNav">
+          <button type="button" class="calarrow" id="calPrev" aria-label="이전 달">&#9664;</button>
+          <select id="calPick" aria-label="달 고르기"></select>
+          <button type="button" class="calarrow" id="calNext" aria-label="다음 달">&#9654;</button>
+          <span class="grow"></span>
+          <span class="calcnt" id="calCnt"></span>
+        </div>
+
+        <details class="ddset" id="ddSet">
+          <summary>D-day 설정</summary>
+          <div class="ddrow">
+            <label>수능일 <input type="date" id="ddSuneung"></label>
+            <label>학사일정 이름 <input type="text" id="ddName" placeholder="중간고사" autocomplete="off"></label>
+            <label>그 날짜 <input type="date" id="ddDate"></label>
+            <button type="button" class="btn" id="ddSave">저장</button>
+            <span class="fh">이 브라우저에만 저장됩니다. 비워 두면 그 줄은 안 나옵니다.</span>
+          </div>
+        </details>
+
         <div id="calPrint">
           <div class="printhead" id="calHead"></div>
           <div id="calOut"></div>
+          <div class="printfoot" id="calFoot"></div>
         </div>
         <div id="calDay" class="calday-panel"></div>
       </div>
     </section>
 
-    <!-- 엑셀 올리기 -->
-    <section class="tview hidden" id="tv-upload">
+
+    <!-- 설정 (총관리자만) -->
+    <section class="tview hidden" id="tv-admin">
+
       <div class="panel pad">
-        <h3 class="sec">학생 자료 올리기 <span class="tag" id="rosterOnly"></span></h3>
+        <h3 class="sec">학교 · 반</h3>
+        <p class="hint">한 학년에 몇 반까지 있는지 정합니다. 아래 <b>교직원 계정</b>의 반 고르는 칸이 이 수만큼 나옵니다.</p>
+        <div class="setrow">
+          <label>학교 이름
+            <input type="text" id="schName" placeholder="○○고등학교" autocomplete="off">
+          </label>
+          <label>반 개수
+            <input type="number" id="schClasses" min="1" max="20" step="1">
+            <span class="fh">1~20</span>
+          </label>
+          <button class="btn primary" id="schSave">저장</button>
+          <span class="msg hidden" id="schMsg"></span>
+        </div>
+      </div>
+
+
+      <div class="panel pad">
+        <h3 class="sec">교직원 계정 만들기</h3>
+        <p class="hint"><b>이름만 넣고 [만들기]</b> 를 누르면 아이디가 자동으로 만들어집니다.
+          초기 비밀번호는 정해진 값이고, 그 선생님이 <b>처음 들어갈 때 바로 바꾸게</b> 됩니다.
+          만든 아이디와 초기 비밀번호는 아래에 한 번 보여 드리니 <b>그때 적어 두고 전해 주세요.</b>
+          담당 반은 여기서 바로 고르거나, 나중에 아래 <b>교직원 계정</b>에서 바꿀 수 있습니다.</p>
+        <div class="setrow">
+          <label>이름
+            <input type="text" id="ntName" placeholder="김담임" autocomplete="off">
+          </label>
+          <label>아이디 <span class="fh">비워 두면 자동</span>
+            <input type="text" id="ntLogin" placeholder="자동 (teacher10 …)" autocomplete="off">
+          </label>
+          <label>담당
+            <select id="ntRole"></select>
+          </label>
+          <button class="btn primary" id="ntMake">만들기</button>
+        </div>
+        <div id="ntOut"></div>
+      </div>
+
+      <div class="panel pad">
+        <h3 class="sec">교직원 계정 <span class="tag" id="stfCount"></span>
+          <button class="btn" id="stfToggle">역할/반 설정</button>
+        </h3>
+        <p class="hint"><b>일반</b>은 담당 학생이 없고, <b>전체</b>는 학교 모든 학생을 봅니다.
+          <b>반 번호</b>를 고르면 그 반 담임이 되어 <b>그 반 학생만</b> 보입니다. 누르면 바로 저장됩니다.
+          <b>[비밀번호 초기화]</b> 를 누르면 초기 비밀번호로 되돌아가고, 그 선생님은 다음에 들어갈 때 새로 정하게 됩니다.</p>
+        <div id="stfList"></div>
+      </div>
+
+
+      <div class="panel pad">
+        <h3 class="sec">학생 계정 <span class="tag" id="sacCount"></span></h3>
+        <p class="hint">학생 비밀번호는 <b>생년월일 6자리 + 전화번호 뒤 4자리</b>로 고정입니다.
+          학생이 못 들어온다고 하면 —
+          <b>[비밀번호 초기화]</b> 는 등록해 둔 생년월일·전화번호로 비밀번호를 <b>다시 맞춰</b> 줍니다(연락처는 그대로).
+          <b>[등록 초기화]</b> 는 생년월일·전화번호를 <b>지워서</b> 학생이 다음 로그인 때 다시 넣게 합니다.
+          성적과 지원계획은 어느 쪽도 지우지 않습니다.</p>
+        <input type="text" id="sacFilter" placeholder="이름·학번으로 찾기" autocomplete="off">
+        <div id="sacList"></div>
+      </div>
+
+      <div class="panel pad" id="tv-upload">
+        <h3 class="sec">학생 자료 올리기 (엑셀) <span class="tag" id="rosterOnly"></span></h3>
         <p class="hint"><b>학생자료양식.xlsx</b> 를 그대로 올리시면 됩니다.
           다른 양식도 <b>뜻이 같으면 알아서 읽습니다</b> — 머리글이 한 줄이든 두 줄이든,
           위에 제목 줄이 몇 개 있든, 열 순서가 달라도 됩니다.</p>
@@ -1019,36 +1322,6 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         </div>
         <div id="rosterOut"></div>
       </div>
-    </section>
-
-    <!-- 설정 (총관리자만) -->
-    <section class="tview hidden" id="tv-admin">
-
-      <div class="panel pad">
-        <h3 class="sec">학교 · 반</h3>
-        <p class="hint">한 학년에 몇 반까지 있는지 정합니다. 아래 <b>교직원 계정</b>의 반 고르는 칸이 이 수만큼 나옵니다.</p>
-        <div class="setrow">
-          <label>학교 이름
-            <input type="text" id="schName" placeholder="○○고등학교" autocomplete="off">
-          </label>
-          <label>반 개수
-            <input type="number" id="schClasses" min="1" max="20" step="1">
-            <span class="fh">1~20</span>
-          </label>
-          <button class="btn primary" id="schSave">저장</button>
-          <span class="msg hidden" id="schMsg"></span>
-        </div>
-      </div>
-
-      <div class="panel pad">
-        <h3 class="sec">교직원 계정 <span class="tag" id="stfCount"></span>
-          <button class="btn" id="stfToggle">역할/반 설정</button>
-        </h3>
-        <p class="hint"><b>일반</b>은 담당 학생이 없고, <b>전체</b>는 학교 모든 학생을 봅니다.
-          <b>반 번호</b>를 고르면 그 반 담임이 되어 <b>그 반 학생만</b> 보입니다.
-          누르면 바로 저장됩니다.</p>
-        <div id="stfList"></div>
-      </div>
 
       <div class="panel pad danger">
         <h3 class="sec">학생 자료 리셋</h3>
@@ -1074,7 +1347,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   <span class="yr" id="yrTag">2027학년도</span>
   <nav class="tabs" id="tabs">
     <button class="tab" data-v="find" aria-selected="true">전형 찾기</button>
-    <button class="tab" data-v="plan" aria-selected="false">내 지원계획</button>
+    <button class="tab" data-v="plan" aria-selected="false">전형 관리</button>
     <button class="tab" data-v="data" aria-selected="false">데이터</button>
   </nav>
   <span class="grow"></span>
@@ -1095,7 +1368,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       <details class="step" open>
         <summary><span class="num">2</span>지역</summary>
         <div class="stepbody">
-          <div class="chips" id="rchips"></div>
+          <div class="mapchips" id="rchips"></div>
         </div>
       </details>
       <details class="step" open>
@@ -1128,6 +1401,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
     <div class="panel">
       <div class="resbar">
+        <button type="button" class="ghost railtog" id="railTog" aria-pressed="false">조건 접기</button>
         <span class="count" id="cnt"></span>
         <span class="grow"></span>
         <button class="btn" id="copyView">화면 결과 복사</button>
@@ -1161,7 +1435,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <th class="c-uni"   data-col="uni"><button type="button" class="thsort">대학<span class="thmark"></span></button></th>
           <th class="c-type"  data-col="type"><button type="button" class="thsort">유형<span class="thmark"></span></button></th>
           <th class="c-jh"    data-col="jh"><button type="button" class="thsort">전형명<span class="thmark"></span></button></th>
-          <th class="c-dept"  data-col="dept"><button type="button" class="thsort">학과(모집단위)<span class="thmark"></span></button></th>
+          <th class="c-dept"  data-col="dept"><button type="button" class="thsort">학과<span class="thmark"></span></button></th>
           <th class="c-n r"   data-col="n"><button type="button" class="thsort">모집<span class="thmark"></span></button></th>
           <th class="c-min">수능최저</th>
           <th class="c-rate r"  data-col="rate"><button type="button" class="thsort">경쟁률<span class="thmark"></span></button></th>
@@ -1178,7 +1452,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   </div>
 </section>
 
-<!-- ══ 내 지원계획 ══ -->
+<!-- ══ 전형 관리 ══ -->
 <section class="wrap view hidden" id="v-plan">
   <div class="cols2">
     <div class="panel pad">
@@ -1224,7 +1498,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   </div>
 
   <div class="plansec">
-    <h3 class="sec">수시 지원<span class="tag">최대 6칸</span></h3>
+    <h3 class="sec">일반대 수시 지원<span class="tag">6칸 — 전형 찾기에서 <b>담기</b> 한 것이 여기에 들어옵니다</span></h3>
     <!-- 대학 목록. 카드마다 넣으면 수천 줄이 되므로 여기 한 번만 둔다.
          수시·후보 칸은 일반대만, 전문대 칸은 전문대만 보여 준다. -->
     <datalist id="dl-uni"></datalist>
@@ -1232,11 +1506,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <div class="cards" id="cardsMain"></div>
   </div>
   <div class="plansec">
-    <h3 class="sec">후보<span class="tag">최대 3칸 · 지원칸과 자리 바꾸기 가능</span></h3>
+    <h3 class="sec">예비<span class="tag">최대 3칸 · 지원칸과 자리 바꾸기 가능</span></h3>
     <div class="cards cand" id="cardsCand"></div>
   </div>
   <div class="plansec">
-    <h3 class="sec">전문대<span class="tag">칸 수 제한 없음 · 한 칸을 채우면 다음 칸이 생김</span></h3>
+    <h3 class="sec">전문대<span class="tag">칸 수 제한 없음 · 담은 만큼 늘어납니다</span></h3>
     <div class="cards" id="cardsCollege"></div>
   </div>
 
@@ -1342,7 +1616,7 @@ window.SUSI_CFG = {
    로그인 화면에서 [학생] / [선생님] 을 고르고,
    들어간 뒤에는 profiles.role 을 보고 화면을 갈라 줍니다.
      student              → 전형 찾기 + 내 지원계획 (app.js 화면 그대로)
-     teacher, super_admin → 학생 목록 · 고사일 달력 · 엑셀 올리기
+     teacher, super_admin → 학생 목록 · 전형 찾기 · 수시 달력 (+ 총관리자는 설정)
 
    학생 로그인은 칸을 나눠 받습니다 — 학번 / 생년월일 / 전화번호.
    Supabase 인증은 "비밀번호 한 줄"만 받으므로, 받은 두 값을 여기서 규칙대로
@@ -1685,7 +1959,7 @@ window.SUSI_CFG = {
     $('pwWarn').innerHTML = voluntary
       ? '새 비밀번호는 <b>8자 이상</b>으로 정해 주세요.'
       /* 강제 변경 화면은 이제 '담임' 에게만 뜬다 (susi_20 · 학생은 비밀번호 고정) */
-      : '초기 비밀번호 <b>1111</b>은 누구나 아는 값입니다. ' +
+      : '<b>초기 비밀번호는 누구나 아는 값</b>입니다. ' +
         '지금 바꾸지 않으면 다른 분이 선생님 계정으로 들어와 담당 학생 자료를 볼 수 있습니다.';
     $('pwCancel').classList.toggle('hidden', !voluntary);
     $('newPw').value = ''; $('newPw2').value = '';
@@ -1881,7 +2155,8 @@ window.SUSI_CFG = {
 
   function enterTeacher() {
     $('teacherView').classList.remove('hidden');
-    $('rosterOnly').textContent = ME.role === 'super_admin' ? '' : '총관리자만 올릴 수 있습니다';
+    var ro = $('rosterOnly');
+    if (ro) ro.textContent = ME.role === 'super_admin' ? '' : '총관리자만 올릴 수 있습니다';
     if (ME.role !== 'super_admin') {
       // ★ 없는 요소를 건드리면 여기서 예외가 나 담임이 아예 못 들어옵니다.
       //    학년 고르는 칸(#rosterGrade)을 없앨 때 이 줄이 남아 있었습니다.
@@ -1889,8 +2164,10 @@ window.SUSI_CFG = {
       var pk = $('pickRoster'); if (pk) pk.disabled = true;
     }
     if (ME.role === 'super_admin') $('tabAdmin').classList.remove('hidden');
-    // 선생님에게는 '내 지원계획' 이 없다(자기 계획이 없으므로) — 전형 찾기와 데이터만
-    window.SUSI.hideTabs(['plan']);
+    /* 선생님에게는 '전형 관리' 가 없다(자기 계획이 없으므로) — 전형 찾기만 쓴다.
+       '데이터'(자료 갈아끼우기)는 총관리자 화면에만 둔다 — 담임이 실수로 그 해 자료를
+       통째로 바꿔 버리면 학교 전체가 같이 바뀐다. */
+    window.SUSI.hideTabs(ME.role === 'super_admin' ? ['plan'] : ['plan', 'data']);
     window.SUSI.hide(['persist']);
     return Promise.all([loadSchool(), loadStudents()]);
   }
@@ -1928,9 +2205,11 @@ window.SUSI_CFG = {
       NOTACT = {};
       ((r[1] && r[1].data) || []).forEach(function (x) { NOTACT[x.id] = 1; });
       renderStudentList();
+      renderStudentAccounts();
     }).catch(function (e) {
       STUDENTS = []; STUDENTS_OK = false;
       renderStudentList();
+      renderStudentAccounts();
       $('notActivated').innerHTML = '<b class="clashk">학생 목록을 읽지 못했습니다</b> — ' +
         esc(e && e.message || '') + '<br>새로고침해 보시고, 계속 이러면 알려 주세요.';
     });
@@ -1983,7 +2262,7 @@ window.SUSI_CFG = {
     return aoa;
   }
 
-  var PLAN_AREA = { main: '수시지원', cand: '후보', college: '전문대' };
+  var PLAN_AREA = { main: '수시지원', cand: '예비', college: '전문대' };
   var PLAN_RESULT = { pass: '합격', fail: '불합격', wait: '충원대기' };
   var PLAN_VERDICT = { up: '상향', fit: '적정', down: '하향' };
 
@@ -2247,7 +2526,7 @@ window.SUSI_CFG = {
   }
 
   var VN = { up: '상향', fit: '적정', down: '하향' };
-  var AN = { main: '지원', cand: '후보', college: '전문대' };
+  var AN = { main: '지원', cand: '예비', college: '전문대' };
 
   /* ★ 늦게 도착한 응답이 화면을 덮으면 안 된다.
      A → B 를 빠르게 누르면 A 의 응답이 나중에 도착해 'B 가 선택된 채 A 의 표' 가 그려진다.
@@ -2396,7 +2675,10 @@ window.SUSI_CFG = {
   function editGrades(st, gr, mock) {
     var byExam = {}; (mock || []).forEach(function (m) { byExam[m.exam] = m; });
     var h = '<h3 class="sec">' + esc(st.name) + ' 성적 입력 <span class="tag">' + st.student_no + '</span></h3>' +
-      '<p class="hint">비워 두면 「없음」으로 저장됩니다. 등급은 1~9만 받습니다.</p>' +
+      '<p class="hint">칸 배치는 <b>학생자료양식.xlsx</b> 와 같습니다 — ' +
+        '내신은 <b>국·수·영·과 / 국·수·영·사 / 전과목</b> 을 <b>1학년·2학년·3학년·평균</b> 으로, ' +
+        '모의고사는 <b>3월·5월·6월·7월·9월·수능</b> 을 <b>국·수·영·탐1·탐2</b> 로 넣습니다. ' +
+        '비워 두면 「없음」으로 저장되고, 등급은 <b>1~9</b> 만 받습니다.</p>' +
       '<table class="gt ed"><thead><tr><th>내신</th>' +
       GCOLS.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr></thead><tbody>' +
       GKEYS.map(function (g) {
@@ -2416,6 +2698,19 @@ window.SUSI_CFG = {
             '" value="' + (v == null ? '' : v) + '"></td>';
         }).join('') + '</tr>';
       }).join('') + '</tbody></table>' +
+      /* 엑셀 양식 맨 끝의 두 칸. 학생이 로그인할 때 스스로 넣는 값이지만,
+         잘못 넣어 못 들어오는 일이 잦아 선생님이 여기서 바로잡을 수 있게 둔다.
+         (고치면 그 값이 곧 새 비밀번호가 된다 — 아래 안내에 그대로 적어 둔다) */
+      '<table class="gt ed"><thead><tr><th>계정</th><th>생년월일</th><th>전화번호</th></tr></thead>' +
+      '<tbody><tr><th>등록 정보</th>' +
+        '<td><input type="text" id="cBirth" inputmode="numeric" placeholder="20080101" value="' +
+          esc(st.birth_date ? String(st.birth_date).replace(/-/g, '') : '') + '"></td>' +
+        '<td><input type="tel" id="cPhone" placeholder="010-1234-5678" value="' +
+          esc(st.phone || '') + '"></td>' +
+      '</tr></tbody></table>' +
+      '<p class="hint">생년월일·전화번호를 고치면 <b>그 값이 곧 그 학생의 새 비밀번호</b>가 됩니다 ' +
+        '(생년월일 6자리 + 전화번호 뒤 4자리). 두 칸을 <b>모두 비우면</b> 등록이 지워져 ' +
+        '학생이 다음 로그인 때 다시 넣습니다.</p>' +
       '<div class="edbtns"><button class="btn solid" id="gSave">저장</button>' +
       '<button class="btn" id="gCancel">취소</button>' +
       '<span class="msg hidden" id="gMsg"></span></div>';
@@ -2452,6 +2747,25 @@ window.SUSI_CFG = {
         return;
       }
       var mRows = Object.keys(byMo).map(function (k) { return byMo[k]; });
+
+      /* 연락처. 바뀐 것이 없으면 아예 보내지 않는다 —
+         서버 함수가 아직 없는 학교에서도 성적 저장은 그대로 되어야 한다. */
+      var bRaw = ($('cBirth').value || '').trim(), pRaw = ($('cPhone').value || '').trim();
+      var bNew = bRaw ? birthYmd(bRaw) : '', pNew = pRaw ? normPhone(pRaw) : '';
+      if (bRaw && !bNew) {
+        var m0 = $('gMsg'); m0.className = 'msg bad';
+        m0.textContent = '생년월일은 숫자 8자리로 넣어 주세요 (2008년 1월 1일 → 20080101).';
+        return;
+      }
+      var bOld = st.birth_date ? String(st.birth_date) : '', pOld = st.phone || '';
+      var contactChanged = (bNew !== bOld) || (pNew !== pOld);
+      // 둘 다 있거나 둘 다 없어야 한다 — 한쪽만 있으면 비밀번호를 만들 수 없다
+      if (contactChanged && ((bNew && !pNew) || (!bNew && pNew))) {
+        var m1 = $('gMsg'); m1.className = 'msg bad';
+        m1.textContent = '생년월일과 전화번호는 둘 다 넣거나 둘 다 비워 주세요 (둘이 합쳐 비밀번호가 됩니다).';
+        return;
+      }
+
       $('gSave').disabled = true;
       var msg = $('gMsg'); msg.className = 'msg'; msg.textContent = '저장 중…';
       sb.from('student_grades').upsert([g], { onConflict: 'student_id' })
@@ -2468,11 +2782,21 @@ window.SUSI_CFG = {
         })
         .then(function (r3) {
           if (r3 && r3.error) throw r3.error;
-          pickStudent(st.id);
+          if (!contactChanged) return { error: null };
+          return Promise.resolve(sb.rpc('set_student_contact',
+            { p_student: st.id, p_birth: bNew || null, p_phone: pNew || null }));
         })
+        .then(function (r4) {
+          if (r4 && r4.error) throw r4.error;
+          return loadStudents();
+        })
+        .then(function () { pickStudent(st.id); })
         .catch(function (err) {
           $('gSave').disabled = false;
-          msg.className = 'msg bad'; msg.textContent = '저장하지 못했습니다: ' + (err && err.message || '');
+          msg.className = 'msg bad';
+          msg.textContent = missingFn(err)
+            ? '성적은 저장됐지만 생년월일·전화번호는 못 바꿨습니다 — Supabase SQL Editor 에서 «추가기능.sql» 을 한 번 실행해 주세요.'
+            : '저장하지 못했습니다: ' + (err && err.message || '');
         });
     });
   }
@@ -2541,13 +2865,137 @@ window.SUSI_CFG = {
   function enterAdmin() {
     $('schName').value = SCHOOL.name;
     $('schClasses').value = SCHOOL.class_count;
+    renderNewTeacherRoles();
+    renderStudentAccounts();
     return loadStaff();
+  }
+
+  /* ───────── 서버에 없는 함수를 불렀을 때 ─────────
+     이 화면의 몇 가지는 데이터베이스 쪽 함수가 있어야 돕니다(계정 만들기·비밀번호 되돌리기).
+     아직 SQL 을 안 넣으셨으면 "Could not find the function …" 같은 영어가 그대로 뜨는데,
+     그러면 무엇을 해야 하는지 알 수가 없습니다. 그 경우만 골라 한국어로 알려 줍니다. */
+  function missingFn(e) {
+    var m = String(e && e.message || e || '');
+    return /could not find the function|does not exist|PGRST202|schema cache/i.test(m);
+  }
+  function rpcErr(e, what) {
+    if (missingFn(e)) {
+      return what + ' 기능이 아직 데이터베이스에 없습니다.\n\n' +
+        'Supabase → SQL Editor 에서 저장소의 «추가기능.sql» 을 한 번 실행해 주세요. ' +
+        '한 번만 하면 됩니다.';
+    }
+    return what + '하지 못했습니다: ' + String(e && e.message || e || '');
+  }
+
+  /* ───────── 교직원 계정 만들기 ─────────
+     이름만 받고 아이디는 서버가 짓습니다(teacher10, teacher11 …).
+     초기 비밀번호는 서버가 정하고, 그 선생님은 처음 들어갈 때 반드시 바꾸게 됩니다. */
+  function renderNewTeacherRoles() {
+    var sel = $('ntRole'); if (!sel) return;
+    var n = SCHOOL.class_count || 9, out = ['<option value="general">일반 (담당 학생 없음)</option>'];
+    for (var i = 1; i <= n; i++) out.push('<option value="c' + i + '">3학년 ' + i + '반 담임</option>');
+    out.push('<option value="all">총관리자 (학교 전체)</option>');
+    sel.innerHTML = out.join('');
+  }
+
+  function makeTeacher() {
+    var name = ($('ntName').value || '').trim();
+    var login = ($('ntLogin').value || '').trim().toLowerCase();
+    var kind = $('ntRole').value || 'general';
+    var out = $('ntOut');
+    if (!name) { out.innerHTML = '<div class="upres"><span class="badline">이름을 넣어 주세요.</span></div>'; return; }
+    if (login && !/^[a-z0-9_.@-]{2,40}$/.test(login)) {
+      out.innerHTML = '<div class="upres"><span class="badline">아이디는 영문 소문자·숫자로 2~40자입니다. ' +
+        '(비워 두면 자동으로 지어 드립니다)</span></div>';
+      return;
+    }
+    var btn = $('ntMake'); btn.disabled = true;
+    out.innerHTML = '<p class="hint">만드는 중…</p>';
+    var args = { p_name: name, p_login: login || null,
+                 p_kind: kind === 'all' ? 'all' : (kind === 'general' ? 'general' : 'homeroom'),
+                 p_grade: 3, p_class: /^c\d+$/.test(kind) ? parseInt(kind.slice(1), 10) : null };
+    Promise.resolve(sb.rpc('admin_create_teacher', args))
+      .then(function (r) {
+        if (r.error) throw r.error;
+        var d = r.data || {};
+        out.innerHTML = '<div class="upres newacct">' +
+          '<span class="okline">' + esc(name) + ' 선생님 계정을 만들었습니다.</span>' +
+          '<table class="gt kv"><tbody>' +
+          '<tr><th>아이디</th><td><b class="pickme">' + esc(d.login || '') + '</b></td></tr>' +
+          '<tr><th>초기 비밀번호</th><td><b class="pickme">' + esc(d.password || '') + '</b></td></tr>' +
+          '</tbody></table>' +
+          '<p class="hint">이 두 줄을 <b>지금 적어 두고</b> 전해 주세요 — 화면을 옮기면 다시 볼 수 없습니다. ' +
+          '그 선생님이 처음 들어가면 <b>비밀번호를 새로 정하는 화면</b>이 먼저 뜹니다.</p></div>';
+        $('ntName').value = ''; $('ntLogin').value = '';
+        return loadStaff();
+      })
+      .catch(function (e) {
+        out.innerHTML = '<div class="upres"><span class="badline">' +
+          esc(rpcErr(e, '계정을 만들지')).replace(/\n/g, '<br>') + '</span></div>';
+      })
+      .then(function () { btn.disabled = false; });
+  }
+
+  /* ───────── 학생 계정 (비밀번호·등록 되돌리기) ───────── */
+  function renderStudentAccounts() {
+    var host = $('sacList'); if (!host) return;
+    var q = (($('sacFilter') && $('sacFilter').value) || '').trim().toLowerCase();
+    var list = STUDENTS.filter(function (s2) {
+      return !q || String(s2.student_no).indexOf(q) >= 0 || (s2.name || '').toLowerCase().indexOf(q) >= 0;
+    });
+    $('sacCount').textContent = (q && list.length !== STUDENTS.length)
+      ? list.length + ' / ' + STUDENTS.length + '명' : STUDENTS.length + '명';
+    if (!STUDENTS.length) {
+      host.innerHTML = '<p class="hint">' + (STUDENTS_OK ? '아직 등록된 학생이 없습니다.' : '학생 목록을 읽지 못했습니다.') + '</p>';
+      return;
+    }
+    if (!list.length) { host.innerHTML = '<p class="hint">찾는 학생이 없습니다.</p>'; return; }
+    host.innerHTML = '<div class="saclist">' + list.slice(0, 400).map(function (s2) {
+      var na = !!NOTACT[s2.id];
+      return '<div class="sacrow">' +
+        '<span class="sno">' + s2.student_no + '</span>' +
+        '<b>' + esc(s2.name) + '</b>' +
+        (na ? '<span class="newbadge">미등록</span>'
+            : '<span class="sacinfo">' + esc(s2.birth_date || '—') + ' · ' + esc(s2.phone || '—') + '</span>') +
+        '<span class="grow"></span>' +
+        (na ? '<span class="fh">학생이 아직 안 넣었습니다</span>'
+            : '<button type="button" class="btn" data-pwstu="' + s2.id + '">비밀번호 초기화</button>') +
+        '<button type="button" class="btn ghostish" data-restu="' + s2.id + '">등록 초기화</button>' +
+        '</div>';
+    }).join('') + '</div>' +
+    (list.length > 400 ? '<p class="hint">…외 ' + (list.length - 400) + '명. 위 칸에 이름이나 학번을 넣어 찾으세요.</p>' : '');
+  }
+
+  function resetStudentPassword(id) {
+    var st = STUDENTS.filter(function (x) { return x.id === id; })[0];
+    if (!st) return;
+    if (!window.confirm(
+        st.student_no + ' ' + st.name + ' 학생의 비밀번호를 되돌립니다.\n\n' +
+        '· 등록해 둔 생년월일·전화번호로 만든 값이 다시 비밀번호가 됩니다\n' +
+        '· 생년월일·전화번호와 성적·지원계획은 그대로입니다\n\n계속할까요?')) return;
+    Promise.resolve(sb.rpc('reset_student_password', { p_student: id })).then(function (r) {
+      if (r.error) throw r.error;
+      window.SUSI.toast(st.name + ' 학생의 비밀번호를 되돌렸습니다 (생년월일 6자리 + 전화번호 뒤 4자리).');
+    }).catch(function (e) { window.alert(rpcErr(e, '비밀번호를 되돌리지')); });
+  }
+
+  /* 아이디(로그인 이름)는 auth.users 에 있어 클라이언트가 직접 못 읽는다.
+     서버 함수 staff_logins() 가 있으면 가져다 보여 주고, 없으면 그냥 안 보여 준다
+     — 이것 때문에 설정 화면 전체가 안 뜨면 안 된다. */
+  var LOGINS = {};
+  function loadLogins() {
+    return Promise.resolve(sb.rpc('staff_logins')).then(function (r) {
+      if (r.error) throw r.error;
+      LOGINS = {};
+      (r.data || []).forEach(function (x) { LOGINS[x.id] = x.login; });
+    }).catch(function () { LOGINS = {}; });
   }
 
   function loadStaff() {
     return Promise.all([
       sb.from('profiles').select('*').neq('role', 'student').order('name'),
-      sb.from('teacher_classes').select('*').order('grade').order('class_no')
+      sb.from('teacher_classes').select('*').order('grade').order('class_no'),
+      loadLogins()
     ]).then(function (r) {
       if (r[0] && r[0].error) throw r[0].error;
       if (r[1] && r[1].error) throw r[1].error;
@@ -2576,10 +3024,10 @@ window.SUSI_CFG = {
     if (x.role === 'super_admin') return { t: '관리자', c: 'all' };
     if (x.classes && x.classes.length > 1) {
       // 두 반 이상이면 숨기지 않고 다 적는다 — 화면에 한 반만 보이면 나머지가 유령이 된다
-      return { t: x.classes.map(function (c) { return c.grade + '' + pad(c.class_no); })
-                 .join('·') + '반 담임', c: 'hr' };
+      return { t: x.classes[0].grade + '학년 ' +
+                 x.classes.map(function (c) { return c.class_no; }).join('·') + '반 담임', c: 'hr' };
     }
-    if (x.cls) return { t: x.grade + '' + pad(x.cls) + '반 담임', c: 'hr' };
+    if (x.cls) return { t: x.grade + '학년 ' + x.cls + '반 담임', c: 'hr' };
     return { t: '일반', c: 'gen' };
   }
 
@@ -2608,12 +3056,13 @@ window.SUSI_CFG = {
       }
       return '<div class="stfrow">' +
         '<div class="stfhead"><b>' + esc(x.name) + '</b>' +
+          (LOGINS[x.id] ? '<code class="stflogin">' + esc(LOGINS[x.id]) + '</code>' : '') +
           '<span class="rtag ' + tg.c + '">' + tg.t + '</span>' +
           '<span class="grow"></span>' +
           // 본인 계정은 뺀다. 총관리자는 강제 변경 화면을 안 만나므로,
           // 자기를 1111 로 되돌리면 그대로 1111 로 남는다. 바꾸려면 [비밀번호] 를 쓴다.
           (me ? '<span class="fh">비밀번호는 위 [비밀번호]로</span>'
-              : '<button class="lnk" data-pw="' + x.id + '">비번초기화</button>') +
+              : '<button class="lnk" data-pw="' + x.id + '">비밀번호 초기화</button>') +
         '</div>' + chips + '</div>';
     }).join('') || '<p class="hint">교직원 계정이 없습니다.</p>';
   }
@@ -2654,6 +3103,7 @@ window.SUSI_CFG = {
         if (r2 && r2.error) throw r2.error;
         SCHOOL.class_count = n;
         if (nm) SCHOOL.name = nm;
+        renderNewTeacherRoles();
         say('schMsg', '저장했습니다.');
         setTimeout(function () { say('schMsg', ''); }, 2000);
         return loadStaff();
@@ -2686,7 +3136,7 @@ window.SUSI_CFG = {
     });
   }
 
-  /* ───────── 고사일 달력 ─────────
+  /* ───────── 수시 달력 ─────────
      달력은 '늘' 떠 있고 그 위에 고사가 얹힙니다. 고사가 하나도 없어도
      빈 달력이 보입니다 — 며칠이 비어 있는지도 정보이기 때문입니다.
 
@@ -2696,7 +3146,59 @@ window.SUSI_CFG = {
      날짜를 누르면 아래에 그 날 전체가 펼쳐집니다(여기는 길어지면 스크롤).
      인쇄할 때는 접힌 것 없이 전부 나오고 칸이 늘어납니다. */
   var CAL_MAX = 3;                     // 한 칸에 적는 최대 건수
-  var CALST = { days: {}, months: [], sel: null };
+  /* cur = 지금 보고 있는 달(months 안의 자리). 한 화면에 한 달만 그린다 —
+     여섯 달을 한꺼번에 늘어놓으면 화면에서도 종이에서도 아무 달도 제대로 안 보인다.
+     인쇄하면 '보고 있는 달' 한 장만 나간다(그리는 것이 하나뿐이라 저절로 그렇게 된다). */
+  var CALST = { days: {}, months: [], sel: null, cur: 0 };
+
+  /* ───────── D-day ─────────
+     학교 일정표에는 늘 「수능 D-79」 같은 줄이 붙어 있다. 수능 날짜는 해마다 정해져 있어
+     계산해 둘 수 있고(11월 셋째 목요일), 중간고사처럼 학교마다 다른 날은 선생님이 넣는다.
+     이 값은 선생님 개인 화면 설정이라 이 브라우저에만 저장한다(서버를 건드리지 않는다). */
+  var DDKEY = 'susi.dday.v1';
+  var DD = { suneung: '', name: '', date: '' };
+
+  function thirdThursdayNov(y) {
+    var d = new Date(y, 10, 1), add = (4 - d.getDay() + 7) % 7;   // 4 = 목요일
+    return new Date(y, 10, 1 + add + 14);
+  }
+  function loadDD() {
+    try { DD = JSON.parse(localStorage.getItem(DDKEY)) || {}; } catch (e) { DD = {}; }
+    if (!DD.suneung) DD.suneung = ymd(thirdThursdayNov(CFG.year - 1));
+    if (typeof DD.name !== 'string') DD.name = '중간고사';
+    if (typeof DD.date !== 'string') DD.date = '';
+    var a = $('ddSuneung'), b = $('ddName'), c = $('ddDate');
+    if (a) a.value = DD.suneung; if (b) b.value = DD.name; if (c) c.value = DD.date;
+  }
+  function saveDD() {
+    DD.suneung = ($('ddSuneung').value || '').trim();
+    DD.name = ($('ddName').value || '').trim();
+    DD.date = ($('ddDate').value || '').trim();
+    try { localStorage.setItem(DDKEY, JSON.stringify(DD)); } catch (e) { }
+    drawCalendar();
+    window.SUSI.toast('D-day 를 저장했습니다.');
+  }
+  // 'YYYY-MM-DD' 두 개의 날짜 차이(일). 시간대에 안 끌려가게 로컬 생성자로 만든다.
+  function dayDiff(fromKey, toKey) {
+    if (!fromKey || !toKey) return null;
+    var a = fromKey.split('-'), b = toKey.split('-');
+    if (a.length !== 3 || b.length !== 3) return null;
+    var x = new Date(+a[0], +a[1] - 1, +a[2]), y = new Date(+b[0], +b[1] - 1, +b[2]);
+    if (isNaN(x) || isNaN(y)) return null;
+    return Math.round((y - x) / 86400000);
+  }
+  /* 지난 일정은 안 적는다 — 「수능 D+12」 는 아무 쓸모가 없고 칸만 잡아먹는다. */
+  function ddLine(label, fromKey, anchor) {
+    var n = dayDiff(fromKey, anchor);
+    if (n === null || n < 0) return '';
+    return '<span class="ddl">' + esc(label) + ' ' + (n === 0 ? 'D-DAY' : 'D-' + n) + '</span>';
+  }
+  function ddCell(key) {
+    var out = '';
+    if (DD.name && DD.date) out += ddLine(DD.name, key, DD.date);
+    if (DD.suneung) out += ddLine('수능', key, DD.suneung);
+    return out ? '<div class="dd">' + out + '</div>' : '';
+  }
 
   /* 이 학년도의 수시 시즌(전년 9월 ~ 해당 학년도 2월). 고사가 없어도 이 달들은 늘 그린다. */
   function seasonMonths() {
@@ -2705,12 +3207,27 @@ window.SUSI_CFG = {
     return out;
   }
 
+  /* 처음 열었을 때 어느 달을 보여 줄까 —
+     ① 오늘이 시즌 안이면 이번 달, ② 아니면 고사가 처음 들어 있는 달, ③ 그것도 없으면 첫 달. */
+  function pickMonth(months, days) {
+    var now = ymd(new Date()).slice(0, 7), i = months.indexOf(now);
+    if (i >= 0) return i;
+    var keys = Object.keys(days || {}).sort();
+    if (keys.length) {
+      var j = months.indexOf(keys[0].slice(0, 7));
+      if (j >= 0) return j;
+    }
+    return 0;
+  }
+
   function buildCalendar() {
+    loadDD();
     $('calOut').innerHTML = '<p class="hint">불러오는 중…</p>';
     if (!STUDENTS.length) {
-      CALST = { days: {}, months: seasonMonths(), sel: null };
-      $('calHead').innerHTML = '';
-      drawCalendar(0, 0);
+      var ms = seasonMonths();
+      CALST = { days: {}, months: ms, sel: null, cur: pickMonth(ms, {}) };
+      calHeadHtml(0, 0);
+      drawCalendar();
       $('calDay').innerHTML = '<p class="hint">담당 학생이 없습니다. 달력만 보여 드립니다.</p>';
       return;
     }
@@ -2759,26 +3276,21 @@ window.SUSI_CFG = {
         var mset = {};
         seasonMonths().forEach(function (m) { mset[m] = 1; });
         keys.forEach(function (k) { mset[k.slice(0, 7)] = 1; });
-        CALST = { days: days, months: Object.keys(mset).sort(), sel: null };
+        var months = Object.keys(mset).sort();
+        CALST = { days: days, months: months, sel: null, cur: pickMonth(months, days) };
 
         var total = keys.reduce(function (n, k) { return n + days[k].length; }, 0);
         var clashDays = keys.filter(isClash).length;
 
-        // 인쇄했을 때 이게 누구의 무슨 표인지 종이만 보고 알 수 있어야 한다
-        var now = new Date();
-        $('calHead').innerHTML =
-          '<div class="pt">' + CFG.year + '학년도 수시 고사일 — ' + esc(ME.name) + '</div>' +
-          '<div class="ps">담당 학생 ' + STUDENTS.length + '명 · 고사 ' + total + '건 · ' +
-          (clashDays ? '겹치는 날 ' + clashDays + '일(⚠ 표시) · ' : '') +
-          '출력 ' + now.getFullYear() + '.' + pad(now.getMonth() + 1) + '.' + pad(now.getDate()) + '</div>';
-
-        drawCalendar(total, clashDays);
+        calHeadHtml(total, clashDays);
+        drawCalendar();
         $('calDay').innerHTML = total
           ? '<p class="hint">날짜를 누르면 그 날 전체가 여기에 펼쳐집니다.</p>'
           : '<p class="hint">아직 고사일이 들어 있는 전형이 없습니다. 학생들이 전형을 담으면 여기에 찍힙니다.</p>';
       }).catch(function (e) {
         $('calHead').innerHTML = '';
         $('calOut').innerHTML = '';
+        $('calNav').classList.add('hidden');
         $('calDay').innerHTML = '<p class="hint"><b class="clashk">고사일을 읽지 못했습니다</b> — ' +
           esc(e && e.message || '') + '<br>「고사일이 없음」이 아니라 <b>읽기에 실패한 것</b>입니다. ' +
           '탭을 다시 눌러 주세요.</p>';
@@ -2797,58 +3309,108 @@ window.SUSI_CFG = {
     return Object.keys(per).some(function (x) { return per[x] > 1; });
   }
 
-  function drawCalendar(total, clashDays) {
-    var today = ymd(new Date());
-    $('calOut').innerHTML = CALST.months.map(function (mo) {
-      var y = +mo.slice(0, 4), m = +mo.slice(5, 7);
-      var lead = new Date(y, m - 1, 1).getDay();
-      var dim  = new Date(y, m, 0).getDate();
-      var cells = [];
-      for (var i = 0; i < lead; i++) cells.push(null);
-      for (var d = 1; d <= dim; d++) cells.push(d);
-      while (cells.length % 7) cells.push(null);
+  /* 종이만 보고도 누구의 무슨 표인지 알 수 있어야 한다 (인쇄용 머리글·꼬리글) */
+  function calHeadHtml(total, clashDays) {
+    var now = new Date();
+    $('calHead').innerHTML =
+      '<div class="pt">' + CFG.year + '학년도 수시 달력 — ' + esc(ME.name) + '</div>' +
+      '<div class="ps">' + (SCHOOL.name ? esc(SCHOOL.name) + ' · ' : '') +
+      '담당 학생 ' + STUDENTS.length + '명 · 고사 ' + total + '건' +
+      (clashDays ? ' · 겹치는 날 ' + clashDays + '일(⚠ 표시)' : '') +
+      ' · 출력 ' + now.getFullYear() + '.' + pad(now.getMonth() + 1) + '.' + pad(now.getDate()) + '</div>';
+    var f = $('calFoot');
+    if (f) f.innerHTML = '한 학생이 같은 날 두 곳 이상이면 굵은 테두리와 ⚠ 로 표시됩니다.';
+  }
 
-      var cnt = 0;
-      for (var d2 = 1; d2 <= dim; d2++) cnt += (CALST.days[mo + '-' + pad(d2)] || []).length;
+  function monthCount(mo) {
+    var dim = new Date(+mo.slice(0, 4), +mo.slice(5, 7), 0).getDate(), n = 0;
+    for (var d = 1; d <= dim; d++) n += (CALST.days[mo + '-' + pad(d)] || []).length;
+    return n;
+  }
 
-      // 빈 달도 화면에는 늘 그린다. 다만 인쇄할 때는 빈 달을 빼서 종이를 아낀다
-      // (아무 것도 없는 9월이 한 장을 통째로 차지하는 건 낭비다).
-      return '<div class="calmon' + (cnt ? '' : ' empty') + '">' +
-        '<h4>' + y + '년 ' + m + '월' +
-          (cnt ? ' <span class="cnt">' + cnt + '건</span>' : ' <span class="cnt none">없음</span>') +
-        '</h4>' +
-        '<div class="calwrap"><div class="calgrid">' +
-          WEEK.map(function (w, i) {
-            return '<div class="calhd' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + w + '</div>';
-          }).join('') +
-          cells.map(function (d, i) {
-            if (d === null) return '<div class="calcell blank"></div>';
-            var key = mo + '-' + pad(d);
-            var items = CALST.days[key] || [];
-            var dow = i % 7;
-            var cls = 'calcell';
-            if (dow === 0) cls += ' sun';
-            if (dow === 6) cls += ' sat';
-            if (items.length) cls += ' has';
-            if (items.length && isClash(key)) cls += ' clash';
-            if (key === today) cls += ' today';
-            if (key === CALST.sel) cls += ' sel';
-            var shown = items.slice(0, CAL_MAX), rest = items.length - shown.length;
-            return '<div class="' + cls + '" data-d="' + key + '"' +
-                (items.length ? ' tabindex="0" role="button"' : '') + '>' +
-              '<div class="dn">' + d + (items.length && isClash(key) ? ' <b class="wk">⚠</b>' : '') + '</div>' +
-              '<div class="its">' + shown.map(itLine).join('') +
-                // 인쇄할 때만 펼쳐지는 나머지 (화면에서는 아래 「+N건」으로 접혀 있다)
-                (rest > 0 ? '<div class="itrest">' +
-                  items.slice(CAL_MAX).map(itLine).join('') + '</div>' : '') +
-              '</div>' +
-              // ★ .its 바깥에 둔다. 안에 두면 칸이 꽉 찼을 때 이 줄까지 같이 잘려서
-              //   '더 있다'는 사실 자체가 안 보인다 (실제로 그렇게 만들었다가 고침).
-              (rest > 0 ? '<div class="calmore">+' + rest + '건</div>' : '') +
-              '</div>';
-          }).join('') +
-        '</div></div></div>';
+  /* 달을 옮기는 줄. 화살표만 두면 '지금 몇 달 중 몇 번째인지' 를 알 수 없어
+     고르는 칸도 같이 둔다(고사 건수까지 적어 두면 어느 달이 바쁜지 한눈에 보인다). */
+  function renderCalNav() {
+    var nav = $('calNav'); if (!nav) return;
+    nav.classList.toggle('hidden', !CALST.months.length);
+    if (!CALST.months.length) return;
+    $('calPick').innerHTML = CALST.months.map(function (mo, i) {
+      var n = monthCount(mo);
+      return '<option value="' + i + '"' + (i === CALST.cur ? ' selected' : '') + '>' +
+        (+mo.slice(0, 4)) + '년 ' + (+mo.slice(5, 7)) + '월' + (n ? ' (' + n + '건)' : '') + '</option>';
     }).join('');
+    $('calPrev').disabled = CALST.cur <= 0;
+    $('calNext').disabled = CALST.cur >= CALST.months.length - 1;
+    var n2 = monthCount(CALST.months[CALST.cur]);
+    $('calCnt').innerHTML = n2
+      ? '이 달 고사 <b>' + n2 + '</b>건'
+      : '<span class="none">이 달은 고사가 없습니다</span>';
+  }
+
+  function moveMonth(step) {
+    var i = CALST.cur + step;
+    if (i < 0 || i >= CALST.months.length) return;
+    CALST.cur = i; CALST.sel = null;
+    drawCalendar();
+    $('calDay').innerHTML = '<p class="hint">날짜를 누르면 그 날 전체가 여기에 펼쳐집니다.</p>';
+  }
+
+  /* 한 달만 그린다. 인쇄하면 이 한 달이 그대로 한 장이 된다. */
+  function drawCalendar() {
+    renderCalNav();
+    if (!CALST.months.length) { $('calOut').innerHTML = ''; return; }
+    var today = ymd(new Date());
+    var mo = CALST.months[CALST.cur];
+    var y = +mo.slice(0, 4), m = +mo.slice(5, 7);
+    var lead = new Date(y, m - 1, 1).getDay();
+    var dim  = new Date(y, m, 0).getDate();
+    var cells = [], i, d;
+    for (i = 0; i < lead; i++) cells.push(null);
+    for (d = 1; d <= dim; d++) cells.push(d);
+    while (cells.length % 7) cells.push(null);
+    var cnt = monthCount(mo);
+
+    $('calOut').innerHTML = '<div class="calmon' + (cnt ? '' : ' empty') + '">' +
+      '<div class="calmonhead">' +
+        '<div class="cm-no">' + m + '<span>월</span></div>' +
+        '<div class="cm-t"><b>' + y + ' 3학년 월간 일정표</b>' +
+          '<span>' + (SCHOOL.name ? esc(SCHOOL.name) : CFG.year + '학년도 수시') + '</span></div>' +
+        '<div class="cm-cnt">' + (cnt ? cnt + '건' : '고사 없음') + '</div>' +
+      '</div>' +
+      '<div class="calwrap"><div class="calgrid">' +
+        WEEK.map(function (w, k) {
+          return '<div class="calhd' + (k === 0 ? ' sun' : k === 6 ? ' sat' : '') + '">' + w + '</div>';
+        }).join('') +
+        cells.map(function (d2, k) {
+          if (d2 === null) return '<div class="calcell blank"></div>';
+          var key = mo + '-' + pad(d2);
+          var items = CALST.days[key] || [];
+          var dow = k % 7;
+          var cls = 'calcell';
+          if (dow === 0) cls += ' sun';
+          if (dow === 6) cls += ' sat';
+          if (items.length) cls += ' has';
+          if (items.length && isClash(key)) cls += ' clash';
+          if (key === today) cls += ' today';
+          if (key === CALST.sel) cls += ' sel';
+          var shown = items.slice(0, CAL_MAX), rest = items.length - shown.length;
+          /* data-n 은 좁은 화면에서 쓴다 — 칸이 작아 글자를 못 담을 때
+             '몇 건 있는지' 만 점처럼 찍어 주고, 누르면 아래에 펼친다. */
+          return '<div class="' + cls + '" data-d="' + key + '"' +
+              (items.length ? ' data-n="' + items.length + '" tabindex="0" role="button"' : '') + '>' +
+            '<div class="dn">' + d2 + (items.length && isClash(key) ? ' <b class="wk">⚠</b>' : '') + '</div>' +
+            ddCell(key) +
+            '<div class="its">' + shown.map(itLine).join('') +
+              // 인쇄할 때만 펼쳐지는 나머지 (화면에서는 아래 「+N건」으로 접혀 있다)
+              (rest > 0 ? '<div class="itrest">' +
+                items.slice(CAL_MAX).map(itLine).join('') + '</div>' : '') +
+            '</div>' +
+            // ★ .its 바깥에 둔다. 안에 두면 칸이 꽉 찼을 때 이 줄까지 같이 잘려서
+            //   '더 있다'는 사실 자체가 안 보인다 (실제로 그렇게 만들었다가 고침).
+            (rest > 0 ? '<div class="calmore">+' + rest + '건</div>' : '') +
+            '</div>';
+        }).join('') +
+      '</div></div></div>';
   }
 
   /* 날짜 하나를 눌렀을 때 아래에 그 날 전체를 펼친다 (칸 안은 좁으니까) */
@@ -2885,7 +3447,7 @@ window.SUSI_CFG = {
 
   function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 
-  /* 인쇄할 것이 두 가지(고사일 달력 / 학생 지원계획서)라 무엇을 낼지 알려 줘야 한다.
+  /* 인쇄할 것이 두 가지(수시 달력 / 학생 지원계획서)라 무엇을 낼지 알려 줘야 한다.
      인쇄 CSS 는 'body * 를 감추고 대상만 보이게' 하는 방식이라, 대상이 둘이면
      클래스로 갈라 주지 않으면 둘 다 나오거나 둘 다 안 나온다. */
   function printArea(kind) {
@@ -3607,7 +4169,7 @@ window.SUSI_CFG = {
     on('tTabs', 'click', function (e) {
       var b = e.target.closest('button[data-t]'); if (!b) return;
       [].forEach.call($('tTabs').children, function (x) { x.setAttribute('aria-selected', String(x === b)); });
-      ['students', 'cal', 'upload', 'admin'].forEach(function (v) {
+      ['students', 'cal', 'admin'].forEach(function (v) {
         $('tv-' + v).classList.toggle('hidden', v !== b.dataset.t); });
       // 「전형 찾기」는 학생 화면과 같은 것을 그대로 쓴다(#appwrap).
       // 선생님도 상담 중에 전형을 찾아볼 수 있어야 해서 열어 뒀다.
@@ -3623,15 +4185,28 @@ window.SUSI_CFG = {
       var c = e.target.closest('.calcell[data-d]'); if (!c) return;
       e.preventDefault(); showCalDay(c.dataset.d);
     });
-    on('calPrintBtn', 'click', function () {
-      if (!document.querySelectorAll('#calOut .calcell.has').length) {
-        alert('인쇄할 고사일이 없습니다. 학생들의 지원계획에 면접·논술·실기 날짜가 있어야 합니다.');
-        return;
-      }
-      printArea('cal');
+    // 고사가 없는 달도 그대로 낸다 — 학사 일정표로도 쓰이기 때문이다(빈 칸도 정보다)
+    on('calPrintBtn', 'click', function () { printArea('cal'); });
+    on('calPrev', 'click', function () { moveMonth(-1); });
+    on('calNext', 'click', function () { moveMonth(1); });
+    on('calPick', 'change', function (e) {
+      CALST.cur = parseInt(e.target.value, 10) || 0; CALST.sel = null;
+      drawCalendar();
+      $('calDay').innerHTML = '<p class="hint">날짜를 누르면 그 날 전체가 여기에 펼쳐집니다.</p>';
     });
+    on('ddSave', 'click', saveDD);
     /* ── 설정 화면 ── */
     on('schSave', 'click', saveSchool);
+    on('ntMake', 'click', makeTeacher);
+    on('ntName', 'keydown', function (e) { if (e.key === 'Enter') makeTeacher(); });
+    on('ntLogin', 'keydown', function (e) { if (e.key === 'Enter') makeTeacher(); });
+    on('sacFilter', 'input', renderStudentAccounts);
+    on('sacList', 'click', function (e) {
+      var a = e.target.closest('[data-pwstu]');
+      if (a) { resetStudentPassword(a.dataset.pwstu); return; }
+      var b = e.target.closest('[data-restu]');
+      if (b) resetStudentLogin(b.dataset.restu);
+    });
     on('stfToggle', 'click', function () { STF_OPEN = !STF_OPEN; renderStaff(); });
     on('stfList', 'click', function (e) {
       var c = e.target.closest('.rchip[data-k]');
@@ -3639,14 +4214,15 @@ window.SUSI_CFG = {
       var pw = e.target.closest('[data-pw]');
       if (pw) {
         var x = STAFF.filter(function (o) { return o.id === pw.dataset.pw; })[0];
-        if (!confirm((x ? x.name : '이 분') + ' 의 비밀번호를 1111 로 되돌립니다.\n' +
+        if (!confirm((x ? x.name : '이 분') + ' 의 비밀번호를 초기 비밀번호로 되돌립니다.\n' +
                      '다음 로그인 때 새 비밀번호를 정하게 됩니다. 계속할까요?')) return;
         pw.disabled = true;
-        sb.rpc('reset_teacher_password', { p_teacher: pw.dataset.pw }).then(function (r) {
+        Promise.resolve(sb.rpc('reset_teacher_password', { p_teacher: pw.dataset.pw })).then(function (r) {
           if (r.error) throw r.error;
-          alert('되돌렸습니다. 초기 비밀번호는 1111 입니다.');
+          alert('되돌렸습니다.\n초기 비밀번호: ' + (r.data && r.data.password ? r.data.password : '1111') +
+                '\n\n그 선생님이 처음 들어가면 새 비밀번호를 정하는 화면이 먼저 뜹니다.');
         }).catch(function (e2) {
-          alert('되돌리지 못했습니다: ' + (e2 && e2.message || ''));
+          alert(rpcErr(e2, '비밀번호를 되돌리지'));
         }).then(function () { pw.disabled = false; });
       }
     });
@@ -4054,15 +4630,46 @@ window.SUSI_CFG = {
         esc(x[1]) + '<span class="n">' + x[2] + '</span></li>';
     }).join('');
   }
+  /* ───────── 지역 = 작은 한국 지도 ─────────
+     가나다순으로 늘어놓으면 「강원 · 경기 · 경남 · 경북 · 광주 …」 가 되어
+     지도에서 서로 붙어 있는 곳이 목록의 반대편에 놓인다. 사람은 지역을 '이름' 이 아니라
+     '위치' 로 떠올리므로, 실제 자리에 가깝게 칸을 잡아 준다.
+     [열, 줄] 은 4칸 × 8줄 격자 위의 자리다. 자료에 없는 이름이 나오면 맨 아래에 붙인다. */
+  var REGION_POS = {
+    '서울': [2, 1], '강원': [3, 1],
+    '인천': [1, 2], '경기': [2, 2],
+    '충남': [2, 3], '세종': [3, 3], '충북': [4, 3],
+    '대전': [2, 4], '경북': [4, 4],
+    '전북': [1, 5], '대구': [4, 5],
+    '광주': [1, 6], '경남': [3, 6], '울산': [4, 6],
+    '전남': [1, 7], '부산': [4, 7],
+    '제주': [1, 8]
+  };
   function renderRegions() {
     var ids = byKind(find.uni === null ? ROWS.map(function (_, i) { return i; }) : (byUni.get(find.uni) || []));
     var cnt = R.map(function () { return 0; });
     ids.forEach(function (i) { var ri = ROWS[i][C.R]; if (ri >= 0) cnt[ri]++; });
-    var order = R.map(function (name, i) { return [i, name]; }).sort(function (a, b) { return a[1].localeCompare(b[1]); });
-    var chips = order.map(function (x) {
-      var i = x[0];
-      return cnt[i] ? '<button class="chip" data-r="' + i + '" aria-pressed="' + find.regions.has(i) + '">' + esc(x[1]) +
-        '<span class="n">' + cnt[i] + '</span></button>' : '';
+
+    var placed = [], extra = [], maxRow = 8;
+    R.forEach(function (name, i) {
+      var p = REGION_POS[String(name).trim()];
+      if (p) placed.push([i, name, p[0], p[1]]);
+      else extra.push([i, name]);
+    });
+    /* 자리를 못 찾은 지역(자료가 「서울특별시」처럼 들어온 경우 등)도 반드시 보여 준다 —
+       안 보이면 그 지역 전형을 영영 못 고른다. 지도 아래 줄에 차례로 붙인다. */
+    extra.sort(function (a, b) { return a[1].localeCompare(b[1]); });
+    extra.forEach(function (x, k) { placed.push([x[0], x[1], (k % 4) + 1, maxRow + 1 + Math.floor(k / 4)]); });
+
+    var chips = placed.map(function (x) {
+      var i = x[0], n = cnt[i];
+      var st = 'grid-column:' + x[2] + ';grid-row:' + x[3];
+      /* 0건인 지역도 자리는 남겨 둔다 — 사라지면 지도 모양이 무너져서
+         '어디를 누르는 것인지' 를 알 수 없게 된다. 대신 눌리지 않게 흐려 둔다. */
+      if (!n) return '<span class="mapchip off" style="' + st + '">' + esc(x[1]) + '</span>';
+      return '<button type="button" class="mapchip" style="' + st + '" data-r="' + i +
+        '" aria-pressed="' + find.regions.has(i) + '">' + esc(x[1]) +
+        '<span class="n">' + n.toLocaleString() + '</span></button>';
     }).join('');
     $('rchips').innerHTML = chips || '<span class="tag">이 자료에는 지역 정보가 없습니다</span>';
   }
@@ -4176,7 +4783,7 @@ window.SUSI_CFG = {
         '<td class="c-uni uni">' + esc(U[r[C.U]]) + '</td>' +
         '<td class="c-type tcell"><span class="pill ' + cls[r[C.T]] + '">' + T[r[C.T]] + '</span></td>' +
         '<td class="c-jh jh" data-label="전형명">' + lc(esc(J[r[C.J]]), 'jh') + '</td>' +
-        '<td class="c-dept dept" data-label="학과(모집단위)">' + lc(esc(DP[r[C.D]]), 'dept') + '</td>' +
+        '<td class="c-dept dept" data-label="학과">' + lc(esc(DP[r[C.D]]), 'dept') + '</td>' +
         '<td class="c-n num" data-label="모집">' + (r[C.N] || '<span class="dash">—</span>') + '</td>' +
         '<td class="c-min" data-label="수능최저">' + minCell(r[C.M]) + '</td>' +
         '<td class="c-rate num" data-label="경쟁률">' + (nf(r[C.C]) || '<span class="dash">—</span>') + '</td>' +
@@ -4184,7 +4791,7 @@ window.SUSI_CFG = {
         '<td class="c-cut70 num" data-label="70%컷">' + (nf(r[C.B]) || '<span class="dash">—</span>') + '</td>' +
         '<td class="c-day" data-label="고사일">' + dayMerged(r) + '</td>' +
         '<td class="c-way" data-label="전형방법" style="color:var(--ink-2)">' + (r[C.W] >= 0 ? lc(esc(W[r[C.W]]), 'way') : '<span class="dash">—</span>') + '</td>' +
-        '<td class="c-add num actd"><button class="addbtn" data-add="' + i + '">계획에 담기</button></td>' +
+        '<td class="c-add num actd"><button class="addbtn" data-add="' + i + '" title="전형 관리 화면에 담습니다">담기</button></td>' +
         '</tr>';
     }).join('');
     markClamps(tb);
@@ -4193,6 +4800,22 @@ window.SUSI_CFG = {
     var mb = $('mb'); if (mb) mb.onclick = function () { find.limit += 500; renderTable(); };
   }
   function renderFind() { renderUnis(); renderRegions(); renderTypes(); renderJh(); find.limit = 200; renderTable(); }
+
+  /* 왼쪽 조건 줄을 접으면 표가 그만큼 넓어진다.
+     열을 줄이지 않고도 「담기」까지 한눈에 들어오게 하는 가장 확실한 방법이다. */
+  var RAILKEY = 'susi.rail.v1';
+  function setRail(folded) {
+    var cols = $('v-find').querySelector('.cols');
+    if (cols) cols.classList.toggle('railoff', !!folded);
+    var b = $('railTog');
+    if (b) { b.setAttribute('aria-pressed', String(!!folded)); b.textContent = folded ? '조건 펴기' : '조건 접기'; }
+    try { localStorage.setItem(RAILKEY, folded ? '1' : '0'); } catch (e) { }
+  }
+  $('railTog').addEventListener('click', function () {
+    var cols = $('v-find').querySelector('.cols');
+    setRail(!(cols && cols.classList.contains('railoff')));
+  });
+  try { if (localStorage.getItem(RAILKEY) === '1') setRail(true); } catch (e) { }
 
   $('uq').addEventListener('input', function (e) { find.uq = e.target.value; renderUnis(); });
   $('dq').addEventListener('input', function (e) { find.dq = e.target.value; find.limit = 200; renderTable(); });
@@ -4282,7 +4905,7 @@ window.SUSI_CFG = {
     var slot = plan.main.findIndex(function (c) { return c.u === null; });
     if (slot >= 0) { plan.main[slot] = nc; savePlan(); toast('수시 ' + (slot + 1) + '번 칸에 담았습니다 — ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
     slot = plan.cand.findIndex(function (c) { return c.u === null; });
-    if (slot >= 0) { plan.cand[slot] = nc; savePlan(); toast('후보 ' + (slot + 1) + '번 칸에 담았습니다 — ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
+    if (slot >= 0) { plan.cand[slot] = nc; savePlan(); toast('예비 ' + (slot + 1) + '번 칸에 담았습니다 — ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
     toast('칸이 가득 찼습니다');
   });
 
@@ -4749,7 +5372,7 @@ window.SUSI_CFG = {
     return Array.from(s).map(function (d) { return [d, DP[d]]; }).sort(function (a, b) { return a[1].localeCompare(b[1]); });
   }
 
-  var AREA_LABEL = { main: '지원', cand: '후보', college: '전문대' };
+  var AREA_LABEL = { main: '지원', cand: '예비', college: '전문대' };
   var PF_LABEL = { pass: '합격', fail: '불합격' };
   function cardHTML(c, ix, area) {
     var r = rowOf(c), vd = verdict(r);
@@ -4855,7 +5478,7 @@ window.SUSI_CFG = {
       });
     }
     tally('main'); tally('cand'); tally('college');
-    $('planCnt').innerHTML = '<b>수시 ' + mainFilled + '/6</b> · <b>후보 ' + candFilled + '/3</b> · <b>전문대 ' + collegeFilled + '</b>개';
+    $('planCnt').innerHTML = '<b>일반대 ' + mainFilled + '/6</b> · <b>예비 ' + candFilled + '/3</b> · <b>전문대 ' + collegeFilled + '</b>개';
     $('planSum').innerHTML = [['상향', cnt.up], ['적정', cnt.fit], ['하향', cnt.down], ['판정 불가', cnt.none]]
       .map(function (x) { return '<div class="sumtile"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join('');
     var clash = Object.keys(dates).filter(function (k) { return dates[k].length > 1; });
@@ -4892,7 +5515,7 @@ window.SUSI_CFG = {
           var other = idByName(uniOpts(hit.area === 'college' ? 'main' : 'college'), e.target.value);
           if (other !== undefined && other !== null) {
             toast(hit.area === 'college'
-              ? '여기는 전문대 칸입니다 — 일반대는 위의 수시·후보 칸에 담아 주세요'
+              ? '여기는 전문대 칸입니다 — 일반대는 위의 지원·예비 칸에 담아 주세요'
               : '전문대입니다 — 아래 전문대 칸에 담아 주세요');
             e.target.value = (c.u !== null && c.u !== undefined ? U[c.u] : '');
             return;
@@ -5365,7 +5988,7 @@ window.SUSI_CFG = {
   function areaOf(v) {
     var s = normName(v);
     if (!s) return null;
-    if (s.indexOf('후보') >= 0) return 'cand';
+    if (s.indexOf('후보') >= 0 || s.indexOf('예비') >= 0) return 'cand';
     if (s.indexOf('전문대') >= 0) return 'college';
     if (s.indexOf('지원') >= 0) return 'main';
     return null;
