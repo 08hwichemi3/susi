@@ -1085,6 +1085,23 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .calcell[data-n]::after{content:none !important}
 }
 
+
+/* ───────── 지역: 뒷배경 한국 지도 ───────── */
+.mapwrap{position:relative}
+.mapbg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.mapbg path,.mapbg ellipse{
+  fill:var(--accent);fill-opacity:.09;
+  stroke:var(--accent);stroke-opacity:.34;stroke-width:1.1;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.mapchips{position:relative;z-index:1}
+/* 칩을 살짝 비쳐 보이게 해서 지도가 뒤에 있다는 게 보이도록 */
+.mapchip{background:color-mix(in srgb,var(--surface) 86%,transparent)}
+.mapchip.off{background:transparent}
+
+/* 「엑셀로 올리기」로 건너왔을 때 어디로 왔는지 잠깐 밝혀 준다 */
+#tv-upload.flash{outline:2px solid var(--accent);outline-offset:3px;
+  transition:outline-color .4s}
+
 </style></head><body><!-- ══════════ 로그인 ══════════ -->
 <div id="gate" class="gate">
   <div class="gatebox">
@@ -1189,7 +1206,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       <div class="cols3">
         <div class="panel pad">
           <h3 class="sec">담당 학생 <span class="tag" id="stCount"></span>
-            <button class="btn" id="stXlsx" title="지금 화면에 있는 학생 자료를 올릴 때와 같은 모양의 엑셀로 받습니다">엑셀로 받기</button></h3>
+            <button class="btn" id="stXlsx" title="지금 화면에 있는 학생 자료를 올릴 때와 같은 모양의 엑셀로 받습니다">엑셀로 받기</button>
+            <button class="btn hidden" id="stXlsxUp" title="학생자료양식.xlsx 로 내신·모의고사를 한 번에 넣습니다">엑셀로 올리기</button></h3>
           <input type="text" id="stFilter" placeholder="이름·학번으로 찾기" autocomplete="off">
           <ul class="stlist" id="stList"></ul>
           <p class="hint" id="notActivated"></p>
@@ -1389,7 +1407,18 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       <details class="step" open>
         <summary><span class="num">2</span>지역</summary>
         <div class="stepbody">
-          <div class="mapchips" id="rchips"></div>
+          <!-- 칩 자리가 이미 실제 시·도 위치를 따라간다. 그 뒤에 지도 윤곽을 옅게 깔면
+               글자를 안 읽어도 '어디쯤을 고르는 것인지' 가 보인다.
+               preserveAspectRatio="none" — 칸 격자에 맞춰 늘어나야 자리가 안 어긋난다. -->
+          <div class="mapwrap">
+            <svg class="mapbg" viewBox="0 0 100 150" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <path d="M20 6 L42 2 L60 5 L70 12 L74 24 L78 36 L86 46 L92 60 L90 74
+                       L84 88 L76 100 L66 110 L56 118 L46 122 L36 118 L28 108 L32 96
+                       L24 86 L30 74 L20 62 L26 50 L14 40 L22 30 L16 18 Z"/>
+              <ellipse cx="13" cy="140" rx="9" ry="5"/>
+            </svg>
+            <div class="mapchips" id="rchips"></div>
+          </div>
         </div>
       </details>
       <details class="step" open>
@@ -2184,7 +2213,12 @@ window.SUSI_CFG = {
       //    화면 요소를 지울 때는 반드시 참조하는 곳을 같이 지우세요.
       var pk = $('pickRoster'); if (pk) pk.disabled = true;
     }
-    if (ME.role === 'super_admin') $('tabAdmin').classList.remove('hidden');
+    if (ME.role === 'super_admin') {
+      $('tabAdmin').classList.remove('hidden');
+      /* 성적을 올리는 곳은 설정 안에 있다. 학생 화면에서 곧장 갈 수 있게 길을 하나 더 둔다
+         — 설정 어딘가에 있다는 걸 모르면 영영 못 찾는다(실제로 못 찾으셨다). */
+      var ub = $('stXlsxUp'); if (ub) ub.classList.remove('hidden');
+    }
     /* 선생님에게는 '전형 관리' 가 없다(자기 계획이 없으므로) — 전형 찾기만 쓴다.
        '데이터'(자료 갈아끼우기)는 총관리자 화면에만 둔다 — 담임이 실수로 그 해 자료를
        통째로 바꿔 버리면 학교 전체가 같이 바뀐다. */
@@ -4277,6 +4311,17 @@ window.SUSI_CFG = {
     });
     on('stFilter', 'input', renderStudentList);
     on('stXlsx', 'click', downloadAllXlsx);
+    on('stXlsxUp', 'click', function () {
+      var t = document.querySelector('#tTabs [data-t="admin"]');
+      if (t) t.click();
+      var box = $('tv-upload');
+      if (box) {
+        box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // 어디로 왔는지 알 수 있게 잠깐 테두리를 밝힌다
+        box.classList.add('flash');
+        setTimeout(function () { box.classList.remove('flash'); }, 1600);
+      }
+    });
     on('stList', 'click', function (e) {
       var rb = e.target.closest('[data-reset]');
       if (rb) { e.stopPropagation(); resetStudentLogin(rb.dataset.reset); return; }
