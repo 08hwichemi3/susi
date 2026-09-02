@@ -4949,7 +4949,11 @@ window.SUSI_DATEFIX = function (text) {
     var q = find.uq.trim().replace(/\s+/g, '').toLowerCase(), items = [];
     U.forEach(function (name, i) {
       if (q && name.replace(/\s+/g, '').toLowerCase().indexOf(q) < 0) return;
-      var n = byKind(byUni.get(i) || []).length;
+      // 1.구분(일반대/전문대) · 2.지역은 3.대학보다 앞 단계라, 여기서 고른 값이 이 목록도 좁혀야 한다
+      // — 안 그러면 지역을 눌러도 대학 목록은 늘 전체로 보인다.
+      var ids = byKind(byUni.get(i) || []);
+      if (find.regions.size) ids = ids.filter(function (j) { return find.regions.has(ROWS[j][C.R]); });
+      var n = ids.length;
       if (!n) return;
       items.push([i, name, n]);
     });
