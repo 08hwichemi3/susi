@@ -486,6 +486,16 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .warnbox{margin:0 0 18px;padding:11px 13px;border-radius:9px;background:var(--rose-soft);
   color:var(--rose);font-size:12px;line-height:1.65}
 
+/* 새 판이 올라왔을 때 — 열어 둔 탭은 새로고침 전까지 예전 화면 그대로다.
+   화면 맨 위에 붙여 늘 보이게 한다(로그인 전·후 상관없이). */
+.updatebar{position:sticky;top:0;z-index:80;display:flex;align-items:center;justify-content:center;
+  flex-wrap:wrap;gap:10px;padding:9px 16px;background:var(--amber-soft);color:var(--amber);
+  font-size:13px;font-weight:600;border-bottom:1px solid var(--amber);text-align:center}
+.updatebar button{flex:0 0 auto;border:1px solid var(--amber);background:var(--surface);
+  color:var(--amber);font-family:inherit;font-weight:700;border-radius:999px;
+  padding:5px 15px;font-size:12.5px;cursor:pointer}
+.updatebar button:hover{background:var(--amber);color:#fff}
+
 /* 로그인한 뒤 머리줄 */
 .userbar{display:flex;align-items:center;gap:10px;padding:8px 20px;background:var(--surface);
   border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -573,7 +583,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calhd.sun{background:var(--cal-sun)}
 .calhd.sat{background:var(--cal-sat)}
 
-.calcell{min-width:0;min-height:150px;overflow:hidden;
+/* 칸 높이를 고정한다 — min-height 만 두면 고사가 몰린 주는 늘어나고, 4주짜리 달과
+   6주짜리 달도 전체 높이가 달라져서 달을 넘길 때마다 달력이 위아래로 흔들렸다.
+   내용은 어차피 CAL_MAX(6건) + 「+N건」으로 접혀 있어 이 높이 안에 늘 들어간다. */
+.calcell{min-width:0;height:195px;overflow:hidden;
   border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--surface);
   display:flex;flex-direction:column}
 .calcell.blank{background:transparent;border-color:transparent}
@@ -599,12 +612,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calcell.has[data-d][tabindex]:hover{background:var(--accent-soft);border-color:var(--accent)}
 .calcell.clash[data-d][tabindex]:hover{background:var(--rose-soft)}
 
-/* 칸을 세로로 길게 쓴다 — 여섯 줄(16px × 6)까지 칸 안에 그대로 적고,
-   그보다 많으면 「+N건」으로 접는다. 칸 높이는 min-height 만 두어
-   내용이 많은 주는 줄 전체가 같이 늘어난다(격자라 옆 칸과 높이가 맞는다). */
+/* 칸을 세로로 길게 쓴다 — 여섯 줄까지 칸 안에 그대로 적고, 그보다 많으면 「+N건」으로 접는다. */
 .calcell .its{min-width:0;flex:0 0 auto;overflow:hidden}
-.calcell .it{font-size:10.5px;line-height:16px;color:var(--ink-2);
+.calcell .it{font-size:11.5px;line-height:17px;color:var(--ink-2);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 한눈에 봐야 하는 건 '어느 대학인지' 다 — 대학명을 진하게, 학생 이름은 옅게 둔다.
+   (처음엔 반대였는데 대학명이 회색이라 잘 안 보인다는 지적을 받아 바꿨다) */
 .calcell .it b{color:var(--ink);font-weight:600}
 .calcell .it .who{color:var(--ink-3)}
 /* 이름을 .calmore 로 둔 이유: app.css 에 이미 `.more{padding:14px}` (결과표의
@@ -1054,8 +1067,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .ddl{display:inline-flex;align-items:center;font-size:9px;font-weight:700;line-height:1;
   color:var(--rose);background:var(--rose-soft);border-radius:999px;padding:3px 6.5px;
   white-space:nowrap;font-variant-numeric:tabular-nums}
-/* D-day 줄이 붙어도 넉넉하게 — 세로로 긴 칸 */
-.calcell{min-height:150px}
+/* D-day 줄이 붙어도 넉넉하게 — 세로로 긴 칸(고정 높이는 위 base 규칙에서 정한다) */
+.calcell{height:195px}
 
 /* ───────── ⑤ 좁은 화면(모바일) ───────── */
 @media(max-width:900px){
@@ -1085,9 +1098,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   #v-find td.c-jh{order:4}
   #v-find td.c-dept{order:5}
   #v-find td.c-way,#v-find td.c-day{order:6}
+  /* 4칸(모집·경쟁률·50%컷·70%컷) 몫으로 폭을 나눈다 — px 로 못박으면 화면이 좁을 때
+     70%컷 하나만 못 들어가 다음 줄로 밀렸다(실제로 360px 화면에서 그렇게 보였다).
+     칸이 3개(간단히 보기)만 있을 때는 flex-grow 로 셋이서 한 줄을 고르게 채운다. */
   #v-find td.c-n,#v-find td.c-rate,#v-find td.c-cut50,#v-find td.c-cut70{
-    order:7;flex:1 1 70px;min-width:0;background:var(--surface-2);border-radius:7px;
-    padding:5px 8px!important;margin-top:6px;text-align:center}
+    order:7;flex:1 1 calc(25% - 6px);min-width:0;background:var(--surface-2);border-radius:7px;
+    padding:5px 4px!important;margin-top:6px;text-align:center}
   /* 수능최저는 글이 길어 숫자 상자들과 한 줄에 못 어울린다 — 순서를 뒤로 미뤄
      숫자 상자들이 먼저 한 줄에 모이게 하고, 자기는 다음 줄 전체를 혼자 쓴다.
      (같은 order 에 두면 이 칸이 먼저 나와 줄을 끊어서 「모집」 상자가 혼자 남아
@@ -1191,7 +1207,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calsplit{display:flex;gap:22px}
 .calmain{flex:1;min-width:0}
 .calside{width:340px;flex:0 0 340px;border-left:1px solid var(--line);padding-left:18px}
-.calcell{min-height:150px}
+.calcell{height:195px}
 
 @media(max-width:900px){
   /* 좁아지면 옆 칸을 둘 자리가 없다 — 위아래로 다시 쌓는다 (sticky 도 여기서는 끈다 —
@@ -1206,7 +1222,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .calcell{min-height:56px}
 }
 
-</style></head><body><!-- ══════════ 로그인 ══════════ -->
+</style></head><body>
+<div id="updateBar" class="updatebar hidden">
+  <span>새 버전이 올라왔습니다. 새로고침하면 최신 화면으로 보입니다.</span>
+  <button type="button" id="updateReload">새로고침</button>
+</div>
+<!-- ══════════ 로그인 ══════════ -->
 <div id="gate" class="gate">
   <div class="gatebox">
     <h1 class="gtitle"><em>계획서</em></h1>
@@ -3508,8 +3529,8 @@ window.SUSI_DATEFIX = function (text) {
     return (col ? '(전)' : '') + v;
   }
   function itLine(it) {
-    return '<div class="it"><b>' + esc(it.who) + '</b> ' +
-      '<span class="who">' + esc(calUni(it.uni)) + '</span> ' +
+    return '<div class="it"><b>' + esc(calUni(it.uni)) + '</b> ' +
+      '<span class="who">' + esc(it.who) + '</span> ' +
       '<span class="kd k-' + it.kind + '">' + it.kind + '</span></div>';
   }
 
@@ -3576,7 +3597,11 @@ window.SUSI_DATEFIX = function (text) {
     var cnt = monthCount(mo);
     // 인쇄 CSS 가 이 값으로 칸 한 줄의 키를 정한다(주 수로 페이지 높이를 나눈다) —
     // 4주짜리 달과 6주짜리 달이 같은 칸 높이면 6주짜리 달은 종이 밖으로 넘친다.
+    // (화면에 늘 6주를 그리기 전, 그 달에 실제로 필요한 주 수를 먼저 적어 둔다.)
     $('calOut').style.setProperty('--cal-weeks', cells.length / 7);
+    // 화면은 늘 6주(42칸)로 그린다 — 4주짜리 달과 6주짜리 달의 전체 높이가 달라지면
+    // 달을 넘길 때마다 달력이 위아래로 흔들린다는 지적을 받았다. 남는 칸은 빈 칸이다.
+    while (cells.length < 42) cells.push(null);
 
     var brandName = SCHOOL.name ? esc(SCHOOL.name) : CFG.year + '학년도 수시 지원 센터';
     $('calOut').innerHTML = '<div class="calmon' + (cnt ? '' : ' empty') + '">' +
@@ -4416,6 +4441,27 @@ window.SUSI_DATEFIX = function (text) {
       .catch(function () { /* 인터넷이 막혀 있으면 캐시된 이름을 그대로 둔다 */ });
   }
 
+  /* 새 판이 올라왔는지 이따금 확인한다 — 열어 둔 탭은 새로고침 전까지 예전 화면
+     그대로라, 사이트에 새 커밋이 올라가도 계속 예전 화면을 보게 된다.
+     이 문서를 불러온 시각의 Last-Modified 와 지금 서버의 Last-Modified 를 견줘 본다
+     (파일을 통째로 다시 받지 않고 HEAD 요청만 보낸다 — 이 파일은 자료가 커서
+     4MB가 넘어 매번 다 받으면 낭비다). */
+  var BOOT_LAST_MOD = document.lastModified ? new Date(document.lastModified).getTime() : 0;
+  function checkForUpdate() {
+    if (!BOOT_LAST_MOD || !window.fetch) return;
+    fetch(location.pathname + location.search, { method: 'HEAD', cache: 'no-store' })
+      .then(function (r) {
+        var lm = r.headers.get('last-modified');
+        if (!lm) return;
+        var t = new Date(lm).getTime();
+        if (t && t > BOOT_LAST_MOD) {
+          var bar = document.getElementById('updateBar');
+          if (bar) bar.classList.remove('hidden');
+        }
+      })
+      .catch(function () { /* 오프라인이면 그냥 다음 차례에 다시 본다 */ });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     // 서버에 물어보는 동안 깜빡이지 않게, 지난번 값이 있으면 먼저 그려 둔다
     try {
@@ -4425,6 +4471,13 @@ window.SUSI_DATEFIX = function (text) {
     try { boot(); }
     catch (e) { showFatal('시작', e); }
     if (BOOTBAD.length) showFatal('화면 칸이 빠졌습니다', new Error('연결하지 못한 곳이 있습니다'));
+
+    var rb = document.getElementById('updateReload');
+    if (rb) rb.addEventListener('click', function () { location.reload(); });
+    setInterval(checkForUpdate, 5 * 60 * 1000);   // 5분마다
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') checkForUpdate();
+    });
   });
 
   function boot() {
