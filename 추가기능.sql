@@ -3,6 +3,8 @@
 --
 --  Supabase → 프로젝트 → SQL Editor 에 이 파일을 통째로 붙여넣고 [Run] 하세요.
 --  여러 번 실행해도 안전합니다(있으면 새로 덮어씁니다).
+--  ★ 딱 하나, 맨 아래 ⑬번(plan_area 에 'tech' 추가)만은 예외입니다 —
+--    그 문단 안의 안내를 따라 두 번에 나눠 실행하세요.
 --
 --  이 파일이 만드는 것
 --    ① admin_create_teacher()   설정 화면에서 [교직원 계정 만들기] 를 쓸 수 있게 합니다
@@ -386,5 +388,188 @@ $$;
 
 revoke all on function public.site_brand() from public;
 grant execute on function public.site_brand() to anon, authenticated;
+
+-- ═══════════════════════════════════════════════════════════════
+--    ⑫ profiles.sees_all — 총관리자는 아니지만 전체 학생을 보는 교직원
+--       담임은 자기 반만, 총관리자는 전체를 보는데, 그 사이(교감 선생님처럼
+--       담임은 아니지만 전체를 봐야 하는 경우)가 없었습니다. role 은 그대로
+--       'teacher' 로 두고 sees_all 만 true 로 켜면 됩니다 — 관리자 화면(계정
+--       관리·설정)은 여전히 role='super_admin' 만 볼 수 있어 구분됩니다.
+--       설정 화면의 [역할/반 설정] 에 "전체보기" 단추가 추가됩니다.
+-- ═══════════════════════════════════════════════════════════════
+alter table public.profiles add column if not exists sees_all boolean not null default false;
+comment on column public.profiles.sees_all is '총관리자는 아니지만 전체 학생을 볼 수 있는 교직원(교감 등)';
+
+create or replace function private.can_see_student(sid uuid)
+returns boolean
+language sql
+stable security definer
+set search_path to 'public'
+as $$
+  select
+    sid = auth.uid()
+    or exists (
+      select 1 from profiles me, profiles st
+      where me.id = auth.uid() and st.id = sid
+        and me.role = 'super_admin' and me.school_id = st.school_id)
+    or exists (
+      select 1 from profiles me, profiles st
+      where me.id = auth.uid() and st.id = sid
+        and me.role = 'teacher' and me.sees_all = true and me.school_id = st.school_id)
+    or exists (
+      select 1 from profiles st
+      join teacher_classes tc
+        on tc.school_id = st.school_id
+       and tc.grade = st.grade
+       and tc.class_no = st.class_no
+      where st.id = sid and tc.teacher_id = auth.uid())
+$$;
+
+create or replace function public.set_teacher_role(p_teacher uuid, p_kind text, p_grade smallint default 3, p_class smallint default null)
+returns void
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+declare v_school uuid; v_target_school uuid; v_n smallint;
+begin
+  if coalesce(private.my_role()::text,'') <> 'super_admin' then
+    raise exception '역할 지정은 총관리자만 할 수 있습니다';
+  end if;
+  v_school := private.my_school();
+
+  select school_id into v_target_school from profiles where id = p_teacher;
+  if v_target_school is null then raise exception '그런 계정이 없습니다'; end if;
+  if v_target_school is distinct from v_school then
+    raise exception '다른 학교 계정은 건드릴 수 없습니다';
+  end if;
+  if (select role from profiles where id = p_teacher) = 'student' then
+    raise exception '학생 계정에는 역할을 지정할 수 없습니다';
+  end if;
+
+  if p_teacher = auth.uid() and p_kind <> 'all' then
+    raise exception '스스로 총관리자 권한을 내려놓을 수는 없습니다. 다른 분을 먼저 총관리자로 올려 주세요';
+  end if;
+
+  delete from teacher_classes where teacher_id = p_teacher;
+  update profiles set sees_all = false where id = p_teacher;
+
+  if p_kind = 'all' then
+    update profiles set role = 'super_admin' where id = p_teacher;
+
+  elsif p_kind = 'all_view' then
+    update profiles set role = 'teacher', sees_all = true where id = p_teacher;
+
+  elsif p_kind = 'general' then
+    update profiles set role = 'teacher' where id = p_teacher;
+
+  elsif p_kind = 'homeroom' then
+    select class_count into v_n from schools where id = v_school;
+    if p_class is null or p_class < 1 or p_class > v_n then
+      raise exception '1~%반 사이에서 골라 주세요', v_n;
+    end if;
+    update profiles set role = 'teacher' where id = p_teacher;
+    insert into teacher_classes (teacher_id, school_id, grade, class_no)
+    values (p_teacher, v_school, coalesce(p_grade,3), p_class)
+    on conflict do nothing;
+
+  else
+    raise exception '알 수 없는 역할입니다: %', p_kind;
+  end if;
+end $$;
+
+-- 계정을 새로 만들 때도 '전체보기(비관리자)' 로 바로 만들 수 있게 p_kind 에
+-- 'all_view' 를 추가합니다(기존 general|homeroom|all 은 그대로 동작합니다).
+create or replace function public.admin_create_teacher(
+  p_name  text,
+  p_login text     default null,
+  p_kind  text     default 'general',   -- general | homeroom | all | all_view
+  p_grade smallint default 3,
+  p_class smallint default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_school uuid;
+  v_login  text;
+  v_pw     text := public.initial_teacher_password();
+  v_id     uuid;
+  n        int := 0;
+begin
+  v_school := public.assert_super_admin();
+
+  if coalesce(btrim(p_name), '') = '' then
+    raise exception '이름을 넣어 주세요';
+  end if;
+
+  v_login := lower(btrim(coalesce(p_login, '')));
+  if v_login = '' then
+    v_login := lower(btrim(p_name));
+    if exists (select 1 from auth.users
+                where email = v_login || '@susi.local') then
+      raise exception '같은 이름의 아이디가 이미 있습니다 — 이름 칸에 「%2」 처럼 구분해서 넣어 주세요', p_name;
+    end if;
+  else
+    if v_login !~ '^[a-z0-9가-힣_.@-]{2,40}$' then
+      raise exception '아이디는 한글·영문 소문자·숫자로 2~40자여야 합니다';
+    end if;
+    if exists (select 1 from auth.users
+                where email = case when v_login like '%@%' then v_login
+                                   else v_login || '@susi.local' end) then
+      raise exception '이미 쓰고 있는 아이디입니다: %', v_login;
+    end if;
+  end if;
+
+  v_id := public.create_teacher(v_school, v_login, btrim(p_name), v_pw,
+                                (p_kind = 'all'));
+
+  update public.profiles
+     set must_change_password = true
+   where id = v_id;
+
+  if p_kind = 'homeroom' and p_class is not null then
+    insert into public.teacher_classes (teacher_id, school_id, grade, class_no)
+    values (v_id, v_school, coalesce(p_grade, 3), p_class)
+    on conflict do nothing;
+  end if;
+
+  if p_kind = 'all_view' then
+    update public.profiles set sees_all = true where id = v_id;
+  end if;
+
+  return jsonb_build_object('id', v_id, 'login', v_login,
+                            'password', v_pw, 'name', btrim(p_name));
+end $$;
+
+notify pgrst, 'reload schema';
+
+-- ═══════════════════════════════════════════════════════════════
+--    ⑬ plan_area 에 'tech' 추가 — 과학기술원(KAIST 등) 전용 칸
+--       수시 지원은 원래 6회 제한이 있지만, 과학기술원(KAIST·GIST·DGIST·
+--       UNIST)과 KENTECH 은 이 6회 제한과 무관한 특별법인 학교라 별도로
+--       지원할 수 있습니다. 전문대(college)처럼 개수 제한이 없습니다.
+--
+--       ★★★ 이 문단만은 이 파일을 통째로 실행하면 안 됩니다 ★★★
+--       Postgres 는 방금 추가한 열거형 값을 같은 실행(트랜잭션) 안에서 바로
+--       쓰지 못합니다. 아래 두 덩어리를 따로따로(마우스로 골라서) 실행하세요.
+--
+--       1단계 — 이 줄만 마우스로 골라서 [Run]:
+-- ═══════════════════════════════════════════════════════════════
+alter type public.plan_area add value if not exists 'tech';
+
+-- ═══════════════════════════════════════════════════════════════
+--       2단계 — 1단계가 성공한 뒤, 아래 블록만 다시 골라서 [Run]:
+-- ═══════════════════════════════════════════════════════════════
+alter table public.applications drop constraint if exists applications_slot_range;
+alter table public.applications add constraint applications_slot_range
+  check (
+    ((area = 'main'::plan_area) and (slot >= 1) and (slot <= 6))
+    or ((area = 'cand'::plan_area) and (slot >= 1) and (slot <= 3))
+    or ((area = 'college'::plan_area) and (slot >= 1))
+    or ((area = 'tech'::plan_area) and (slot >= 1))
+  );
+notify pgrst, 'reload schema';
 
 notify pgrst, 'reload schema';

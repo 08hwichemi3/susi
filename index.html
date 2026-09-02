@@ -555,6 +555,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   white-space:nowrap}
 .plantbl .areatag{font-size:10.5px;padding:1px 6px;border-radius:999px;font-weight:700;white-space:nowrap}
 .at-main{background:var(--accent-soft);color:var(--accent)}
+.at-tech{background:var(--amber-soft);color:var(--amber)}
 .at-cand{background:var(--surface-2);color:var(--ink-3)}
 .at-college{background:var(--blue-soft);color:var(--blue)}
 .tblwrap{overflow-x:auto}
@@ -836,6 +837,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .stfhead b{font-size:14px;color:var(--ink)}
 .rtag{font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}
 .rtag.all{background:var(--accent);color:var(--accent-ink)}
+.rtag.allview{background:var(--blue-soft);color:var(--blue)}
 .rtag.hr{background:var(--accent-soft);color:var(--accent)}
 .rtag.gen{background:var(--surface-2);color:var(--ink-3)}
 .stfhead .lnk{border:0;background:transparent;color:var(--ink-3);font-family:inherit;
@@ -1448,7 +1450,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <h3 class="sec">교직원 계정 <span class="tag" id="stfCount"></span>
           <button class="btn" id="stfToggle">역할/반 설정</button>
         </h3>
-        <p class="hint"><b>일반</b>은 담당 학생이 없으며, <b>전체</b>는 학교 전체 학생을 조회합니다.
+        <p class="hint"><b>일반</b>은 담당 학생이 없으며, <b>전체보기</b>는 설정 화면 등 관리자 권한 없이 학교 전체 학생만 조회합니다(교감 선생님 등에게 적합),
+          <b>전체(총관리자)</b>는 학교 전체를 조회하면서 이 설정 화면까지 쓸 수 있습니다.
           <b>반 번호</b>를 선택하면 해당 반 담임으로 지정되어 <b>그 반 학생만</b> 조회됩니다. 선택하는 즉시 저장됩니다.
           <b>[비밀번호 초기화]</b>를 누르면 초기 비밀번호로 되돌아가며, 해당 선생님은 다음 로그인 시 새로 설정하게 됩니다.
           <b>[계정 삭제]</b>는 해당 선생님 계정을 완전히 삭제합니다. 되돌릴 수 없습니다.</p>
@@ -1706,6 +1709,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <div class="cards" id="cardsMain"></div>
   </div>
   <div class="plansec pi-uni">
+    <h3 class="sec">기술원 등<span class="tag">칸 수 제한 없음 · 수시 6회 제한과 무관하게 따로 지원할 수 있는 대학입니다(KAIST 등)</span></h3>
+    <div class="cards" id="cardsTech"></div>
+  </div>
+  <div class="plansec pi-uni">
     <h3 class="sec">예비<span class="tag">최대 3칸 · 다른 칸과 자리 바꾸기 가능</span></h3>
     <div class="cards cand" id="cardsCand"></div>
   </div>
@@ -1717,8 +1724,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   <p class="hint pad-h">입력한 내용은 이 브라우저에 자동으로 저장됩니다. <b>모든 기기에 저장</b>을 누르면 서버에 저장되어 다른 기기·다른 브라우저에서도 동일하게 확인할 수 있습니다.
     카드의 <b>⇄</b> 버튼을 누르면(테두리가 굵어집니다) 바꾸고 싶은 다른 카드의 <b>⇄</b> 버튼을 눌러 자리를 바꿀 수 있습니다 —
     <b>지원 6칸 안에서 순서를 바꾸는 것도, 후보와 자리를 바꾸는 것도</b> 같은 방법입니다.
-    <b>한국과학기술원(KAIST)</b>처럼 목록에 없는 대학은 카드의 <b>목록에 없는 대학</b> 단추를 눌러 직접 적어 넣을 수 있습니다.
-    과학기술원(KAIST·GIST·DGIST·UNIST·KENTECH) 이름은 "카이스트"처럼 편하게 적어도 칸을 벗어나면 정식 명칭으로 자동으로 맞춰져,
+    <b>한국과학기술원(KAIST)</b>처럼 목록에 없는 대학은 위의 <b>기술원 등</b> 칸에 직접 적어 넣으세요 —
+    과학기술원은 수시 6회 제한과 무관하게 따로 지원할 수 있어서, <b>지원 6칸을 쓰지 않고</b> 필요한 만큼 늘어납니다.
+    이름은 "카이스트"처럼 편하게 적어도 칸을 벗어나면 정식 명칭(KAIST·GIST·DGIST·UNIST·KENTECH)으로 자동으로 맞춰져,
     학생마다 이름이 다르게 저장되지 않습니다. 다만 이런 카드는 모집인원·컷 같은 자동 정보는 나오지 않으니 전형 일정과 결과를 직접 챙겨야 합니다.</p>
 </section>
 
@@ -2250,7 +2258,7 @@ window.SUSI_DATEFIX = function (text) {
     $('gate').classList.add('hidden');
     $('userbar').classList.remove('hidden');
     $('whoName').textContent = ME.name;
-    $('whoRole').textContent = ROLENAME[ME.role] || ME.role;
+    $('whoRole').textContent = (ME.role === 'teacher' && ME.sees_all) ? '전체보기' : (ROLENAME[ME.role] || ME.role);
     $('whoNo').textContent = ME.role === 'student'
       ? (ME.student_no + ' · ' + ME.grade + '학년 ' + ME.class_no + '반 ' + ME.number_no + '번') : '';
     // 학생에게는 [비밀번호] 단추를 아예 보여 주지 않는다 (서버에도 막는 트리거가 있다 — susi_20)
@@ -2280,7 +2288,7 @@ window.SUSI_DATEFIX = function (text) {
     });
   }
 
-  var AREAS = ['main', 'cand', 'college'];
+  var AREAS = ['main', 'cand', 'college', 'tech'];
   function emptyCard() {
     return { u: null, t: null, j: null, d: null,
              custom: false, uName: '', tName: '', jName: '', dName: '',
@@ -2288,7 +2296,7 @@ window.SUSI_DATEFIX = function (text) {
              fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
   }
   function rowsToPlan(rows, grades) {
-    var plan = { g: { nat: '', hum: '', all: '' }, th: 0.3, main: [], cand: [], college: [] };
+    var plan = { g: { nat: '', hum: '', all: '' }, th: 0.3, main: [], cand: [], college: [], tech: [] };
     if (grades) {
       if (grades.nat_avg != null) plan.g.nat = String(grades.nat_avg);
       if (grades.hum_avg != null) plan.g.hum = String(grades.hum_avg);
@@ -2476,7 +2484,7 @@ window.SUSI_DATEFIX = function (text) {
      지원계획 한 장만 만든다. 예전에는 '내신'(다시 올릴 때 쓰는 명부)과
      '학생별'(학생마다 양식 한 벌) 시트도 함께 넣었지만, 실제로 쓰는 것은
      지원계획 시트뿐이라 그 두 장과 그것을 만들던 코드를 걷어냈다. */
-  var PLAN_AREA = { main: '수시지원', cand: '예비', college: '전문대' };
+  var PLAN_AREA = { main: '수시지원', cand: '예비', college: '전문대', tech: '기술원' };
   var PLAN_RESULT = { pass: '합격', fail: '불합격', wait: '충원대기' };
   var PLAN_VERDICT = { up: '상향', fit: '적정', down: '하향' };
 
@@ -2683,7 +2691,7 @@ window.SUSI_DATEFIX = function (text) {
   }
 
   var VN = { up: '상향', fit: '적정', down: '하향' };
-  var AN = { main: '지원', cand: '예비', college: '전문대' };
+  var AN = { main: '지원', cand: '예비', college: '전문대', tech: '기술원' };
 
   /* ★ 늦게 도착한 응답이 화면을 덮으면 안 된다.
      A → B 를 빠르게 누르면 A 의 응답이 나중에 도착해 'B 가 선택된 채 A 의 표' 가 그려진다.
@@ -2761,7 +2769,7 @@ window.SUSI_DATEFIX = function (text) {
            '학교 양식 그대로 받으세요.</p>';
       $('stDetail').innerHTML = h; wire(); return;
     }
-    var order = { main: 0, cand: 1, college: 2 };
+    var order = { main: 0, tech: 1, cand: 2, college: 3 };
     apps.sort(function (a, b) { return (order[a.area] - order[b.area]) || (a.slot - b.slot); });
     h += '<p class="hint">회색 칸은 <b>자료에서 자동으로</b> 옵니다. 흰 칸은 <b>직접 넣는 곳</b>이고, 고치면 바로 저장됩니다. ' +
       '<b>면접 · 논술</b>과 <b>최종</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
@@ -3059,6 +3067,7 @@ window.SUSI_DATEFIX = function (text) {
     var sel = $('ntRole'); if (!sel) return;
     var n = SCHOOL.class_count || 9, out = ['<option value="general">일반 (담당 학생 없음)</option>'];
     for (var i = 1; i <= n; i++) out.push('<option value="c' + i + '">3학년 ' + i + '반 담임</option>');
+    out.push('<option value="all_view">전체보기 (총관리자 아님, 학교 전체 조회)</option>');
     out.push('<option value="all">총관리자 (학교 전체)</option>');
     sel.innerHTML = out.join('');
   }
@@ -3071,7 +3080,7 @@ window.SUSI_DATEFIX = function (text) {
     var btn = $('ntMake'); btn.disabled = true;
     out.innerHTML = '<p class="hint">만드는 중…</p>';
     var args = { p_name: name, p_login: null,
-                 p_kind: kind === 'all' ? 'all' : (kind === 'general' ? 'general' : 'homeroom'),
+                 p_kind: (kind === 'all' || kind === 'all_view' || kind === 'general') ? kind : 'homeroom',
                  p_grade: 3, p_class: /^c\d+$/.test(kind) ? parseInt(kind.slice(1), 10) : null };
     Promise.resolve(sb.rpc('admin_create_teacher', args))
       .then(function (r) {
@@ -3209,7 +3218,7 @@ window.SUSI_DATEFIX = function (text) {
       });
       STAFF = ((r[0] && r[0].data) || []).map(function (p) {
         var list = tc[p.id] || [];
-        return { id: p.id, name: p.name, role: p.role, classes: list,
+        return { id: p.id, name: p.name, role: p.role, sees_all: !!p.sees_all, classes: list,
                  cls: list.length ? list[0].class_no : null,
                  grade: list.length ? list[0].grade : 3 };
       });
@@ -3223,6 +3232,7 @@ window.SUSI_DATEFIX = function (text) {
   /* 어떤 상태인지 한 마디로 — 목록에서 바로 읽히게 */
   function staffTag(x) {
     if (x.role === 'super_admin') return { t: '관리자', c: 'all' };
+    if (x.sees_all) return { t: '전체보기', c: 'allview' };
     if (x.classes && x.classes.length > 1) {
       // 두 반 이상이면 숨기지 않고 다 적는다 — 화면에 한 반만 보이면 나머지가 유령이 된다
       return { t: x.classes[0].grade + '학년 ' +
@@ -3241,7 +3251,8 @@ window.SUSI_DATEFIX = function (text) {
       var tg = staffTag(x), me = (x.id === ME.id);
       var chips = '';
       if (STF_OPEN) {
-        var opts = [['general', '일반', x.role === 'teacher' && !x.cls],
+        var opts = [['general', '일반', x.role === 'teacher' && !x.cls && !x.sees_all],
+                    ['all_view', '전체보기', x.role === 'teacher' && !!x.sees_all],
                     ['all', '전체', x.role === 'super_admin']];
         for (var i = 1; i <= n; i++) {
           opts.push(['c' + i, (x.grade || 3) + '' + pad(i), x.role === 'teacher' && x.cls === i]);
@@ -3274,6 +3285,7 @@ window.SUSI_DATEFIX = function (text) {
     if (!x) return;
     var args = { p_teacher: id, p_kind: 'general', p_grade: x.grade || 3, p_class: null };
     if (kind === 'all') args.p_kind = 'all';
+    else if (kind === 'all_view') args.p_kind = 'all_view';
     else if (kind === 'general') args.p_kind = 'general';
     else { args.p_kind = 'homeroom'; args.p_class = parseInt(kind.slice(1), 10); }
 
@@ -5645,6 +5657,24 @@ window.SUSI_DATEFIX = function (text) {
     plan.college = (plan.college || []).filter(cardFilled).map(normalizeCard);
     plan.college.push(emptyCard());
   }
+  /* 기술원(KAIST 등) 칸의 빈 칸은 처음부터 '직접 입력' 모드다 — 애초에 목록에 없는
+     대학만 적는 칸이라 고를 목록 자체가 없다. 자리 개수는 college 처럼 무제한이다
+     (수시 6칸·예비 3칸과 전혀 무관 — 6회 제한과 상관없는 과학기술원 전용 칸). */
+  function emptyTechCard() {
+    var c = emptyCard();
+    c.custom = true;
+    return c;
+  }
+  function ensureTechGrow() {
+    plan.tech = (plan.tech || []).filter(cardFilled).map(normalizeCard);
+    plan.tech.push(emptyTechCard());
+  }
+  /* college·tech 는 둘 다 "채워진 칸 + 맨 끝 빈 칸 1개" 로 무제한 늘어나는 칸이다 —
+     이 둘을 만졌을 때마다 부르면 된다(main·cand 는 6·3칸 고정이라 해당 없음). */
+  function growUnboundedArea(area) {
+    if (area === 'college') ensureCollegeGrow();
+    else if (area === 'tech') ensureTechGrow();
+  }
   /* 옛 버전(plan.cards 단일 배열, 최대 12칸)을 새 구조로 옮긴다. 전문대 행은 college로,
      나머지는 앞에서부터 main(6)→cand(3) 순서로 채우고, 자리가 없으면 버리고 알린다. */
   function migratePlanIfNeeded() {
@@ -5652,6 +5682,7 @@ window.SUSI_DATEFIX = function (text) {
       plan.main = plan.main.map(normalizeCard); while (plan.main.length < 6) plan.main.push(emptyCard()); plan.main = plan.main.slice(0, 6);
       plan.cand = plan.cand.map(normalizeCard); while (plan.cand.length < 3) plan.cand.push(emptyCard()); plan.cand = plan.cand.slice(0, 3);
       ensureCollegeGrow();
+      ensureTechGrow();          // 예전 저장분엔 tech 칸 자체가 없었다 — 여기서 처음 만든다
       return;
     }
     var old = plan.cards || [];
@@ -5666,8 +5697,9 @@ window.SUSI_DATEFIX = function (text) {
     });
     while (main.length < 6) main.push(emptyCard());
     while (cand.length < 3) cand.push(emptyCard());
-    plan.main = main; plan.cand = cand; plan.college = college;
+    plan.main = main; plan.cand = cand; plan.college = college; plan.tech = [];
     ensureCollegeGrow();
+    ensureTechGrow();
     delete plan.cards;
     if (dropped) toast(dropped + '개 칸은 새 형식으로 옮기며 자리가 없어 빠졌습니다');
     savePlan();
@@ -5682,10 +5714,18 @@ window.SUSI_DATEFIX = function (text) {
   function doSwap(area, ix) {
     if (swapPick && swapPick.area === area && swapPick.ix === ix) { swapPick = null; renderCards(); return; }
     if (!swapPick) { swapPick = { area: area, ix: ix }; renderCards(); return; }
+    /* 기술원 칸은 수시 6회 제한과 무관해서 만든 칸이다 — 다른 칸과 자리를 바꾸면
+       목록에서 고른(직접 입력이 아닌) 대학이 기술원 칸으로 건너가 그 제한을
+       몰래 벗어나 버린다. 그래서 기술원은 기술원끼리만 자리를 바꾼다. */
+    if ((swapPick.area === 'tech') !== (area === 'tech')) {
+      toast('기술원 칸은 기술원 칸끼리만 자리를 바꿀 수 있습니다');
+      swapPick = null; renderCards(); return;
+    }
     var a = plan[swapPick.area], b = plan[area];
     var tmp = a[swapPick.ix]; a[swapPick.ix] = b[ix]; b[ix] = tmp;
     swapPick = null;
     ensureCollegeGrow();
+    ensureTechGrow();
     savePlan(); renderCards();
     toast('자리를 바꿨습니다');
   }
@@ -5765,7 +5805,7 @@ window.SUSI_DATEFIX = function (text) {
     return Array.from(s).map(function (d) { return [d, DP[d]]; }).sort(function (a, b) { return a[1].localeCompare(b[1]); });
   }
 
-  var AREA_LABEL = { main: '지원', cand: '예비', college: '전문대' };
+  var AREA_LABEL = { main: '지원', cand: '예비', college: '전문대', tech: '기술원' };
   var PF_LABEL = { pass: '합격', fail: '불합격' };
   function cardHTML(c, ix, area) {
     var r = c.custom ? null : rowOf(c), vd = verdict(r);
@@ -5774,7 +5814,7 @@ window.SUSI_DATEFIX = function (text) {
       : (r ? '<span class="verdict none">' + whyNoVerdict(r) + '</span>'
            : (c.custom && c.dName ? '<span class="tag">직접 입력</span>' : '<span class="tag">비어 있음</span>'));
     var isPick = swapPick && swapPick.area === area && swapPick.ix === ix;
-    var showDel = (area !== 'college') || cardFilled(c);
+    var showDel = (area !== 'college' && area !== 'tech') || cardFilled(c);
     var facts = '', results = '';
     if (r) {
       var mi = r[C.M], minTxt = mi >= 0 ? (isNoMin(M[mi]) ? '<span class="min-x">X</span> 미반영' : lc('<span class="min-o">O</span> ' + esc(M[mi]))) : '<span class="dash">어디가에 정보 없음</span>';
@@ -5832,13 +5872,13 @@ window.SUSI_DATEFIX = function (text) {
     return '<div class="card' + (isPick ? ' swap-pick' : '') + '" data-area="' + area + '" data-ix="' + ix + '">' +
       '<div class="chd"><span class="no">' + (ix + 1) + '</span>' + headBadge +
       '<button class="swapbtn" type="button" data-swap="1" aria-pressed="' + (isPick ? 'true' : 'false') + '" title="자리 바꾸기">⇄</button>' +
-      (showDel ? '<button class="del" data-del="1" title="' + (area === 'college' ? '삭제' : '비우기') + '">×</button>' : '') +
+      (showDel ? '<button class="del" data-del="1" title="' + ((area === 'college' || area === 'tech') ? '삭제' : '비우기') + '">×</button>' : '') +
       '</div>' +
       '<div class="unirow">' +
       (c.custom
         ? '<input type="text" data-f="uName" list="dl-tech-uni-' + area + '-' + ix + '" autocomplete="off" spellcheck="false"' +
           ' value="' + esc(c.uName || '') + '"' +
-          ' placeholder="' + (area === 'college' ? '전문대 이름 (직접 입력)' : '대학 이름 (직접 입력, 예: 한국과학기술원(KAIST))') + '">' +
+          ' placeholder="' + (area === 'college' ? '전문대 이름 (직접 입력)' : area === 'tech' ? '과학기술원 이름 (예: 한국과학기술원(KAIST))' : '대학 이름 (직접 입력, 예: 한국과학기술원(KAIST))') + '">' +
           '<datalist id="dl-tech-uni-' + area + '-' + ix + '">' + TECH_INST.map(function (t) {
             return '<option value="' + esc(t.canon) + '">';
           }).join('') + '</datalist>'
@@ -5847,8 +5887,13 @@ window.SUSI_DATEFIX = function (text) {
           ' value="' + esc(c.u !== null && c.u !== undefined ? U[c.u] : '') + '"' +
           ' placeholder="' + (area === 'college' ? '전문대 이름을 치거나 ▾ 에서 고르세요'
                                                  : '대학 이름을 치거나 ▾ 에서 고르세요') + '">') +
-      '<button type="button" class="customtoggle" data-custom-toggle="1" title="KAIST 같은 과학기술원처럼 목록에 없는 곳을 직접 적어 넣습니다">' +
-      (c.custom ? '목록에서 고르기' : '목록에 없는 대학') + '</button>' +
+      // 목록 ↔ 직접 입력 전환은 전문대 칸에만 남긴다. 지원·예비 칸은 6·3회 제한이
+      // 있는 진짜 대학만 담는 칸이라 여기서 뺐고(직접 입력이 필요하면 기술원 칸을
+      // 쓴다), 기술원 칸은 애초에 직접 입력 전용이라 전환할 게 없다.
+      (area === 'college'
+        ? '<button type="button" class="customtoggle" data-custom-toggle="1" title="목록에 없는 전문대를 직접 적어 넣습니다">' +
+          (c.custom ? '목록에서 고르기' : '목록에 없는 대학') + '</button>'
+        : '') +
       '</div>' +
       (c.custom
         ? '<div class="grid2">' +
@@ -5879,7 +5924,7 @@ window.SUSI_DATEFIX = function (text) {
     fillUniDatalist();          // 337곳 목록은 한 번만 만든다 (카드마다 만들면 3,700줄이 된다)
     $('g-nat').value = plan.g.nat; $('g-hum').value = plan.g.hum; $('g-all').value = plan.g.all;
     $('g-th').value = plan.th;
-    [['main', 'cardsMain'], ['cand', 'cardsCand'], ['college', 'cardsCollege']].forEach(function (a) {
+    [['main', 'cardsMain'], ['tech', 'cardsTech'], ['cand', 'cardsCand'], ['college', 'cardsCollege']].forEach(function (a) {
       var area = a[0], host = $(a[1]);
       host.innerHTML = plan[area].map(function (c, ix) { return cardHTML(c, ix, area); }).join('');
       markClamps(host);
@@ -5903,13 +5948,14 @@ window.SUSI_DATEFIX = function (text) {
       }).join('') + '</tbody></table>';
   }
   function renderPlanSummary() {
-    var cnt = { up: 0, fit: 0, down: 0, none: 0 }, mainFilled = 0, candFilled = 0, collegeFilled = 0, dates = {};
+    var cnt = { up: 0, fit: 0, down: 0, none: 0 }, mainFilled = 0, candFilled = 0, collegeFilled = 0, techFilled = 0, dates = {};
     function tally(area) {
       plan[area].forEach(function (c) {
         var r = c.custom ? null : rowOf(c);
         var isCustom = c.custom && c.dName;
         if (!r && !isCustom) return;
-        if (area === 'main') mainFilled++; else if (area === 'cand') candFilled++; else collegeFilled++;
+        if (area === 'main') mainFilled++; else if (area === 'cand') candFilled++;
+        else if (area === 'tech') techFilled++; else collegeFilled++;
         var ev = effVerdict(c, verdict(r)); cnt[ev ? ev.v : 'none']++;
         var uniName = r ? U[r[C.U]] : c.uName;
         if (r) {
@@ -5926,8 +5972,8 @@ window.SUSI_DATEFIX = function (text) {
         }
       });
     }
-    tally('main'); tally('cand'); tally('college');
-    $('planCnt').innerHTML = '<b>일반대 ' + mainFilled + '/6</b> · <b>예비 ' + candFilled + '/3</b> · <b>전문대 ' + collegeFilled + '</b>개';
+    tally('main'); tally('tech'); tally('cand'); tally('college');
+    $('planCnt').innerHTML = '<b>일반대 ' + mainFilled + '/6</b> · <b>기술원 ' + techFilled + '</b>개 · <b>예비 ' + candFilled + '/3</b> · <b>전문대 ' + collegeFilled + '</b>개';
     var pu = $('piUniN'), pc = $('piColN');
     if (pu) pu.textContent = (mainFilled + candFilled) + '건';
     if (pc) pc.textContent = collegeFilled + '건';
@@ -6034,7 +6080,7 @@ window.SUSI_DATEFIX = function (text) {
           var vu = normalizeUniName(e.target.value);
           if (vu !== e.target.value) { hitG.c.uName = vu; savePlan(); }
         }
-        if (hitG && hitG.area === 'college') ensureCollegeGrow();
+        if (hitG) growUnboundedArea(hitG.area);
         renderCards();
         return;
       }
@@ -6054,14 +6100,15 @@ window.SUSI_DATEFIX = function (text) {
         var hit = cardHit(e); if (!hit) return;
         // 채워진 카드만 확인을 받는다 — 이미 빈 칸을 누른 거면(주로 college 칸에서 곧장
         // 삭제 버튼이 보이는 경우) 물어봐야 잃을 게 없어 그냥 진행한다.
+        var unbounded = (hit.area === 'college' || hit.area === 'tech');
         if (cardFilled(hit.c)) {
           var nm = window.SUSI_NAMES ? window.SUSI_NAMES(hit.c) : null;
           var label = nm ? (nm.uni + (nm.dept ? ' ' + nm.dept : '')) : '이 카드';
-          var q = (hit.area === 'college' ? (label + ' 지원을 목록에서 지웁니다.') : (label + ' 칸을 비웁니다.')) +
+          var q = (unbounded ? (label + ' 지원을 목록에서 지웁니다.') : (label + ' 칸을 비웁니다.')) +
             '\n되돌릴 수 없습니다. 계속할까요?';
           if (!window.confirm(q)) return;
         }
-        if (hit.area === 'college') { plan.college.splice(hit.ix, 1); ensureCollegeGrow(); }
+        if (unbounded) { plan[hit.area].splice(hit.ix, 1); growUnboundedArea(hit.area); }
         else plan[hit.area][hit.ix] = emptyCard();
         savePlan(); renderCards();
         return;
@@ -6088,7 +6135,7 @@ window.SUSI_DATEFIX = function (text) {
         c4.custom = !c4.custom;
         c4.u = null; c4.t = null; c4.j = null; c4.d = null;
         c4.uName = ''; c4.tName = ''; c4.jName = ''; c4.dName = '';
-        if (hit4.area === 'college') ensureCollegeGrow();
+        growUnboundedArea(hit4.area);
         savePlan(); renderCards();
         return;
       }
@@ -6103,7 +6150,7 @@ window.SUSI_DATEFIX = function (text) {
       '판정(자동)', '판정(수동)', '모집인원', '작년경쟁률', '수능최저', '1단계', '면접', '논술', '실기',
       '최종', '합불', '충원합격', '메모'];
     var out = [head];
-    ['main', 'cand', 'college'].forEach(function (area) {
+    ['main', 'tech', 'cand', 'college'].forEach(function (area) {
       plan[area].forEach(function (c, ix) {
         var r = c.custom ? null : rowOf(c);
         if (!r && !(c.custom && c.dName)) return;
@@ -6452,7 +6499,7 @@ window.SUSI_DATEFIX = function (text) {
 
   function planFormRows() {
     var out = [];
-    ['main', 'cand', 'college'].forEach(function (area) {
+    ['main', 'tech', 'cand', 'college'].forEach(function (area) {
       plan[area].forEach(function (c) {
         var r = c.custom ? null : rowOf(c);
         if (!r && !(c.custom && c.dName)) return;
@@ -6515,7 +6562,7 @@ window.SUSI_DATEFIX = function (text) {
        값만 채운 진짜 양식 모양의 파일이 나간다. */
     if (tplGet()) {
       var picks = [];
-      ['main', 'cand', 'college'].forEach(function (area) {
+      ['main', 'tech', 'cand', 'college'].forEach(function (area) {
         plan[area].forEach(function (c, ix) {
           var r = c.custom ? null : rowOf(c);
           if (r || (c.custom && c.dName)) picks.push({ r: r, card: c, area: area, ix: ix });
@@ -6556,6 +6603,7 @@ window.SUSI_DATEFIX = function (text) {
     if (!s) return null;
     if (s.indexOf('후보') >= 0 || s.indexOf('예비') >= 0) return 'cand';
     if (s.indexOf('전문대') >= 0) return 'college';
+    if (s.indexOf('기술원') >= 0) return 'tech';
     if (s.indexOf('지원') >= 0) return 'main';
     return null;
   }
@@ -6659,7 +6707,7 @@ window.SUSI_DATEFIX = function (text) {
     return null;
   }
   function planHasAnything() {
-    return ['main', 'cand', 'college'].some(function (a) {
+    return ['main', 'tech', 'cand', 'college'].some(function (a) {
       return (plan[a] || []).some(cardFilled);
     });
   }
@@ -6703,7 +6751,7 @@ window.SUSI_DATEFIX = function (text) {
     if (!PENDING_IMP) return;
     var all = PENDING_IMP.ok.slice();
     PENDING_IMP.bad.forEach(function (b) { if (!b.skip && (b.pick.d !== null || b.keepCustom)) all.push(b); });
-    var main = [], cand = [], college = [], over = 0;
+    var main = [], cand = [], college = [], tech = [], over = 0;
     all.forEach(function (x) {
       var e = x.e, c = emptyCard();
       if (x.keepCustom) {
@@ -6724,6 +6772,7 @@ window.SUSI_DATEFIX = function (text) {
         : (e.essay && r && e.essay !== examText(r[C.L])) ? e.essay : null;
       var area = e.area || (r && isCol(r) ? 'college' : 'main');
       if (area === 'college') college.push(c);
+      else if (area === 'tech') { c.custom = true; tech.push(c); }
       else if (area === 'cand') { cand.length < 3 ? cand.push(c) : over++; }
       else if (main.length < 6) main.push(c);
       else if (cand.length < 3) cand.push(c);
@@ -6731,8 +6780,8 @@ window.SUSI_DATEFIX = function (text) {
     });
     while (main.length < 6) main.push(emptyCard());
     while (cand.length < 3) cand.push(emptyCard());
-    plan.main = main; plan.cand = cand; plan.college = college;
-    ensureCollegeGrow(); savePlan();
+    plan.main = main; plan.cand = cand; plan.college = college; plan.tech = tech;
+    ensureCollegeGrow(); ensureTechGrow(); savePlan();
     var n = all.length;
     PENDING_IMP = null;
     $('impBox').classList.add('hidden');
@@ -6965,7 +7014,8 @@ window.SUSI_DATEFIX = function (text) {
     var main = plan.main.map(remapOne);
     var cand = plan.cand.map(remapOne);
     var college = plan.college.filter(cardFilled).map(remapOne);
-    return { main: main, cand: cand, college: college, lost: lost };
+    var tech = plan.tech.filter(cardFilled).map(remapOne);
+    return { main: main, cand: cand, college: college, tech: tech, lost: lost };
   }
   function swapData(nd) {
     var rm = remapPlan(nd);
@@ -6973,8 +7023,8 @@ window.SUSI_DATEFIX = function (text) {
     YEAR = nd.year || YEAR; PREV = YEAR - 1;
     byUni = new Map();
     ROWS.forEach(function (r, i) { var a = byUni.get(r[0]); if (!a) { a = []; byUni.set(r[0], a); } a.push(i); });
-    plan.main = rm.main; plan.cand = rm.cand; plan.college = rm.college;
-    ensureCollegeGrow(); savePlan();
+    plan.main = rm.main; plan.cand = rm.cand; plan.college = rm.college; plan.tech = rm.tech;
+    ensureCollegeGrow(); ensureTechGrow(); savePlan();
     find.kind = -1; find.uni = null; find.regions.clear(); find.types.clear(); find.jh = null; find.dq = ''; find.uq = '';
     $('uq').value = ''; $('dq').value = '';
     $('yrTag').textContent = YEAR + '학년도';
@@ -6999,7 +7049,7 @@ window.SUSI_DATEFIX = function (text) {
     var planOut = plan;
     if (dataObj) {
       var rm = remapPlan(dataObj);
-      planOut = { g: plan.g, th: plan.th, main: rm.main, cand: rm.cand, college: rm.college };
+      planOut = { g: plan.g, th: plan.th, main: rm.main, cand: rm.cand, college: rm.college, tech: rm.tech };
     }
     var doc = buildDoc(dataObj || D, planOut);
     ART.publish(doc).then(function () { toast(okMsg || '저장했습니다. 다른 기기에서도 동일하게 확인할 수 있습니다.'); },
