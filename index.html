@@ -9,6 +9,7 @@
   --blue:#25506E; --blue-soft:#DEE8F0;
   /* 달력 전용 색 — 주말과 고사 종류는 한눈에 갈라져야 해서 본문 색보다 진하게 쓴다 */
   --cal-sun:#D6293E; --cal-sat:#1160C4;
+  --facts-bg:#F1EFE7;          /* 카드 가운데 '자료에서 오는 정보' 띠 바탕 */
   --kd-int:#12795F; --kd-ess:#A4650B; --kd-prac:#5B47B0; --kd-ink:#FFFFFF;
   --shadow:0 1px 2px rgba(23,32,28,.06),0 8px 24px -12px rgba(23,32,28,.18);
   --r:10px;
@@ -22,6 +23,7 @@
   --rose:#D98189; --rose-soft:#2C1B1D;
   --blue:#8FB8D6; --blue-soft:#1B2630;
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
+  --facts-bg:#232C26;
   --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }}
@@ -34,6 +36,7 @@
   --rose:#D98189; --rose-soft:#2C1B1D;
   --blue:#8FB8D6; --blue-soft:#1B2630;
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
+  --facts-bg:#232C26;
   --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }
@@ -285,14 +288,19 @@ td.jh{color:var(--ink-2)}
   position:absolute;right:0;width:32px;height:100%}
 .card input.pick:disabled{background-image:none;color:var(--ink-3)}
 .card .grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.facts{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:5px;font-size:12.5px}
+/* 자료에서 저절로 따라오는 '읽기만 하는' 정보. 직접 적는 칸과 한눈에 갈라 보이도록
+   카드 폭을 꽉 채운 다른 색 띠로 깐다 — 흰 바탕은 적는 곳, 이 띠는 보여 주는 곳이다.
+   (카드 좌우 여백이 14px 이라 그만큼 음수 여백을 줘서 양끝까지 늘린다) */
+.facts{margin:2px -14px;padding:9px 14px;background:var(--facts-bg);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  display:flex;flex-direction:column;gap:5px;font-size:12.5px}
 .frow{display:flex;gap:8px;align-items:baseline}
 .frow .fk{color:var(--ink-3);font-size:11.5px;min-width:62px}
 .frow .fv{color:var(--ink-2);flex:1;min-width:0}
 .frow .fv.dash{color:var(--ink-3)}
 
 /* 결과 입력(수동판정 · 1단계·면접·논술 · 충원합격 · 합불) */
-.results{border-top:1px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:6px}
+.results{padding-top:2px;display:flex;flex-direction:column;gap:6px}
 .rrow{display:flex;align-items:center;gap:8px}
 .rrow>label{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);flex:1;min-width:0}
 .rrow>label>select,.rrow>label>input{flex:1;min-width:0}
@@ -1053,6 +1061,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .step{padding:11px 12px}
   .chip{padding:7px 12px}
   .card{padding:11px 12px}
+  /* 카드 좌우 여백이 좁아지므로 정보 띠의 음수 여백도 그만큼 맞춰 준다 */
+  .facts{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}
   .cards,#impList{grid-template-columns:minmax(0,1fr)}
   .grades{grid-template-columns:minmax(0,1fr)}
   .sacrow{font-size:12.5px}
