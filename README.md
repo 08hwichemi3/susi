@@ -32,9 +32,10 @@
 `main` 이 아닌 **아무 브랜치에 올려도 자동으로 `main` 에 합쳐지고**, 1~2분 뒤 사이트에 나타납니다.
 `.github/workflows/deploy.yml` 이 그 일을 합니다.
 
-**처음 한 번만 켜 주세요.**
-저장소 **Settings → Actions → General → Workflow permissions** 에서
-**`Read and write permissions`** 를 고르고 저장합니다.
+이 저장소는 **이미 켜져 있어 그대로 동작합니다**(2026-09-02 첫 실행 성공 확인).
+혹시 나중에 자동 반영이 갑자기 안 되면 여기를 먼저 보세요 —
+저장소 **Settings → Actions → General → Workflow permissions** 가
+**`Read and write permissions`** 여야 합니다.
 (이 권한이 없으면 자동 반영이 거부되어 **Actions** 탭에 빨간 X 로 남습니다. 사이트는 그대로 유지됩니다.)
 
 **잘 됐는지 보는 곳**: 저장소 위쪽 **Actions** 탭.
