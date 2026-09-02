@@ -326,3 +326,11 @@ grant execute on function public.delete_student(uuid) to authenticated;
 
 -- PostgREST 가 새 함수를 알아보게 한다 (안 하면 잠깐 "찾을 수 없습니다" 가 뜹니다)
 notify pgrst, 'reload schema';
+
+-- ═══════════════════════════════════════════════════════════════
+--    ⑧ schools.site_title  — 설정 화면에서 사이트 제목(브랜드명)을 바꿀 수 있게 합니다
+--       (로그인 화면·브라우저 탭 제목·안쪽 헤더에 씁니다. 비어 있으면 "계획서"가 기본값)
+-- ═══════════════════════════════════════════════════════════════
+alter table public.schools add column if not exists site_title text;
+comment on column public.schools.site_title is
+  '로그인 화면·브라우저 탭·앱 안 브랜드에 쓰는 사이트 제목. 비어 있으면 기본값("계획서")을 쓴다.';
