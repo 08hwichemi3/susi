@@ -7,6 +7,9 @@
   --amber:#8A5A0E; --amber-soft:#F6EBD6;
   --rose:#8C2F39; --rose-soft:#F6E2E3;
   --blue:#25506E; --blue-soft:#DEE8F0;
+  /* 달력 전용 색 — 주말과 고사 종류는 한눈에 갈라져야 해서 본문 색보다 진하게 쓴다 */
+  --cal-sun:#D6293E; --cal-sat:#1160C4;
+  --kd-int:#12795F; --kd-ess:#A4650B; --kd-prac:#5B47B0; --kd-ink:#FFFFFF;
   --shadow:0 1px 2px rgba(23,32,28,.06),0 8px 24px -12px rgba(23,32,28,.18);
   --r:10px;
 }
@@ -18,6 +21,8 @@
   --amber:#D9A441; --amber-soft:#2A2318;
   --rose:#D98189; --rose-soft:#2C1B1D;
   --blue:#8FB8D6; --blue-soft:#1B2630;
+  --cal-sun:#FF7C86; --cal-sat:#79B0FF;
+  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }}
 :root[data-theme="dark"]{
@@ -28,6 +33,8 @@
   --amber:#D9A441; --amber-soft:#2A2318;
   --rose:#D98189; --rose-soft:#2C1B1D;
   --blue:#8FB8D6; --blue-soft:#1B2630;
+  --cal-sun:#FF7C86; --cal-sat:#79B0FF;
+  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }
 *{box-sizing:border-box}
@@ -537,25 +544,30 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;min-width:660px}
 
-.calhd{font-size:11px;font-weight:700;color:var(--ink-3);text-align:center;padding:4px 0 2px}
-.calhd.sun{color:var(--rose)}
-.calhd.sat{color:#3b6fb5}
+.calhd{font-size:11.5px;font-weight:700;color:var(--ink-2);text-align:center;padding:4px 0 2px}
+.calhd.sun{color:var(--cal-sun)}
+.calhd.sat{color:var(--cal-sat)}
 
 .calcell{min-width:0;min-height:150px;overflow:hidden;
   border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--surface);
   display:flex;flex-direction:column}
 .calcell.blank{background:transparent;border-color:transparent}
 .calcell .dn{font-size:11.5px;font-weight:700;color:var(--ink-3);margin-bottom:3px;flex:0 0 auto}
-.calcell.sun .dn{color:var(--rose)}
-.calcell.sat .dn{color:#3b6fb5}
-.calcell.has{background:var(--surface)}
+.calcell.sun .dn{color:var(--cal-sun)}
+.calcell.sat .dn{color:var(--cal-sat)}
+/* 고사가 있는 날은 빈 날과 확실히 갈라 보이게 — 바탕을 옅게 깔고 왼쪽에 굵은 띠를 넣는다 */
+.calcell.has{background:var(--accent-soft);border-color:var(--accent-line);
+  box-shadow:inset 3px 0 0 var(--accent)}
 .calcell.has .dn{color:var(--ink)}
 .calcell.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.calcell.clash{border-color:var(--rose);background:var(--rose-soft)}
+.calcell.has.today{box-shadow:inset 3px 0 0 var(--accent),inset 0 0 0 1px var(--accent)}
+.calcell.clash{border-color:var(--rose);background:var(--rose-soft);
+  box-shadow:inset 3px 0 0 var(--rose)}
 .calcell.clash .dn{color:var(--rose)}
 .calcell.sel{outline:2px solid var(--accent);outline-offset:1px}
 .calcell[data-d][tabindex]{cursor:pointer}
 .calcell[data-d][tabindex]:hover{background:var(--surface-2)}
+.calcell.has[data-d][tabindex]:hover{background:var(--accent-soft);border-color:var(--accent)}
 .calcell.clash[data-d][tabindex]:hover{background:var(--rose-soft)}
 
 /* 칸을 세로로 길게 쓴다 — 여섯 줄(16px × 6)까지 칸 안에 그대로 적고,
@@ -574,10 +586,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calcell .wk{color:var(--rose)}
 .calcell .itrest{display:none}          /* 인쇄할 때만 펼친다 */
 
-.kd{font-size:9.5px;font-weight:700;border-radius:3px;padding:0 3px;vertical-align:1px}
-.kd.k-면접{color:#1c6b57;background:#dff2ec}
-.kd.k-논술{color:#8a5a12;background:#fbeed6}
-.kd.k-실기{color:#5b4a9c;background:#e9e5f8}
+/* 고사 종류 배지 — 옅은 파스텔이라 눈에 안 띈다는 지적을 받아 진한 바탕에 흰 글씨로 바꿨다 */
+.kd{font-size:9.5px;font-weight:700;border-radius:3px;padding:1px 4px;vertical-align:1px;
+  color:var(--kd-ink)}
+.kd.k-면접{background:var(--kd-int)}
+.kd.k-논술{background:var(--kd-ess)}
+.kd.k-실기{background:var(--kd-prac)}
 
 /* 날짜를 눌렀을 때 아래에 펼쳐지는 판. 여기는 길어지면 스크롤 */
 /* 달력을 아래로 스크롤해도 오른쪽 상세가 요일 줄 높이에 붙어 계속 보이도록 sticky 로 띄운다.
@@ -1154,7 +1168,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <p class="msg hidden" id="loginMsg"></p>
     <!-- 어느 판이 올라가 있는지 보여 준다. mk_site.py 가 만들 때 넣는 값이다.
          '새 파일을 올렸는데 사이트가 안 바뀐' 상황을 여기서 바로 알아볼 수 있다. -->
-    <p class="buildtag">판 <b id="buildTag">2026-09-01</b></p>
+    <p class="buildtag">최종 업데이트 <b id="buildTag">2026-09-02</b></p>
   </div>
 </div>
 
@@ -1282,8 +1296,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       <div class="panel pad">
         <h3 class="sec">학교 · 반</h3>
         <p class="hint">한 학년에 몇 반까지 있는지 정합니다. 아래 <b>교직원 계정</b>의 반 고르는 칸이 이 수만큼 나옵니다.
-          <b>사이트 제목</b>은 로그인 화면과 브라우저 탭 제목에 사용됩니다. 비워 두면 "계획서"로 표시됩니다.
-          (예: 부광고등학교 수시 원서 시스템).</p>
+          <b>사이트 제목</b>은 로그인 화면과 브라우저 탭 제목에 사용됩니다. 비워 두면 <b>학교 이름</b>이 대신
+          표시되고, 학교 이름도 비어 있으면 "계획서"로 표시됩니다. (사이트 제목 예: 부광고등학교 수시 원서 시스템)</p>
         <div class="setrow">
           <label>학교 이름
             <input type="text" id="schName" placeholder="○○고등학교" autocomplete="off">
@@ -1683,6 +1697,37 @@ window.SUSI_CFG = {
     var v = String(login || '').trim().toLowerCase();
     return v.indexOf('@') >= 0 ? v : v + '@susi.local';
   }
+};
+
+/* ───────── 고사일 형식 맞추기 ─────────
+   달력은 'YYYY/MM/DD' 로 적힌 날짜만 알아봅니다(buildCalendar 의 정규식).
+   그런데 선생님마다 2026-11-27 · 2026.11.27 · 11/27 · 11월 27일 · 20261127 처럼
+   다르게 적기 때문에, 적어 넣은 뒤 이 함수가 그 형식으로 맞춰 줍니다.
+
+   ★ 날짜로 보이지 않는 글자는 절대 건드리지 않습니다 — 「미실시」 같은 말이나
+     "2026/11/27 10:30 본관" 처럼 뒤에 붙인 메모는 그대로 남습니다.
+   ★ 연도를 안 적으면 수시 시즌으로 채웁니다 — 3~12월은 전 해(원서 접수~면접),
+     1~2월은 학년도와 같은 해(추가모집)입니다.
+   ★ '2026' 처럼 달·일로 볼 수 없는 숫자는 날짜로 바꾸지 않습니다. */
+window.SUSI_DATEFIX = function (text) {
+  var s = String(text == null ? '' : text);
+  if (!s) return s;
+  var Y = (window.SUSI_CFG && window.SUSI_CFG.year) || new Date().getFullYear();
+  var p2 = function (n) { return n < 10 ? '0' + n : '' + n; };
+  var okmd = function (m, d) { return m >= 1 && m <= 12 && d >= 1 && d <= 31; };
+  var yearFor = function (m) { return m >= 3 ? Y - 1 : Y; };
+  /* 한 번에 훑는다. 앞의 것부터 맞춰 보므로 '2026/11/27' 은 통째로 잡히고,
+     그 안의 '11/27' 이 다시 잡혀 연도가 두 번 붙는 일이 없다. */
+  var RE = /(^|[^0-9])(?:(\d{4})\s*[-.\/년]\s*(\d{1,2})\s*[-.\/월]\s*(\d{1,2})(?:\s*일)?|(\d{4})(\d{2})(\d{2})|(\d{1,2})\s*[-.\/월]\s*(\d{1,2})(?:\s*일)?|(\d{2})(\d{2}))(?!\d)/g;
+  return s.replace(RE, function (all, pre, y1, m1, d1, y2, m2, d2, m3, d3, m4, d4) {
+    var y, m, d;
+    if (y1) { y = +y1; m = +m1; d = +d1; }
+    else if (y2) { y = +y2; m = +m2; d = +d2; }
+    else if (m3) { m = +m3; d = +d3; y = yearFor(m); }
+    else { m = +m4; d = +d4; y = yearFor(m); }
+    if (!okmd(m, d)) return all;
+    return pre + y + '/' + p2(m) + '/' + p2(d);
+  });
 };
 
 </script><script id="SHELLJS">
@@ -2270,7 +2315,7 @@ window.SUSI_CFG = {
       SCHOOL.class_count = r.data.class_count || 9;
       SCHOOL.site_title = r.data.site_title || '';
       SCHOOL.loaded = true;
-      applyBrand(SCHOOL.site_title);
+      applyBrand(SCHOOL.site_title || SCHOOL.name);
     }).catch(function (e) {
       SCHOOL.loaded = false;
       console.warn('학교 정보를 읽지 못했습니다', e);
@@ -2695,10 +2740,12 @@ window.SUSI_CFG = {
     }
     var order = { main: 0, cand: 1, college: 2 };
     apps.sort(function (a, b) { return (order[a.area] - order[b.area]) || (a.slot - b.slot); });
-    h += '<p class="hint">회색 칸은 <b>자료에서 자동으로</b> 옵니다. 흰 칸은 <b>직접 넣는 곳</b>이고, 고치면 바로 저장됩니다.</p>';
+    h += '<p class="hint">회색 칸은 <b>자료에서 자동으로</b> 옵니다. 흰 칸은 <b>직접 넣는 곳</b>이고, 고치면 바로 저장됩니다. ' +
+      '<b>면접 · 논술</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
+      '칸을 떠날 때 <b>2026/11/27</b> 형식으로 자동으로 맞춰지며, 이 형식이라야 달력에 표시됩니다.</p>';
     h += '<div class="tblwrap"><table class="plantbl edit"><thead><tr>' +
       '<th>구분</th><th>대학 · 전형 · 학과</th><th>70%컷</th><th>판정</th>' +
-      '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>충원</th><th>합불</th>' +
+      '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>합불</th><th>충원</th>' +
       '</tr></thead><tbody>';
     apps.forEach(function (a) {
       var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name);
@@ -2731,7 +2778,7 @@ window.SUSI_CFG = {
           '<input type="text" data-f="essay" value="' + esc(a.essay != null ? a.essay : eAuto) +
             '" placeholder="논술' + (eAuto ? '' : ' 없음') + '">' +
         '</td>' +
-        '<td data-label="충원"><input type="text" data-f="fill_no" value="' + esc(a.fill_no || '') + '" placeholder="번호"></td>' +
+        // 합불을 먼저 정하고, 그 결과가 불합격·대기일 때 충원 번호를 적는 순서다.
         '<td data-label="합불"><select data-f="result">' +
             '<option value="">미정</option>' +
             '<option value="pass"' + (a.result === 'pass' ? ' selected' : '') + '>합격</option>' +
@@ -2740,6 +2787,7 @@ window.SUSI_CFG = {
             // 브라우저가 첫 항목('미정')을 보여 주고, 그 줄을 한 번만 건드려도 null 로 지워진다.
             '<option value="wait"' + (a.result === 'wait' ? ' selected' : '') + '>대기(예비)</option>' +
           '</select></td>' +
+        '<td data-label="충원"><input type="text" data-f="fill_no" value="' + esc(a.fill_no || '') + '" placeholder="최초 충원번호"></td>' +
         '</tr>';
     });
     h += '</tbody></table></div>';
@@ -2919,8 +2967,18 @@ window.SUSI_CFG = {
         else { m.className = 'msg ok'; m.textContent = '저장됨'; }
       });
     };
+    /* 고사일 칸은 적어 넣은 값을 달력이 알아보는 형식으로 맞춘 뒤에 저장한다
+       (11/27 · 20261127 처럼 적어도 2026/11/27 로 바뀐다). */
+    var fixDates = function (tr) {
+      ['interview', 'essay'].forEach(function (f) {
+        var el = tr.querySelector('[data-f="' + f + '"]');
+        if (!el || !el.value) return;
+        var v = window.SUSI_DATEFIX(el.value);
+        if (v !== el.value) el.value = v;
+      });
+    };
     host.addEventListener('change', function (e) {
-      var tr = e.target.closest('tr[data-id]'); if (tr) save(tr);
+      var tr = e.target.closest('tr[data-id]'); if (tr) { fixDates(tr); save(tr); }
     });
     host.addEventListener('input', function (e) {
       if (e.target.tagName !== 'INPUT') return;
@@ -3218,15 +3276,21 @@ window.SUSI_CFG = {
         var patch = {};
         if (nm && nm !== SCHOOL.name) patch.name = nm;                    // 빈 칸이면 이름은 그대로 둔다
         if (title !== (SCHOOL.site_title || '')) patch.site_title = title || null;  // 제목은 비워서 기본값으로 되돌릴 수 있다
-        if (!Object.keys(patch).length) return { error: null };
-        return sb.from('schools').update(patch).eq('id', ME.school_id);
+        if (!Object.keys(patch).length) return { error: null, data: null, skip: true };
+        // ★ RLS 정책이 이 update 를 막으면(권한이 없거나 조건이 안 맞으면) 오류 없이
+        //   '바뀐 줄 0개' 로 조용히 끝난다 — .select() 로 실제로 뭐가 바뀌었는지 받아서
+        //   빈 배열이면 우리가 직접 실패로 처리한다(실제로 이렇게 조용히 실패한 적이 있었다).
+        return sb.from('schools').update(patch).eq('id', ME.school_id).select();
       })
       .then(function (r2) {
         if (r2 && r2.error) throw r2.error;
+        if (r2 && !r2.skip && (!r2.data || !r2.data.length)) {
+          throw new Error('저장 권한이 없거나 대상을 찾지 못했습니다.');
+        }
         SCHOOL.class_count = n;
         if (nm) SCHOOL.name = nm;
         SCHOOL.site_title = title;
-        applyBrand(title);
+        applyBrand(title || SCHOOL.name);
         renderNewTeacherRoles();
         say('schMsg', '저장했습니다.');
         setTimeout(function () { say('schMsg', ''); }, 2000);
@@ -5620,19 +5684,20 @@ window.SUSI_CFG = {
         '<option value="fit"' + (c.verdictOverride === 'fit' ? ' selected' : '') + '>적정(수동)</option>' +
         '<option value="down"' + (c.verdictOverride === 'down' ? ' selected' : '') + '>하향(수동)</option>' +
         '</select></label></div>' +
+        // 합격 여부를 먼저 정하고, 불합격·충원일 때 최초 충원번호를 적는 순서로 둔다.
         '<div class="rrow2">' +
-        '<label>충원합격 번호<input type="text" data-f="fillNo" value="' + esc(c.fillNo || '') + '" placeholder="예: 3"></label>' +
         '<label>합격 여부<select data-f="passFail" class="' + (c.passFail === 'pass' ? 'passfail-pass' : c.passFail === 'fail' ? 'passfail-fail' : '') + '">' +
         '<option value=""' + (!c.passFail ? ' selected' : '') + '>미정</option>' +
         '<option value="pass"' + (c.passFail === 'pass' ? ' selected' : '') + '>합격</option>' +
         '<option value="fail"' + (c.passFail === 'fail' ? ' selected' : '') + '>불합격</option>' +
         '</select></label>' +
+        '<label>충원합격 번호<input type="text" data-f="fillNo" value="' + esc(c.fillNo || '') + '" placeholder="예: 3"></label>' +
         '</div>' +
         '<div class="rrow"><label>1단계<input type="text" data-f="step1" value="' + esc(c.step1 || '') + '" placeholder="1단계 합격 여부 등 직접 입력"></label></div>' +
-        '<div class="rrow"><label>면접<input type="text" data-f="interview" value="' + esc(iVal) + '" placeholder="자동값 없음"></label>' +
+        '<div class="rrow"><label>면접<input type="text" data-f="interview" value="' + esc(iVal) + '" placeholder="예: 1127 → 2026/11/27"></label>' +
         ((c.interview !== null && c.interview !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="interview" title="자동값으로 되돌리기">⟲</button>' : '') +
         '</div>' +
-        '<div class="rrow"><label>논술<input type="text" data-f="essay" value="' + esc(eVal) + '" placeholder="자동값 없음"></label>' +
+        '<div class="rrow"><label>논술<input type="text" data-f="essay" value="' + esc(eVal) + '" placeholder="예: 1204 → 2026/12/04"></label>' +
         ((c.essay !== null && c.essay !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="essay" title="자동값으로 되돌리기">⟲</button>' : '') +
         '</div>' +
         '</div>';
@@ -5799,7 +5864,15 @@ window.SUSI_CFG = {
     });
     host.addEventListener('blur', function (e) {
       var f = e.target && e.target.dataset && e.target.dataset.f;
-      if (f === 'interview' || f === 'essay') renderCards();
+      if (f !== 'interview' && f !== 'essay') return;
+      /* 칸을 떠날 때 달력이 알아보는 형식으로 맞춘다 — 11/27 · 20261127 → 2026/11/27.
+         날짜로 안 보이는 말(미실시 등)과 뒤에 붙인 메모는 그대로 둔다. */
+      var hit = cardHit(e);
+      if (hit && e.target.value) {
+        var v = window.SUSI_DATEFIX(e.target.value);
+        if (v !== e.target.value) { e.target.value = v; hit.c[f] = v; savePlan(); }
+      }
+      renderCards();
     }, true);
     host.addEventListener('click', function (e) {
       var delBtn = e.target.closest('button[data-del]');

@@ -334,3 +334,16 @@ notify pgrst, 'reload schema';
 alter table public.schools add column if not exists site_title text;
 comment on column public.schools.site_title is
   '로그인 화면·브라우저 탭·앱 안 브랜드에 쓰는 사이트 제목. 비어 있으면 기본값("계획서")을 쓴다.';
+
+-- ═══════════════════════════════════════════════════════════════
+--    ⑨ schools 에 update 정책이 없었습니다 — 설정 화면에서 학교 이름·사이트
+--       제목을 저장해도 화면에는 "저장했습니다"가 뜨지만 실제로는 아무 것도
+--       바뀌지 않는 문제가 있었습니다(update 를 막는 규칙이 없으면 조용히
+--       0줄만 바뀌고 끝나며, 오류로 뜨지 않습니다). 총관리자만, 자기 학교
+--       것만 고칠 수 있게 정책을 추가합니다.
+-- ═══════════════════════════════════════════════════════════════
+drop policy if exists schools_update_admin on public.schools;
+create policy schools_update_admin on public.schools
+  for update
+  using (id = private.my_school() and private.my_role() = 'super_admin')
+  with check (id = private.my_school() and private.my_role() = 'super_admin');
