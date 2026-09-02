@@ -580,8 +580,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .kd.k-실기{color:#5b4a9c;background:#e9e5f8}
 
 /* 날짜를 눌렀을 때 아래에 펼쳐지는 판. 여기는 길어지면 스크롤 */
-.calday-panel{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;
-  max-height:340px;overflow-y:auto}
+.calday-panel{max-height:70vh;overflow-y:auto}
 .calday-panel .cdh{margin:0 0 9px;font-size:13.5px;font-weight:700;color:var(--ink);
   display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .cdlist{display:flex;flex-direction:column;gap:7px}
@@ -607,6 +606,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 /* ══════════ 수시 달력 인쇄 ══════════ */
 .sec #calPrintBtn{margin-left:10px;font-size:11.5px;padding:3px 10px}
 .printhead,.printfoot{display:none}   /* 화면에서는 감추고 인쇄할 때만 나온다 */
+.pnote{margin:8px 0 0;padding:8px 11px;border-radius:9px;background:var(--amber-soft);
+  color:var(--amber);font-size:12px;line-height:1.6}
+.pnote b{font-weight:700}
 
 @media print{
   @page{size:A4 portrait;margin:12mm}
@@ -616,64 +618,87 @@ td.c-cut70{font-weight:600;color:var(--ink)}
      같이 사라지기 때문이다(고전적인 인쇄 트릭). */
   body *{visibility:hidden}
 
+  /* ★ position:absolute 는 '가장 가까운 position 있는 조상'을 기준으로 자리를 잡는다.
+     그 조상이 (안 보이지만 여전히 자리를 차지하는) 다른 탭들 밑 깊숙한 곳에 있으면,
+     인쇄물이 페이지 맨 위가 아니라 그 조상이 문서 안에서 실제로 있던 위치부터 시작해
+     버린다 — 한 달이 페이지 중간에서 시작해 다음 장으로 잘려 넘어가던 문제가 이것이었다.
+     position:fixed 는 조상이 아니라 '그 페이지' 자체를 기준으로 삼으므로, 문서 어디에
+     있든 항상 각 페이지 맨 위·왼쪽에서 시작한다. */
   body.pmode-cal #calPrint, body.pmode-cal #calPrint *{visibility:visible}
-  body.pmode-cal #calPrint{position:absolute;left:0;top:0;width:100%}
-  /* #calPrintWrap 을 기준 상자로 삼아야 위 #calPrint(position:absolute) 의 크기를
-     여기 안에 가둘 수 있다 — 한 달을 종이 한 장에 맞추려고 줄여 찍을 때 쓴다
-     (printArea 의 fitCalToPage 참고). visibility:hidden 인 채로도 자리 기준
-     역할은 그대로 한다 — 안 보이는 건 상관없다, 위치 기준만 필요하다. */
-  body.pmode-cal #calPrintWrap{position:relative}
+  body.pmode-cal #calPrint{
+    position:fixed;left:0;top:0;
+    width:186mm;height:273mm;          /* A4 세로 인쇄 영역: (210-24)×(297-24)mm, 여백 12mm×2 */
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  /* '가로' 를 고르면 printArea() 가 body 에 이 클래스를 얹는다 — 가로/세로 크기를 맞바꾼다 */
+  body.pmode-cal.cal-landscape #calPrint{width:273mm;height:186mm}
 
   body.pmode-plan #stPrint, body.pmode-plan #stPrint *{visibility:visible}
+  /* ★ 여기는 calendar 인쇄와 달리 여러 장으로 자연스레 이어져야 한다(학생 지원계획이
+     길면 2~3장). position:fixed 는 페이지마다 같은 자리에 반복 출력되는 용도라
+     여러 장짜리 내용에는 맞지 않는다 — position:absolute 를 그대로 쓴다. 이 조상들
+     사이에는 #calPrintWrap 같은 position:relative 가 없어서 body(=페이지) 기준으로
+     정확히 맨 위에서 시작한다. */
   body.pmode-plan #stPrint{position:absolute;left:0;top:0;width:100%}
 
   /* 어느 쪽도 아니면(브라우저 인쇄 단축키를 그냥 누른 경우) 달력을 낸다 */
   body:not(.pmode-cal):not(.pmode-plan) #calPrint,
   body:not(.pmode-cal):not(.pmode-plan) #calPrint *{visibility:visible}
-  body:not(.pmode-cal):not(.pmode-plan) #calPrint{position:absolute;left:0;top:0;width:100%}
+  body:not(.pmode-cal):not(.pmode-plan) #calPrint{
+    position:fixed;left:0;top:0;width:186mm;height:273mm;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
 
   /* 종이에서는 색이 안 나올 수 있으니 검정 글씨에 테두리로 구분한다 */
   body{background:#fff;color:#000}
-  .printhead{display:block;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid #000}
-  #calHead{display:none}   /* 달 머리글과 겹쳐 보여서 뺐다 — 내용도 비워 둔다(calHeadHtml 참고) */
+  .printhead{display:block;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #000;flex:none}
+  #calHead{display:none}   /* 달 머리글과 겹쳐 보여서 뺐다 — 내용도 비워 둔다(calFootHtml 참고) */
   .printhead .pt{font-size:17px;font-weight:700;margin-bottom:3px}
   .printhead .ps{font-size:11px;color:#444}
 
-  /* 종이에서는 접지 않고 전부 보여 준다. 칸 높이 제한을 풀어 내용만큼 늘어나게 하고,
-     한 달이 페이지에 안 들어가면 달 단위가 아니라 '주' 단위로 넘긴다. */
-  .calmon.empty{display:none}     /* 고사가 하나도 없는 달은 종이에 안 낸다 */
-  .calmon{margin:0 0 10px}
-  .calmon h4{font-size:13px;font-weight:700;margin:0 0 5px;padding:3px 0;
-    border-bottom:1px solid #000;color:#000;display:block}
-  .calmon h4 .cnt{background:none !important;color:#333 !important;font-size:10.5px;padding:0 0 0 6px}
-  .calmon h4 .cnt.none{color:#666 !important}
+  /* ★ 한 달이 페이지 밖으로 넘치지 않게, '내용만큼 늘어나는' 대신 페이지 높이를 그 달의
+     주(週) 수만큼 나눠 칸 하나하나의 키를 CSS 로 딱 정해 버린다(--cal-weeks, drawCalendar
+     에서 정한다). 칸 안 목록도 화면과 똑같이 CAL_MAX 건까지만 적고 나머지는 「+N건」 으로
+     접는다 — 그래야 고사가 몰린 날이 있어도 칸 높이가 절대 흔들리지 않는다. 예전에는 인쇄
+     직전에 실제 크기를 재서 transform:scale() 로 줄였는데, 브라우저마다 인쇄 타이밍이 달라
+     자꾸 어긋났다. 이 방식은 애초에 재는 것이 없어 항상 같은 결과가 나온다. */
+  #calOut{flex:1;min-height:0;display:flex;flex-direction:column}
+  .calmon{margin:0;flex:1;min-height:0;display:flex;flex-direction:column}
+  .calmonhead{flex:none;border-bottom:2px solid #000;padding-bottom:5px;margin:0 0 5px}
+  .cm-no{font-size:24px;color:#000}
+  .cm-no span{font-size:11px;color:#000}
+  .cm-t b{font-size:12px;color:#000}
+  .cm-t span{font-size:9.5px;color:#444}
+  .cm-cnt{font-size:9.5px;color:#000 !important;background:none !important;padding:0}
 
-  .calwrap{overflow:visible !important}
-  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;min-width:0 !important}
+  .calwrap{flex:1;min-height:0;overflow:hidden}
+  .calgrid{height:100%;display:grid;grid-template-columns:repeat(7,1fr);
+    grid-template-rows:18px repeat(var(--cal-weeks,5),1fr);gap:2px;min-width:0 !important}
 
-  .calhd{font-size:10px;font-weight:700;color:#000 !important;padding:2px 0;
+  .calhd{font-size:9.5px;font-weight:700;color:#000 !important;padding:1px 0;
     border-bottom:1px solid #000}
-  .calcell{min-height:64px;max-height:none !important;overflow:visible !important;
-    break-inside:avoid;border:1px solid #999;border-radius:0;padding:3px 4px;
-    background:#fff !important}
+  .calcell{min-height:0;max-height:none;overflow:hidden;
+    border:1px solid #999;border-radius:0;padding:2px 4px;
+    background:#fff !important;display:flex;flex-direction:column}
   .calcell.blank{border-color:#e6e6e6}
   .calcell.today{box-shadow:none !important;border-color:#999}
   .calcell.sel{outline:none !important}
   .calcell.clash{border:2.2px solid #000}
-  .calcell .dn{font-size:10px;font-weight:700;color:#000 !important;margin-bottom:2px}
-  .calcell .its{height:auto !important;flex:none !important;overflow:visible !important}
-  .calcell .it{font-size:9px;line-height:1.35;color:#000 !important;
-    white-space:normal !important;overflow:visible !important;text-overflow:clip !important;
+  .calcell .dn{font-size:9.5px;font-weight:700;color:#000 !important;margin-bottom:1px;flex:none}
+  .ddl{font-size:8px;line-height:1.25;color:#000 !important}
+  .calcell .its{flex:1;min-height:0;overflow:hidden}
+  .calcell .it{font-size:8.5px;line-height:1.3;color:#000 !important;
+    white-space:normal !important;overflow:hidden;text-overflow:clip !important;
     word-break:keep-all !important;overflow-wrap:normal !important}
   .calcell .it .who{color:#333 !important}
-  .calcell .calmore{display:none !important}   /* 「+N건」 대신 */
-  .calcell .itrest{display:block !important}   /* 진짜 나머지를 펼친다 */
-  .kd{background:none !important;color:#000 !important;font-size:8.5px;padding:0}
+  .calcell .calmore{flex:none;font-size:8px;color:#000 !important;background:none !important}
+  .calcell .itrest{display:none !important}   /* 화면과 똑같이 접어 둔다 — 칸 높이를 흔들지 않는다 */
+  .kd{background:none !important;color:#000 !important;font-size:8px;padding:0}
 
-  .calday-panel{display:none !important}       /* 아래 펼침판은 종이에 안 낸다 */
+  .calday-panel{display:none !important}       /* 옆 패널은 종이에 안 낸다 */
 
-  .printfoot{display:block;margin-top:10px;padding-top:6px;border-top:1px solid #999;
-    font-size:10px;color:#444}
+  .printfoot{display:block;margin-top:6px;padding-top:5px;border-top:1px solid #999;
+    font-size:9.5px;color:#444;flex:none}
 }
 .gt.fmt{font-size:11px}
 .gt.fmt td{color:var(--ink-3)}
@@ -1090,35 +1115,6 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .list li{padding-top:10px;padding-bottom:10px}
 }
 
-/* ───────── ⑥ 달력 인쇄: 보고 있는 한 달이 한 장 ───────── */
-@media print{
-  /* 그리는 달이 하나뿐이라 저절로 한 장이 된다. 빈 달도 그대로 낸다
-     (학사 일정표로도 쓰이므로 '아무 것도 없는 달' 자체가 정보다). */
-  .calmon.empty{display:block}
-  .calnav,.ddset{display:none !important}
-  /* 컬러로 인쇄한다 — 면접/논술/실기 배지와 ⚠ 경고색이 종이에서도 그대로 나오게.
-     다크 모드에서 인쇄해도 종이는 흰색이므로, 인쇄 때는 밝은 판의 색으로 되돌린다. */
-  :root, :root:not([data-theme="light"]), :root[data-theme="dark"]{
-    --ground:#FFFFFF; --surface:#FFFFFF; --surface-2:#F4F2EC;
-    --line:#D8D5CC; --line-2:#C4C0B4;
-    --ink:#17201C; --ink-2:#4A544E; --ink-3:#7C857E;
-    --accent:#1F5D4C; --accent-ink:#FFFFFF; --accent-soft:#DFEAE4; --accent-line:#A9C7BB;
-    --amber:#8A5A0E; --amber-soft:#F6EBD6;
-    --rose:#8C2F39; --rose-soft:#F6E2E3;
-    --blue:#25506E; --blue-soft:#DEE8F0;
-  }
-  #calPrint, #calPrint *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-  .calmonhead{display:flex !important;border-bottom:2px solid var(--ink);padding-bottom:6px;margin:0 0 8px}
-  .cm-no{font-size:34px}
-  .cm-t b{font-size:13px}
-  .cm-cnt{padding:2px 10px}
-  .calcell{min-height:120px;max-height:none !important}
-  .calcell .dd{display:block !important}
-  .ddl{font-size:8px;line-height:1.25}
-  .calcell[data-n]::after{content:none !important}
-}
-
-
 /* ───────── 지역: 뒷배경 한국 지도 ───────── */
 .mapwrap{position:relative}
 .mapbg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
@@ -1136,24 +1132,23 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   transition:outline-color .4s}
 
 
-/* ───────── 달력을 A4 세로 비율로 ─────────
-   칸 높이만 키우면 화면이 넓을 때 달력이 옆으로 퍼져(1362×793) 오히려 가로로 납작해집니다.
-   폭을 840px 로 묶어야 세로로 긴 한 장이 됩니다 — 840×923, 한 칸 117×176.
-   min-height 만 두므로 고사가 몰린 주는 그 줄이 알아서 늘어납니다. */
-.calgrid{max-width:840px;margin-left:auto;margin-right:auto}
-.calmonhead{max-width:840px;margin-left:auto;margin-right:auto}
-.calcell{min-height:176px}
+/* ───────── 달력을 왼쪽, 날짜 상세를 오른쪽에 ─────────
+   전에는 달력을 가운데 두고 폭을 묶어 놓아 화면이 넓으면 양옆이 비었다.
+   왼쪽에 달력, 오른쪽에 '누른 날짜' 패널을 두는 두 칸 배치로 바꾼다. */
+.calsplit{display:flex;align-items:flex-start;gap:22px}
+.calmain{flex:1;min-width:0}
+.calside{width:340px;flex:0 0 340px;border-left:1px solid var(--line);padding-left:18px}
+.calcell{min-height:150px}
 
-/* 좁은 화면은 건수만 찍는 쪽을 그대로 둔다 (위에서 56px 로 잡아 둔 것) */
-@media(max-width:700px){
-  .calgrid,.calmonhead{max-width:none;margin-left:0;margin-right:0}
-  .calcell{min-height:56px}
+@media(max-width:900px){
+  /* 좁아지면 옆 칸을 둘 자리가 없다 — 위아래로 다시 쌓는다 */
+  .calsplit{flex-direction:column}
+  .calside{width:100%;flex:1 1 auto;border-left:0;padding-left:0;
+    border-top:1px solid var(--line);padding-top:14px}
 }
 
-@media print{
-  /* 종이에서는 폭 제한을 풀고, 6줄 × 38mm 로 A4 세로 한 장을 꽉 채운다 */
-  .calgrid,.calmonhead{max-width:none;margin-left:0;margin-right:0}
-  .calcell{min-height:38mm}
+@media(max-width:700px){
+  .calcell{min-height:56px}
 }
 
 </style></head><body><!-- ══════════ 로그인 ══════════ -->
@@ -1286,8 +1281,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <p class="hint">한 화면에는 <b>한 달만</b> 표시됩니다. 화살표를 눌러 다른 달로 이동하세요.
           담당 학생들의 <b>면접·논술·실기</b> 날짜가 달력에 표시되며,
           <b class="clashk">한 학생이 같은 날 두 곳 이상</b>이면 그 칸이 빨갛게 표시됩니다.
-          <b>날짜를 클릭하면</b> 그 날의 일정이 달력 아래에 펼쳐집니다.
+          <b>날짜를 클릭하면</b> 그 날의 일정이 오른쪽 칸에 표시됩니다.
           인쇄하면 <b>현재 보고 있는 달</b>이 한 장에 모두 표시됩니다.</p>
+        <p class="pnote">인쇄 대화상자를 열면 <b>옵션 더보기</b>(또는 <b>자세히</b>)에서
+          <b>머리글과 바닥글</b>을 꺼 주세요. 그래야 날짜·문서 제목·인터넷 주소·쪽수가
+          종이에 함께 찍히지 않습니다. 이 항목은 브라우저가 인쇄 화면마다 붙이는
+          설정이라, 이 프로그램에서 대신 꺼 드릴 수 없습니다.</p>
 
         <div class="calnav" id="calNav">
           <button type="button" class="calarrow" id="calPrev" aria-label="이전 달">&#9664;</button>
@@ -1308,14 +1307,20 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           </div>
         </details>
 
-        <div id="calPrintWrap">
-          <div id="calPrint">
-            <div class="printhead" id="calHead"></div>
-            <div id="calOut"></div>
-            <div class="printfoot" id="calFoot"></div>
+        <div class="calsplit">
+          <div class="calmain">
+            <div id="calPrintWrap">
+              <div id="calPrint">
+                <div class="printhead" id="calHead"></div>
+                <div id="calOut"></div>
+                <div class="printfoot" id="calFoot"></div>
+              </div>
+            </div>
+          </div>
+          <div class="calside">
+            <div id="calDay" class="calday-panel"></div>
           </div>
         </div>
-        <div id="calDay" class="calday-panel"></div>
       </div>
     </section>
 
@@ -2698,7 +2703,10 @@ window.SUSI_CFG = {
       st.grade + '학년 ' + st.class_no + '반 ' + st.number_no + '번</span>' +
       '<button class="btn primary" id="gEdit">성적 입력</button>' +
       '<button class="btn" id="planEditBtn">지원계획 설정</button>' +
-      '<button class="btn" id="stPrintBtn">인쇄</button></h3>';
+      '<button class="btn" id="stPrintBtn">인쇄</button></h3>' +
+      '<p class="pnote">인쇄 대화상자의 <b>옵션 더보기</b>(또는 <b>자세히</b>)에서 ' +
+      '<b>머리글과 바닥글</b>을 꺼야 날짜·주소·쪽수가 종이에 함께 찍히지 않습니다. ' +
+      '브라우저가 붙이는 설정이라 이 프로그램에서 대신 끌 수 없습니다.</p>';
     // 여기서부터 인쇄에 나가는 부분. 종이에만 보이는 머리글을 맨 앞에 둔다.
     h += '<div id="stPrint"><div class="printhead">' +
       '<div class="pt">' + CFG.year + '학년도 수시 지원계획서 · ' + esc(st.name) + '</div>' +
@@ -3558,6 +3566,9 @@ window.SUSI_CFG = {
     for (d = 1; d <= dim; d++) cells.push(d);
     while (cells.length % 7) cells.push(null);
     var cnt = monthCount(mo);
+    // 인쇄 CSS 가 이 값으로 칸 한 줄의 키를 정한다(주 수로 페이지 높이를 나눈다) —
+    // 4주짜리 달과 6주짜리 달이 같은 칸 높이면 6주짜리 달은 종이 밖으로 넘친다.
+    $('calOut').style.setProperty('--cal-weeks', cells.length / 7);
 
     $('calOut').innerHTML = '<div class="calmon' + (cnt ? '' : ' empty') + '">' +
       '<div class="calmonhead">' +
@@ -3602,7 +3613,7 @@ window.SUSI_CFG = {
       '</div></div></div>';
   }
 
-  /* 날짜 하나를 눌렀을 때 아래에 그 날 전체를 펼친다 (칸 안은 좁으니까) */
+  /* 날짜 하나를 눌렀을 때 오른쪽 칸에 그 날 전체를 펼친다 (칸 안은 좁으니까) */
   function showCalDay(key) {
     var items = CALST.days[key] || [];
     CALST.sel = CALST.sel === key ? null : key;
@@ -3638,62 +3649,28 @@ window.SUSI_CFG = {
 
   /* 인쇄할 것이 두 가지(수시 달력 / 학생 지원계획서)라 무엇을 낼지 알려 줘야 한다.
      인쇄 CSS 는 'body * 를 감추고 대상만 보이게' 하는 방식이라, 대상이 둘이면
-     클래스로 갈라 주지 않으면 둘 다 나오거나 둘 다 안 나온다. */
-  /* 한 달 분량이 종이 한 장보다 길면(고사가 많은 달) '전형 찾기' 카드처럼
-     화면 그대로는 두 장, 세 장으로 넘어간다. 그래서 인쇄 직전에 실제 크기를
-     재 보고, 한 장(가로/세로에 맞는 인쇄 가능 영역)을 넘으면 그만큼 줄인다.
-     ★ transform:scale() 은 '보이는 크기'만 줄일 뿐 자리는 그대로 차지한다 —
-       그래서 #calPrintWrap 의 높이도 같이 줄여 줘야(overflow:hidden) 진짜로
-       한 장에 들어간다. #calPrintWrap 이 position:relative 라야 안의
-       #calPrint(position:absolute) 크기가 이 안에 갇힌다. */
-  function fitCalToPage(landscape) {
-    var el = $('calPrint'), wrap = $('calPrintWrap');
-    if (!el || !wrap) return;
-    el.style.transform = ''; el.style.width = '';
-    wrap.style.height = ''; wrap.style.overflow = '';
-    var mmToPx = 96 / 25.4;                       // 인쇄는 mm, 화면 측정은 px
-    var pageW = (landscape ? 297 : 210) - 24;      // A4, 여백 12mm×2
-    var pageH = (landscape ? 210 : 297) - 24;
-    var maxW = pageW * mmToPx, maxH = pageH * mmToPx;
-    var w = el.scrollWidth, h = el.scrollHeight;
-    if (!w || !h) return;
-    var scale = Math.min(1, maxW / w, maxH / h);
-    if (scale < 1) {
-      el.style.transformOrigin = 'top left';
-      el.style.transform = 'scale(' + scale + ')';
-      el.style.width = (100 / scale) + '%';
-      wrap.style.height = (h * scale) + 'px';
-      wrap.style.overflow = 'hidden';
-    }
-  }
-
-  /* 인쇄할 것이 두 가지(수시 달력 / 학생 지원계획서)라 무엇을 낼지 알려 줘야 한다.
-     인쇄 CSS 는 'body * 를 감추고 대상만 보이게' 하는 방식이라, 대상이 둘이면
-     클래스로 갈라 주지 않으면 둘 다 나오거나 둘 다 안 나온다. */
+     클래스로 갈라 주지 않으면 둘 다 나오거나 둘 다 안 나온다.
+     ★ 한 달을 한 장에 맞추는 일은 이제 여기(JS)가 아니라 인쇄 CSS(@media print 의
+       #calPrint 규칙)가 한다 — 실제 크기를 재서 줄이던 예전 방식은 브라우저마다
+       인쇄 타이밍이 달라 믿을 수 없었다. 지금은 페이지 크기를 CSS 에 mm 로 그대로
+       박아 두고, 칸 높이는 grid 로 나눠 버리므로 잴 필요 자체가 없다. */
   function printArea(kind) {
     var b = document.body;
     b.classList.add('pmode-' + kind);
     var landscape = kind === 'cal' && CAL_ORIENT === 'landscape';
+    b.classList.toggle('cal-landscape', landscape);
     /* ★ @page 는 body 클래스로 못 고른다(CSS 스펙상 @page 는 :first 같은
-       가상클래스만 받는다) — 그래서 '가로' 를 골랐을 때만 <style> 을 그때그때 넣었다 뺀다. */
+       가상클래스만 받는다) — 그래서 '가로' 를 골랐을 때만 <style> 을 그때그때 넣었다 뺀다.
+       (본문 크기 자체는 body.cal-landscape 클래스로 맞춘다.) */
     var pageStyle = null;
     if (landscape) {
       pageStyle = document.createElement('style');
       pageStyle.textContent = '@page{size:landscape}';
       document.head.appendChild(pageStyle);
     }
-    /* ★ 지금(=window.print() 부르기 전)은 아직 화면용 CSS라서 여기서 재면 글자 크기가
-       실제 인쇄보다 훨씬 크게 잡혀 엉뚱하게 줄어든다. beforeprint 가 뜰 때는 인쇄용
-       CSS(@media print)가 이미 적용된 뒤라, 그때 재야 진짜 크기가 나온다. */
-    var onBeforePrint = kind === 'cal' ? function () { fitCalToPage(landscape); } : null;
-    if (onBeforePrint) window.addEventListener('beforeprint', onBeforePrint);
     var clear = function () {
-      b.classList.remove('pmode-cal', 'pmode-plan');
+      b.classList.remove('pmode-cal', 'pmode-plan', 'cal-landscape');
       if (pageStyle) { pageStyle.remove(); pageStyle = null; }
-      if (onBeforePrint) window.removeEventListener('beforeprint', onBeforePrint);
-      var el = $('calPrint'), wrap = $('calPrintWrap');
-      if (el) { el.style.transform = ''; el.style.width = ''; }
-      if (wrap) { wrap.style.height = ''; wrap.style.overflow = ''; }
     };
     // 인쇄창이 닫힌 뒤 되돌린다. onafterprint 를 안 주는 브라우저가 있어 예비도 둔다.
     if (window.onafterprint !== undefined) {
