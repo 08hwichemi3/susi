@@ -1220,7 +1220,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <div class="panel pad">
           <h3 class="sec">담당 학생 <span class="tag" id="stCount"></span></h3>
           <div class="stxlsxrow">
-            <button class="btn" id="stXlsx" title="지금 화면에 있는 학생 자료를 올릴 때와 같은 모양의 엑셀로 받습니다">엑셀로 받기</button>
+            <button class="btn" id="stXlsx" title="담당 학생들의 지원계획을 한 장짜리 엑셀로 받습니다">엑셀로 받기</button>
             <button class="btn hidden" id="stXlsxUp" title="학생자료양식.xlsx 로 내신·모의고사를 한 번에 넣습니다">엑셀로 올리기</button>
           </div>
           <input type="text" id="stFilter" placeholder="이름·학번으로 찾기" autocomplete="off">
@@ -2169,7 +2169,7 @@ window.SUSI_DATEFIX = function (text) {
   var AREAS = ['main', 'cand', 'college'];
   function emptyCard() {
     return { u: null, t: null, j: null, d: null, memo: '', verdictOverride: null,
-             fillNo: '', passFail: null, step1: '', interview: null, essay: null };
+             fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
   }
   function rowsToPlan(rows, grades) {
     var plan = { g: { nat: '', hum: '', all: '' }, th: 0.3, main: [], cand: [], college: [] };
@@ -2187,6 +2187,7 @@ window.SUSI_DATEFIX = function (text) {
       // 'wait' 를 떨어뜨리면, 학생이 로그인만 해도 다음 저장 때 선생님이 넣은 값이 지워진다
       c.passFail = (r.result === 'pass' || r.result === 'fail' || r.result === 'wait') ? r.result : null;
       c.step1 = r.step1 || ''; c.interview = r.interview; c.essay = r.essay;
+      c.final = r.final_date || '';
       c._slot = r.slot;
       (plan[r.area] || plan.main).push(c);
     });
@@ -2215,7 +2216,8 @@ window.SUSI_DATEFIX = function (text) {
         out.push({ student_id: owner.id, area: area, slot: i + 1, year: CFG.year,
           uni_name: n.uni, type_name: n.type, admission_name: n.jh, dept_name: n.dept,
           verdict_override: c.verdictOverride || null, step1: c.step1 || null,
-          interview: c.interview, essay: c.essay, fill_no: c.fillNo || null,
+          interview: c.interview, essay: c.essay, final_date: c.final || null,
+          fill_no: c.fillNo || null,
           result: c.passFail || null, memo: c.memo || null });
       });
     });
@@ -2348,52 +2350,9 @@ window.SUSI_DATEFIX = function (text) {
   }
 
   /* ───────── 학생 자료를 엑셀로 받기 ─────────
-     ★ 올릴 때 쓰는 「학생자료양식」과 **똑같은 모양**으로 만든다.
-        머리글 두 줄(위: 국수영과·3월 / 아래: 1학년·국) · 47칸 · 맨 끝 생년월일·전화번호.
-        그래야 받아서 고친 뒤 그대로 다시 올릴 수 있다(왕복).
-        학생이 로그인하며 넣은 생년월일·전화번호도 여기에 채워져 나온다. */
-  var NAESIN_TRACKS = [['nat', '국수영과'], ['hum', '국수영사'], ['all', '전과목']];
-  var NAESIN_YEARS = [['_y1', '1학년'], ['_y2', '2학년'], ['_y3', '3학년'], ['_avg', '평균']];
-  var MOCK_EXAMS = ['3월', '5월', '6월', '7월', '9월', '수능'];
-
-  function rosterAoa(grades, mocks) {
-    var top = ['', '', ''], head = ['반', '번호', '이름'], c;
-    NAESIN_TRACKS.forEach(function (t) {
-      NAESIN_YEARS.forEach(function (y, i) { top.push(i === 0 ? t[1] : ''); head.push(y[1]); });
-    });
-    MOCK_EXAMS.forEach(function (e) {
-      SUBJ.forEach(function (sj, i) { top.push(i === 0 ? e : ''); head.push(sj[1]); });
-    });
-    top.push('', ''); head.push('생년월일', '전화번호');
-
-    var gBy = {}, mBy = {};
-    (grades || []).forEach(function (g) { gBy[g.student_id] = g; });
-    (mocks || []).forEach(function (m) { (mBy[m.student_id] = mBy[m.student_id] || {})[m.exam] = m; });
-
-    var aoa = [top, head];
-    STUDENTS.slice().sort(function (a, b) { return a.student_no - b.student_no; }).forEach(function (st) {
-      var r = [st.class_no, st.number_no, st.name], g = gBy[st.id] || {}, mm = mBy[st.id] || {};
-      NAESIN_TRACKS.forEach(function (t) {
-        NAESIN_YEARS.forEach(function (y) {
-          var v = g[t[0] + y[0]];
-          r.push(v === null || v === undefined ? '' : v);
-        });
-      });
-      MOCK_EXAMS.forEach(function (e) {
-        var m = mm[e] || {};
-        SUBJ.forEach(function (sj) {
-          var v = m[sj[0]];
-          r.push(v === null || v === undefined ? '' : v);
-        });
-      });
-      // 생년월일은 20080101 여덟 자리로 — 올릴 때 쓰는 모양 그대로
-      r.push(st.birth_date ? String(st.birth_date).replace(/-/g, '') : '');
-      r.push(st.phone || '');
-      aoa.push(r);
-    });
-    return aoa;
-  }
-
+     지원계획 한 장만 만든다. 예전에는 '내신'(다시 올릴 때 쓰는 명부)과
+     '학생별'(학생마다 양식 한 벌) 시트도 함께 넣었지만, 실제로 쓰는 것은
+     지원계획 시트뿐이라 그 두 장과 그것을 만들던 코드를 걷어냈다. */
   var PLAN_AREA = { main: '수시지원', cand: '예비', college: '전문대' };
   var PLAN_RESULT = { pass: '합격', fail: '불합격', wait: '충원대기' };
   var PLAN_VERDICT = { up: '상향', fit: '적정', down: '하향' };
@@ -2401,8 +2360,10 @@ window.SUSI_DATEFIX = function (text) {
   function planAoa(apps) {
     var byId = {};
     STUDENTS.forEach(function (st) { byId[st.id] = st; });
+    /* 칸 차례는 화면(교사용 표)과 같게 둔다 — 1단계 → 면접·실기·논술 → 최종 → 합불 → 충원.
+       다시 올릴 때는 머리글 '이름'으로 찾으므로 차례가 바뀌어도 읽는 데는 문제가 없다. */
     var aoa = [['학번', '반', '번호', '이름', '구분', '칸', '대학', '전형유형', '전형명', '학과',
-                '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '충원합격', '합불', '메모']];
+                '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '최종', '합불', '충원합격', '메모']];
     (apps || []).slice().sort(function (a, b) {
       var sa = byId[a.student_id], sb2 = byId[b.student_id];
       return ((sa && sa.student_no) || 0) - ((sb2 && sb2.student_no) || 0)
@@ -2415,82 +2376,23 @@ window.SUSI_DATEFIX = function (text) {
         a.uni_name || '', a.type_name || '', a.admission_name || '', a.dept_name || '',
         PLAN_VERDICT[a.verdict_override] || '', a.exam_no || '', a.step1 || '',
         a.interview === null || a.interview === undefined ? '' : a.interview,
-        a.fill_no || '', PLAN_RESULT[a.result] || '', a.memo || '']);
+        a.final_date || '', PLAN_RESULT[a.result] || '', a.fill_no || '', a.memo || '']);
     });
     return aoa;
   }
 
-  var LIST_COLS_PLAN = [8, 5, 6, 10, 9, 5, 15, 12, 20, 19, 13, 12, 14, 16, 10, 8, 26]
+  var LIST_COLS_PLAN = [8, 5, 6, 10, 9, 5, 15, 12, 20, 19, 13, 12, 14, 16, 13, 8, 10, 26]
     .map(function (w) { return { wch: w }; });
-  var ROSTER_COLS = (function () {
-    var c = [{ wch: 5 }, { wch: 5 }, { wch: 11 }];
-    for (var i = 0; i < 42; i++) c.push({ wch: 7 });
-    c.push({ wch: 12 }); c.push({ wch: 15 });
-    return c;
-  })();
-
-  /* 학생마다 「지원계획서 양식」 한 벌씩 만들어 한 시트에 밑으로 쌓는다.
-     ★ 사이에 빈 줄을 넉넉히 두고 구분선을 넣는다 — 엑셀 파일에는 인쇄 경계를
-       넣을 수 없어서, 종이로 뽑으실 거면 화면의 [인쇄]가 더 정확합니다. */
-  function formSheetAoa(grades, mocks, apps) {
-    if (!window.SUSI_FORM) return [['엑셀 양식을 불러오지 못했습니다']];
-    var gBy = {}, mBy = {}, aBy = {};
-    (grades || []).forEach(function (g) { gBy[g.student_id] = g; });
-    (mocks || []).forEach(function (m) { (mBy[m.student_id] = mBy[m.student_id] || {})[m.exam] = m; });
-    (apps || []).forEach(function (a) { (aBy[a.student_id] = aBy[a.student_id] || []).push(a); });
-
-    var order = { main: 0, cand: 1, college: 2 };
-    var out = [], first = true;
-    STUDENTS.slice().sort(function (a, b) { return a.student_no - b.student_no; }).forEach(function (st) {
-      var mine = (aBy[st.id] || []).slice().sort(function (a, b) {
-        return (order[a.area] - order[b.area]) || (a.slot - b.slot); });
-      if (!first) {
-        out.push([]);
-        out.push(['', '──────── 다음 학생 ────────']);
-        out.push([]);
-      }
-      first = false;
-      var g = gBy[st.id] || {};
-      var gg = {
-        nat: { y1: g.nat_y1, y2: g.nat_y2, y3: g.nat_y3, avg: g.nat_avg },
-        hum: { y1: g.hum_y1, y2: g.hum_y2, y3: g.hum_y3, avg: g.hum_avg },
-        all: { y1: g.all_y1, y2: g.all_y2, y3: g.all_y3, avg: g.all_avg }
-      };
-      var rows = mine.map(function (a) {
-        var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name) || {};
-        var cut = info.cut70 || info.cut50 || null;
-        var my = g ? pickGrade(g, a.dept_name) : null;
-        var vd = window.SUSI_VERDICT(cut, my, 0.3);
-        var row = [];
-        function put(i, v) { while (row.length <= i) row.push(''); row[i] = (v === null || v === undefined) ? '' : v; }
-        put(2, a.uni_name); put(3, a.admission_name); put(4, a.dept_name);
-        put(5, my); put(6, info.cut50); put(7, info.cut70);
-        put(8, a.type_name); put(9, a.exam_no || ''); put(10, info.min || '');
-        put(11, ''); put(12, a.step1 || ''); put(13, a.interview || '');
-        put(14, ''); put(15, vd ? VN[vd.v] : ''); put(16, info.n); put(17, info.rate);
-        put(18, (AN[a.area] || a.area) + ' ' + a.slot);
-        put(19, a.fill_no || ''); put(20, a.result ? (PLAN_RESULT[a.result] || '') : '');
-        put(21, a.verdict_override ? (VN[a.verdict_override] || '') : '');
-        return row;
-      });
-      var who = { name: st.name, no: st.student_no, grade: st.grade, cls: st.class_no, num: st.number_no };
-      window.SUSI_FORM.aoa(who, gg, mBy[st.id] || {}, rows).forEach(function (r) { out.push(r); });
-    });
-    return out.length ? out : [['담긴 전형이 있는 학생이 없습니다']];
-  }
 
   function downloadAllXlsx() {
     if (typeof XLSX === 'undefined') { window.alert('엑셀 기능을 불러오지 못했습니다.'); return; }
     if (!STUDENTS.length) { window.alert('내려받을 학생이 없습니다.'); return; }
     var btn = $('stXlsx'); if (btn) { btn.disabled = true; btn.textContent = '만드는 중…'; }
-    /* 접근 규칙(RLS)이 알아서 걸러 준다 — 담임은 자기 반만, 총관리자는 전부. */
-    Promise.all([
-      sb.from('student_grades').select('*'),
-      sb.from('mock_exams').select('*'),
-      sb.from('applications').select('*').eq('year', CFG.year)
-    ]).then(function (r) {
-      var err = (r[0] && r[0].error) || (r[1] && r[1].error) || (r[2] && r[2].error);
-      if (err) throw err;
+    /* 접근 규칙(RLS)이 알아서 걸러 준다 — 담임은 자기 반만, 총관리자는 전부.
+       지원계획 한 장만 만들므로 성적(내신·모의고사)은 이제 읽지 않는다. */
+    Promise.resolve(sb.from('applications').select('*').eq('year', CFG.year))
+    .then(function (r) {
+      if (r && r.error) throw r.error;
       var wb = XLSX.utils.book_new();
       function add(name, aoa, cols) {
         var ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -2501,16 +2403,14 @@ window.SUSI_DATEFIX = function (text) {
         if (auto) ws['!cols'] = auto;          // 너비를 안 주면 글자가 잘려 보인다
         XLSX.utils.book_append_sheet(wb, ws, name);
       }
-      /* '내신' 을 앞에 둔다 — 이 시트가 다시 올릴 때 쓰는 것이다.
-         (읽는 쪽도 시트를 훑도록 고쳤지만, 차례까지 맞춰 두면 사람이 헷갈리지 않는다) */
-      add('내신', rosterAoa(r[0].data, r[1].data), ROSTER_COLS);
-      add('학생별', formSheetAoa(r[0].data, r[1].data, r[2].data),
-          window.SUSI_FORM ? window.SUSI_FORM.cols : null);
-      add('지원계획', planAoa(r[2].data), LIST_COLS_PLAN);
+      /* 예전에는 '내신'·'학생별' 시트도 함께 넣었지만, 실제로 쓰는 것은 이 한 장이라
+         지원계획만 남겼다. (내신·모의고사를 한꺼번에 넣을 때는 학생자료양식.xlsx 를
+         [엑셀로 올리기] 로 올린다 — 그쪽은 이 파일과 별개다.) */
+      add('지원계획', planAoa((r && r.data) || []), LIST_COLS_PLAN);
       var buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
       var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       var d = new Date();
-      var nm = '학생자료_' + CFG.year + '_' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.xlsx';
+      var nm = '지원계획_' + CFG.year + '_' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.xlsx';
       var url = URL.createObjectURL(blob), a = document.createElement('a');
       a.href = url; a.download = nm; document.body.appendChild(a); a.click();
       document.body.removeChild(a);
@@ -2741,11 +2641,11 @@ window.SUSI_DATEFIX = function (text) {
     var order = { main: 0, cand: 1, college: 2 };
     apps.sort(function (a, b) { return (order[a.area] - order[b.area]) || (a.slot - b.slot); });
     h += '<p class="hint">회색 칸은 <b>자료에서 자동으로</b> 옵니다. 흰 칸은 <b>직접 넣는 곳</b>이고, 고치면 바로 저장됩니다. ' +
-      '<b>면접 · 논술</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
-      '칸을 떠날 때 <b>2026/11/27</b> 형식으로 자동으로 맞춰지며, 이 형식이라야 달력에 표시됩니다.</p>';
+      '<b>면접 · 논술</b>과 <b>최종</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
+      '칸을 떠날 때 <b>2026/11/27</b> 형식으로 자동으로 맞춰집니다. 달력에는 면접 · 논술 · 실기 날짜가 표시됩니다.</p>';
     h += '<div class="tblwrap"><table class="plantbl edit"><thead><tr>' +
       '<th>구분</th><th>대학 · 전형 · 학과</th><th>70%컷</th><th>판정</th>' +
-      '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>합불</th><th>충원</th>' +
+      '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>최종</th><th>합불</th><th>충원</th>' +
       '</tr></thead><tbody>';
     apps.forEach(function (a) {
       var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name);
@@ -2778,6 +2678,8 @@ window.SUSI_DATEFIX = function (text) {
           '<input type="text" data-f="essay" value="' + esc(a.essay != null ? a.essay : eAuto) +
             '" placeholder="논술' + (eAuto ? '' : ' 없음') + '">' +
         '</td>' +
+        '<td data-label="최종"><input type="text" data-f="final_date" value="' +
+          esc(a.final_date || '') + '" placeholder="최종 발표일"></td>' +
         // 합불을 먼저 정하고, 그 결과가 불합격·대기일 때 충원 번호를 적는 순서다.
         '<td data-label="합불"><select data-f="result">' +
             '<option value="">미정</option>' +
@@ -2949,6 +2851,7 @@ window.SUSI_DATEFIX = function (text) {
         step1: get('step1') || null,
         interview: (iv === '' || iv === iAuto) ? null : iv,
         essay:     (ev === '' || ev === eAuto) ? null : ev,
+        final_date: get('final_date') || null,
         fill_no: get('fill_no') || null,
         result: get('result') || null
       };
@@ -2970,7 +2873,7 @@ window.SUSI_DATEFIX = function (text) {
     /* 고사일 칸은 적어 넣은 값을 달력이 알아보는 형식으로 맞춘 뒤에 저장한다
        (11/27 · 20261127 처럼 적어도 2026/11/27 로 바뀐다). */
     var fixDates = function (tr) {
-      ['interview', 'essay'].forEach(function (f) {
+      ['interview', 'essay', 'final_date'].forEach(function (f) {
         var el = tr.querySelector('[data-f="' + f + '"]');
         if (!el || !el.value) return;
         var v = window.SUSI_DATEFIX(el.value);
@@ -5505,7 +5408,7 @@ window.SUSI_DATEFIX = function (text) {
   /* ───────── 지원계획 카드 모델: 수시(main, 6칸) · 후보(cand, 3칸) · 전문대(college, 무제한) ───────── */
   var VERDICT_KEYS = { up: 1, fit: 1, down: 1 };
   function emptyCard() {
-    return { u: null, t: null, j: null, d: null, memo: '', verdictOverride: null, fillNo: '', passFail: null, step1: '', interview: null, essay: null };
+    return { u: null, t: null, j: null, d: null, memo: '', verdictOverride: null, fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
   }
   function normalizeCard(c) {
     c = c || {};
@@ -5520,7 +5423,8 @@ window.SUSI_DATEFIX = function (text) {
       passFail: (c.passFail === 'pass' || c.passFail === 'fail') ? c.passFail : null,
       step1: c.step1 || '',
       interview: (c.interview === undefined || c.interview === null) ? null : c.interview,
-      essay: (c.essay === undefined || c.essay === null) ? null : c.essay
+      essay: (c.essay === undefined || c.essay === null) ? null : c.essay,
+      final: c.final || ''
     };
   }
   /* college 칸은 항상 "채워진 칸들 + 맨 끝 빈 칸 1개"만 남긴다 — 추가·삭제·자리바꾸기 뒤 매번 불러 정리한다. */
@@ -5700,6 +5604,9 @@ window.SUSI_DATEFIX = function (text) {
         '<div class="rrow"><label>논술<input type="text" data-f="essay" value="' + esc(eVal) + '" placeholder="예: 1204 → 2026/12/04"></label>' +
         ((c.essay !== null && c.essay !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="essay" title="자동값으로 되돌리기">⟲</button>' : '') +
         '</div>' +
+        // 전형 단계의 마지막 칸. 자료에 없는 값이라 늘 직접 적는다(1단계 → 면접·논술 → 최종).
+        '<div class="rrow"><label>최종 발표<input type="text" data-f="final" value="' + esc(c.final || '') +
+        '" placeholder="예: 1215 → 2026/12/15"></label></div>' +
         '</div>';
     }
     return '<div class="card' + (isPick ? ' swap-pick' : '') + '" data-area="' + area + '" data-ix="' + ix + '">' +
@@ -5859,12 +5766,13 @@ window.SUSI_DATEFIX = function (text) {
       else if (f === 'step1') c.step1 = e.target.value;
       else if (f === 'interview') c.interview = e.target.value;
       else if (f === 'essay') c.essay = e.target.value;
+      else if (f === 'final') c.final = e.target.value;
       else return;
       savePlan();
     });
     host.addEventListener('blur', function (e) {
       var f = e.target && e.target.dataset && e.target.dataset.f;
-      if (f !== 'interview' && f !== 'essay') return;
+      if (f !== 'interview' && f !== 'essay' && f !== 'final') return;
       /* 칸을 떠날 때 달력이 알아보는 형식으로 맞춘다 — 11/27 · 20261127 → 2026/11/27.
          날짜로 안 보이는 말(미실시 등)과 뒤에 붙인 메모는 그대로 둔다. */
       var hit = cardHit(e);
@@ -5905,7 +5813,7 @@ window.SUSI_DATEFIX = function (text) {
   function planRows() {
     var head = ['구분', '번호', '대학', '전형유형', '전형명', '학과', '본인내신', '50%컷', '70%컷',
       '판정(자동)', '판정(수동)', '모집인원', '작년경쟁률', '수능최저', '1단계', '면접', '논술', '실기',
-      '충원합격', '합불', '메모'];
+      '최종', '합불', '충원합격', '메모'];
     var out = [head];
     ['main', 'cand', 'college'].forEach(function (area) {
       plan[area].forEach(function (c, ix) {
@@ -5919,7 +5827,7 @@ window.SUSI_DATEFIX = function (text) {
           (c.interview !== null && c.interview !== undefined) ? c.interview : examText(r[C.F]),
           (c.essay !== null && c.essay !== undefined) ? c.essay : examText(r[C.L]),
           r[C.K] >= 0 ? DP[r[C.K]] : '',
-          c.fillNo || '', c.passFail ? PF_LABEL[c.passFail] : '',
+          c.final || '', c.passFail ? PF_LABEL[c.passFail] : '', c.fillNo || '',
           c.memo || ''].map(clean));
       });
     });
@@ -6101,6 +6009,7 @@ window.SUSI_DATEFIX = function (text) {
       x1 = setCell(x1, 'L' + r, row[C.W] >= 0 ? W[row[C.W]] : '');
       x1 = putCell(x1, 'M' + r, c.step1 || '');
       x1 = setCell(x1, 'N' + r, (c.interview !== null && c.interview !== undefined) ? c.interview : examText(row[C.F]));
+      x1 = setCell(x1, 'O' + r, c.final || '');            // O 최종(발표일)
       x1 = setCell(x1, 'P' + r, ev ? VN[ev.v] : '');
       x1 = setCell(x1, 'Q' + r, row[C.N] || '');
       x1 = setCell(x1, 'R' + r, nf(row[C.C]));
@@ -6112,7 +6021,7 @@ window.SUSI_DATEFIX = function (text) {
     });
     // 다 못 채운 나머지 줄도 F~W 를 통째로 비운다 (공유 수식 원본이 없어져 깨져 보이는 것 방지)
     for (var un = 13 + picks.length; un <= last; un++) {
-      ['F', 'G', 'H', 'K', 'L', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'].forEach(function (col) {
+      ['F', 'G', 'H', 'K', 'L', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'].forEach(function (col) {
         x1 = clearCell(x1, col + un);
       });
     }
@@ -6160,8 +6069,8 @@ window.SUSI_DATEFIX = function (text) {
     '현인원(+/-)', '작년경쟁률', '구분', '충원합격', '합불', '판정(직접지정)'];
   var FORM_COLS = [4, 6, 15, 20, 19, 9, 11, 9, 7, 12, 24, 30, 16, 18, 12, 15, 12, 11, 8, 10, 8, 12]
     .map(function (w) { return { wch: w }; });
-  // 나열식(지원계획) 시트 21칸 너비 — planRows() 의 머리글 차례와 같다
-  var LIST_COLS = [7, 5, 15, 11, 20, 19, 9, 8, 8, 10, 10, 8, 10, 26, 16, 18, 18, 12, 9, 8, 24]
+  // 나열식(지원계획) 시트 22칸 너비 — planRows() 의 머리글 차례와 같다
+  var LIST_COLS = [7, 5, 15, 11, 20, 19, 9, 8, 8, 10, 10, 8, 10, 26, 16, 18, 18, 12, 13, 8, 9, 24]
     .map(function (w) { return { wch: w }; });
   var FORM_MOCKS = ['3월', '5월', '6월', '7월', '9월', '수능'];
   var FORM_TRACKS = [['nat', '국수영과'], ['hum', '국수영사'], ['all', '전과목']];
@@ -6234,7 +6143,7 @@ window.SUSI_DATEFIX = function (text) {
     put(row, 11, r[C.W] >= 0 ? W[r[C.W]] : '');           // L 전형요소
     put(row, 12, c.step1 || '');                          // M 1단계
     put(row, 13, (c.interview !== null && c.interview !== undefined) ? c.interview : examText(r[C.F])); // N 면접·실기·논술
-    put(row, 14, '');                                     // O 최종
+    put(row, 14, c.final || '');                          // O 최종(발표일)
     put(row, 15, vd ? VN[vd.v] : '');                     // P 상향/적정/하향(자동)
     put(row, 16, r[C.N] || '');                           // Q 현인원(모집인원)
     put(row, 17, nf(r[C.C]));                             // R 작년경쟁률
@@ -6416,7 +6325,7 @@ window.SUSI_DATEFIX = function (text) {
       out.push({
         area: areaOf(g('구분')), uName: g('대학'), tName: g('전형유형'), jName: g('전형명'), dName: g('학과'),
         verdictOverride: verdictKeyOf(g('판정(수동)')), step1: g('1단계'),
-        interview: g('면접'), essay: g('논술'),
+        interview: g('면접'), essay: g('논술'), final: g('최종'),
         fillNo: g('충원합격'), passFail: pfOf(g('합불')), memo: g('메모')
       });
     }
@@ -6431,12 +6340,12 @@ window.SUSI_DATEFIX = function (text) {
       if (!uName && !dName) continue;
       var memo = [];
       if (cellStr(ws, 'J' + n)) memo.push('수험번호 ' + cellStr(ws, 'J' + n));
-      if (cellStr(ws, 'O' + n)) memo.push('최종 ' + cellStr(ws, 'O' + n));
       out.push({
         area: areaOf(cellStr(ws, 'S' + n)), uName: uName, tName: cellStr(ws, 'I' + n),
         jName: cellStr(ws, 'D' + n), dName: dName,
         verdictOverride: verdictKeyOf(cellStr(ws, 'V' + n)), step1: cellStr(ws, 'M' + n),
         interview: cellStr(ws, 'N' + n), essay: '', // 계획서는 면접·실기·논술이 한 칸이라 면접으로 받는다
+        final: cellStr(ws, 'O' + n),                // O 최종(발표일) — 예전에는 메모로 흘려보냈다
         fillNo: cellStr(ws, 'T' + n), passFail: pfOf(cellStr(ws, 'U' + n)), memo: memo.join(' · ')
       });
     }
@@ -6502,6 +6411,7 @@ window.SUSI_DATEFIX = function (text) {
       c.u = x.pick.u; c.t = x.pick.t; c.j = x.pick.j; c.d = x.pick.d;
       c.memo = e.memo || ''; c.verdictOverride = e.verdictOverride;
       c.fillNo = e.fillNo || ''; c.passFail = e.passFail; c.step1 = e.step1 || '';
+      c.final = e.final || '';
       var r = rowOf(c);
       // 면접·논술은 자료의 자동값과 다를 때만 「수정됨」으로 넣는다 (같으면 자동값 그대로 두기)
       c.interview = (e.interview && r && e.interview !== examText(r[C.F])) ? e.interview : null;

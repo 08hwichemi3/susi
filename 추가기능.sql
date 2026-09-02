@@ -347,3 +347,17 @@ create policy schools_update_admin on public.schools
   for update
   using (id = private.my_school() and private.my_role() = 'super_admin')
   with check (id = private.my_school() and private.my_role() = 'super_admin');
+
+-- ═══════════════════════════════════════════════════════════════
+--    ⑩ applications.final_date — 최종 발표일
+--       전형 단계는 1단계 → 면접·실기·논술 → 최종 순인데 마지막 칸이 없었습니다.
+--       달력이 읽는 형식은 'YYYY/MM/DD' 이며, 화면에서 자동으로 그 형식으로
+--       맞춰 줍니다(1127 · 11/27 · 2026-11-27 → 2026/11/27).
+-- ═══════════════════════════════════════════════════════════════
+alter table public.applications add column if not exists final_date text;
+comment on column public.applications.final_date is
+  '최종 발표일. 1단계 → 면접/실기/논술 → 최종 순서의 마지막 단계 날짜.';
+
+-- 칸을 새로 만들었으면 반드시 알려 줘야 합니다. 이 줄이 없으면 화면에서 저장할 때
+-- "final_date 칸을 찾을 수 없다" 는 오류가 납니다(주소창 API 가 칸 목록을 캐둡니다).
+notify pgrst, 'reload schema';
