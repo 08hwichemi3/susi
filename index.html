@@ -33,7 +33,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);
   font-family:"IBM Plex Sans KR",-apple-system,"Malgun Gothic",sans-serif;
-  font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
 .mono,.r,td.num,input[type=number]{font-variant-numeric:tabular-nums}
 .wrap{max-width:1380px;margin:0 auto;padding:18px 20px 72px}
 .hidden{display:none!important}
@@ -43,7 +43,7 @@ body{margin:0;background:var(--ground);color:var(--ink);
    한두 단어만 남은 줄로 잘려 보인다는 지적을 여러 화면에서 받아 없앴다.
    패널 자체가(옆 사이드바는 300px 안팎, 본문은 .wrap 이 1380px 로) 이미
    너비를 잡아 주므로 .hint 에 따로 제한을 두지 않아도 줄이 너무 길어지진 않는다. */
-.hint{color:var(--ink-3);font-size:12.5px;margin:6px 0 0}
+.hint{color:var(--ink-3);font-size:13.5px;line-height:1.65;margin:6px 0 0}
 .pad-h{padding:0 2px}
 
 header.top{position:sticky;top:0;z-index:40;background:var(--ground);border-bottom:1px solid var(--line)}
@@ -443,7 +443,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .gform{display:flex;flex-direction:column;gap:13px}
 .gform label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-2);font-weight:500}
 .gform input,.gform select{width:100%}
-.fh{font-size:11px;color:var(--ink-3);font-weight:400}
+.fh{font-size:12px;color:var(--ink-3);font-weight:400}
 .gbtn{margin-top:4px;padding:11px;border:1px solid var(--accent);border-radius:8px;
   background:var(--accent);color:var(--accent-ink);font-size:14px;font-weight:600;
   cursor:pointer;font-family:inherit}
@@ -636,28 +636,18 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   /* '가로' 를 고르면 printArea() 가 body 에 이 클래스를 얹는다 — 가로/세로 크기를 맞바꾼다 */
   body.pmode-cal.cal-landscape #calPrint{width:273mm;height:186mm}
 
-  body.pmode-plan #stPrint, body.pmode-plan #stPrint *{visibility:visible}
-  /* ★ 여기는 calendar 인쇄와 달리 여러 장으로 자연스레 이어져야 한다(학생 지원계획이
-     길면 2~3장). position:fixed 는 페이지마다 같은 자리에 반복 출력되는 용도라
-     여러 장짜리 내용에는 맞지 않는다 — position:absolute 를 그대로 쓴다. 이 조상들
-     사이에는 #calPrintWrap 같은 position:relative 가 없어서 body(=페이지) 기준으로
-     정확히 맨 위에서 시작한다. */
-  body.pmode-plan #stPrint{position:absolute;left:0;top:0;width:100%}
-
-  /* 어느 쪽도 아니면(브라우저 인쇄 단축키를 그냥 누른 경우) 달력을 낸다 */
-  body:not(.pmode-cal):not(.pmode-plan) #calPrint,
-  body:not(.pmode-cal):not(.pmode-plan) #calPrint *{visibility:visible}
-  body:not(.pmode-cal):not(.pmode-plan) #calPrint{
+  /* 인쇄할 게 지금은 이 달력 하나뿐이라, 어떻게 인쇄를 열어도(단축키를 그냥 눌러도)
+     그대로 달력을 낸다. */
+  body:not(.pmode-cal) #calPrint,
+  body:not(.pmode-cal) #calPrint *{visibility:visible}
+  body:not(.pmode-cal) #calPrint{
     position:fixed;left:0;top:0;width:186mm;height:273mm;
     display:flex;flex-direction:column;overflow:hidden;
   }
 
   /* 종이에서는 색이 안 나올 수 있으니 검정 글씨에 테두리로 구분한다 */
   body{background:#fff;color:#000}
-  .printhead{display:block;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #000;flex:none}
   #calHead{display:none}   /* 달 머리글과 겹쳐 보여서 뺐다 — 내용도 비워 둔다(calFootHtml 참고) */
-  .printhead .pt{font-size:17px;font-weight:700;margin-bottom:3px}
-  .printhead .ps{font-size:11px;color:#444}
 
   /* ★ 한 달이 페이지 밖으로 넘치지 않게, '내용만큼 늘어나는' 대신 페이지 높이를 그 달의
      주(週) 수만큼 나눠 칸 하나하나의 키를 CSS 로 딱 정해 버린다(--cal-weeks, drawCalendar
@@ -831,57 +821,6 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .gt.kv td b{color:var(--ink)}
 .gt.kv .or{color:var(--accent);font-size:11px}
 .yrrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
-
-
-/* ═══════════ 학생 지원계획서 인쇄 ═══════════ */
-.signrow{display:none}
-
-@media print{
-  /* 화면에서는 입력칸이지만 종이에서는 '적힌 값' 으로 보여야 한다.
-     테두리·배경·화살표를 지우면 input/select 는 값 그대로 인쇄된다. */
-  body.pmode-plan .plantbl.edit input,
-  body.pmode-plan .plantbl.edit select{
-    border:0 !important; background:none !important; padding:0 !important;
-    font-size:9.5px !important; color:#000 !important; width:100% !important;
-    min-width:0 !important; height:auto !important;
-    -webkit-appearance:none; -moz-appearance:none; appearance:none;
-    text-overflow:clip;
-  }
-  /* 안내용 흐린 글씨(placeholder)는 값이 아니다. 종이에 나오면 「직접 입력」·「번호」가
-     정말 적힌 것처럼 보인다. 인쇄할 때만 감춘다. */
-  body.pmode-plan .plantbl.edit input::placeholder{color:transparent !important}
-  body.pmode-plan .plantbl.edit input::-webkit-input-placeholder{color:transparent !important}
-  body.pmode-plan .plantbl.edit input::-moz-placeholder{color:transparent !important;opacity:0}
-
-  body.pmode-plan .plantbl.edit td.auto{background:#fff !important;color:#000 !important}
-  body.pmode-plan .plantbl{width:100%;border-collapse:collapse;font-size:9.5px}
-  body.pmode-plan .plantbl th,
-  body.pmode-plan .plantbl td{border:1px solid #777 !important;padding:4px 5px !important;
-    color:#000 !important;vertical-align:top}
-  body.pmode-plan .plantbl thead th{background:#eee !important;font-size:9px;font-weight:700}
-  body.pmode-plan .plantbl tr{break-inside:avoid}
-  body.pmode-plan .areatag{background:none !important;color:#000 !important;
-    border:1px solid #777;padding:0 4px}
-  body.pmode-plan .whyno{color:#555 !important;font-size:8.5px}
-
-  /* 성적표 */
-  body.pmode-plan .gt{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px}
-  body.pmode-plan .gt th,
-  body.pmode-plan .gt td{border:1px solid #777 !important;padding:3px 6px !important;color:#000 !important}
-  body.pmode-plan .gt thead th{background:#eee !important}
-
-  /* 화면 안내는 종이에 안 낸다 */
-  body.pmode-plan .hint,
-  body.pmode-plan #planMsg,
-  body.pmode-plan .tblwrap{overflow:visible !important}
-  body.pmode-plan .hint{display:none !important}
-
-  /* 확인란 */
-  body.pmode-plan .signrow{display:flex !important;gap:40px;margin-top:22px;
-    font-size:10.5px;color:#000}
-  body.pmode-plan .signrow .sigline{display:inline-block;width:120px;
-    border-bottom:1px solid #000;margin-left:8px}
-}
 
 
 /* 엑셀을 어떻게 읽었는지 펼쳐 보이는 상자 (열을 못 찾았을 때만 나온다) */
@@ -2710,22 +2649,13 @@ window.SUSI_CFG = {
   }
 
   function renderDetail(st, apps, gr, mock) {
-    var now = new Date();
     var h = '<h3 class="sec">' + esc(st.name) + ' <span class="tag">' + st.student_no + ' · ' +
       st.grade + '학년 ' + st.class_no + '반 ' + st.number_no + '번</span>' +
       '<button class="btn primary" id="gEdit">성적 입력</button>' +
-      '<button class="btn" id="planEditBtn">지원계획 설정</button>' +
-      '<button class="btn" id="stPrintBtn">인쇄</button></h3>' +
-      '<p class="pnote">인쇄 대화상자의 <b>옵션 더보기</b>(또는 <b>자세히</b>)에서 ' +
-      '<b>머리글과 바닥글</b>을 꺼야 날짜·주소·쪽수가 종이에 함께 찍히지 않습니다. ' +
-      '브라우저가 붙이는 설정이라 이 프로그램에서 대신 끌 수 없습니다.</p>';
-    // 여기서부터 인쇄에 나가는 부분. 종이에만 보이는 머리글을 맨 앞에 둔다.
-    h += '<div id="stPrint"><div class="printhead">' +
-      '<div class="pt">' + CFG.year + '학년도 수시 지원계획서 · ' + esc(st.name) + '</div>' +
-      '<div class="ps">' + st.student_no + ' · ' + st.grade + '학년 ' + st.class_no + '반 ' +
-        st.number_no + '번' + (SCHOOL.name ? ' · ' + esc(SCHOOL.name) : '') +
-        ' · 출력 ' + now.getFullYear() + '.' + pad(now.getMonth() + 1) + '.' + pad(now.getDate()) +
-      '</div></div>';
+      '<button class="btn" id="planEditBtn">지원계획 설정</button></h3>';
+    // 예전에는 여기 자체에 「인쇄」 단추가 있었다. 표를 그대로 인쇄하면 여러 장으로
+    // 늘어지기만 하고 쓸모가 적어, 학교 양식 그대로 나오는 「지원계획 설정 → xlsx로
+    // 저장」쪽으로 안내를 넘기고 이 단추는 없앴다.
     h += '<p class="hint">' + (NOTACT[st.id]
       ? '<b class="clashk">아직 등록하지 않았습니다.</b> 학생이 처음 로그인할 때 생년월일·전화번호를 넣습니다.'
       : '등록됨 · 생년월일 ' + esc(st.birth_date || '—') + ' · 연락처 ' + esc(st.phone || '—') +
@@ -2753,14 +2683,14 @@ window.SUSI_CFG = {
     var wire = function () {
       var eb = $('gEdit');
       if (eb) eb.addEventListener('click', function () { editGrades(st, gr, mock); });
-      var pb = $('stPrintBtn');
-      if (pb) pb.addEventListener('click', function () { printArea('plan'); });
       var qb = $('planEditBtn');
       if (qb) qb.addEventListener('click', function () { openPlanFor(st); });
     };
     if (!apps.length) {
       h += '<p class="hint">아직 담은 전형이 없습니다. 위의 <b>지원계획 설정</b>을 누르면 ' +
-           '학생 화면과 동일한 화면이 열려 대신 입력할 수 있습니다.</p></div>';
+           '학생 화면과 동일한 화면이 열려 대신 입력할 수 있습니다. ' +
+           '표를 인쇄하려면 <b>지원계획 설정</b>을 연 뒤 <b>xlsx로 저장</b>을 눌러 ' +
+           '학교 양식 그대로 받으세요.</p>';
       $('stDetail').innerHTML = h; wire(); return;
     }
     var order = { main: 0, cand: 1, college: 2 };
@@ -2813,11 +2743,6 @@ window.SUSI_CFG = {
         '</tr>';
     });
     h += '</tbody></table></div>';
-    h += '<div class="signrow">' +
-         '<span>담임 확인 <b class="sigline"></b></span>' +
-         '<span>학부모 확인 <b class="sigline"></b></span>' +
-         '</div>';
-    h += '</div>';                       // #stPrint 닫기
     h += '<span class="msg hidden" id="planMsg"></span>';
     $('stDetail').innerHTML = h;
     wire();
@@ -3349,7 +3274,7 @@ window.SUSI_CFG = {
      여섯 달을 한꺼번에 늘어놓으면 화면에서도 종이에서도 아무 달도 제대로 안 보인다.
      인쇄하면 '보고 있는 달' 한 장만 나간다(그리는 것이 하나뿐이라 저절로 그렇게 된다). */
   var CALST = { days: {}, months: [], sel: null, cur: 0 };
-  var CAL_ORIENT = 'portrait';   // '세로'/'가로' 인쇄 방향 — printArea('cal') 가 이 값을 본다
+  var CAL_ORIENT = 'portrait';   // '세로'/'가로' 인쇄 방향 — printArea() 가 이 값을 본다
 
   /* ───────── D-day ─────────
      학교 일정표에는 늘 「수능 D-79」 같은 줄이 붙어 있다. 수능 날짜는 해마다 정해져 있어
@@ -3666,10 +3591,12 @@ window.SUSI_CFG = {
        #calPrint 규칙)가 한다 — 실제 크기를 재서 줄이던 예전 방식은 브라우저마다
        인쇄 타이밍이 달라 믿을 수 없었다. 지금은 페이지 크기를 CSS 에 mm 로 그대로
        박아 두고, 칸 높이는 grid 로 나눠 버리므로 잴 필요 자체가 없다. */
-  function printArea(kind) {
+  /* 지금은 인쇄할 게 수시 달력 하나뿐이다(학생 상세의 표 인쇄 단추는 없앴다 —
+     지원계획 설정 → xlsx로 저장이 학교 양식 그대로 나와 더 낫다). */
+  function printArea() {
     var b = document.body;
-    b.classList.add('pmode-' + kind);
-    var landscape = kind === 'cal' && CAL_ORIENT === 'landscape';
+    b.classList.add('pmode-cal');
+    var landscape = CAL_ORIENT === 'landscape';
     b.classList.toggle('cal-landscape', landscape);
     /* ★ @page 는 body 클래스로 못 고른다(CSS 스펙상 @page 는 :first 같은
        가상클래스만 받는다) — 그래서 '가로' 를 골랐을 때만 <style> 을 그때그때 넣었다 뺀다.
@@ -3681,7 +3608,7 @@ window.SUSI_CFG = {
       document.head.appendChild(pageStyle);
     }
     var clear = function () {
-      b.classList.remove('pmode-cal', 'pmode-plan', 'cal-landscape');
+      b.classList.remove('pmode-cal', 'cal-landscape');
       if (pageStyle) { pageStyle.remove(); pageStyle = null; }
     };
     // 인쇄창이 닫힌 뒤 되돌린다. onafterprint 를 안 주는 브라우저가 있어 예비도 둔다.
@@ -4505,7 +4432,7 @@ window.SUSI_CFG = {
       e.preventDefault(); showCalDay(c.dataset.d);
     });
     // 고사가 없는 달도 그대로 낸다 — 학사 일정표로도 쓰이기 때문이다(빈 칸도 정보다)
-    on('calPrintBtn', 'click', function () { printArea('cal'); });
+    on('calPrintBtn', 'click', function () { printArea(); });
     on('tv-cal', 'click', function (e) {
       var b = e.target.closest('.calorient button[data-orient]'); if (!b) return;
       CAL_ORIENT = b.dataset.orient;
