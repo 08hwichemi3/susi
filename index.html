@@ -580,7 +580,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .kd.k-실기{color:#5b4a9c;background:#e9e5f8}
 
 /* 날짜를 눌렀을 때 아래에 펼쳐지는 판. 여기는 길어지면 스크롤 */
-.calday-panel{max-height:70vh;overflow-y:auto}
+/* 달력을 아래로 스크롤해도 오른쪽 상세가 요일 줄 높이에 붙어 계속 보이도록 sticky 로 띄운다.
+   .calside(부모)가 .calmain 과 같은 높이로 늘어나 있어야(align-items:stretch, 기본값)
+   그 안에서 이 패널이 떠 있을 자리가 생긴다. */
+.calday-panel{position:sticky;top:70px;max-height:calc(100vh - 90px);overflow-y:auto}
 .calday-panel .cdh{margin:0 0 9px;font-size:13.5px;font-weight:700;color:var(--ink);
   display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .cdlist{display:flex;flex-direction:column;gap:7px}
@@ -672,8 +675,13 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .cm-cnt{font-size:9.5px;color:#000 !important;background:none !important;padding:0}
 
   .calwrap{flex:1;min-height:0;overflow:hidden}
+  /* ★ 주(週) 줄은 1fr 대신 calc(%) 로 나눈다. grid 의 1fr 트랙은 안이 꽉 차면
+     '내용이 필요한 만큼'을 최소 크기로 여겨 줄어들지 않으려는 경우가 있어(가로 인쇄처럼
+     남는 높이가 적을 때 두드러진다), 마지막 주가 페이지 아래로 밀려 통째로 안 보이는
+     일이 있었다. calc() 로 쓰면 내용과 상관없이 남은 높이를 주 수로 나눈 만큼만 준다. */
   .calgrid{height:100%;display:grid;grid-template-columns:repeat(7,1fr);
-    grid-template-rows:18px repeat(var(--cal-weeks,5),1fr);gap:2px;min-width:0 !important}
+    grid-template-rows:18px repeat(var(--cal-weeks,5),calc((100% - 18px)/var(--cal-weeks,5)));
+    column-gap:2px;row-gap:0;min-width:0 !important}
 
   .calhd{font-size:9.5px;font-weight:700;color:#000 !important;padding:1px 0;
     border-bottom:1px solid #000}
@@ -1135,16 +1143,20 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 /* ───────── 달력을 왼쪽, 날짜 상세를 오른쪽에 ─────────
    전에는 달력을 가운데 두고 폭을 묶어 놓아 화면이 넓으면 양옆이 비었다.
    왼쪽에 달력, 오른쪽에 '누른 날짜' 패널을 두는 두 칸 배치로 바꾼다. */
-.calsplit{display:flex;align-items:flex-start;gap:22px}
+/* align-items 는 기본값(stretch)을 그대로 둔다 — .calside 가 .calmain(달력) 과 같은
+   높이로 늘어나야, 그 안의 상세 패널(.calday-panel)이 sticky 로 끝까지 따라다닐 수 있다. */
+.calsplit{display:flex;gap:22px}
 .calmain{flex:1;min-width:0}
 .calside{width:340px;flex:0 0 340px;border-left:1px solid var(--line);padding-left:18px}
 .calcell{min-height:150px}
 
 @media(max-width:900px){
-  /* 좁아지면 옆 칸을 둘 자리가 없다 — 위아래로 다시 쌓는다 */
+  /* 좁아지면 옆 칸을 둘 자리가 없다 — 위아래로 다시 쌓는다 (sticky 도 여기서는 끈다 —
+     한 줄로 쌓인 화면에서 상세 칸만 붙박이면 오히려 스크롤이 어색해진다) */
   .calsplit{flex-direction:column}
   .calside{width:100%;flex:1 1 auto;border-left:0;padding-left:0;
     border-top:1px solid var(--line);padding-top:14px}
+  .calday-panel{position:static;max-height:none}
 }
 
 @media(max-width:700px){
