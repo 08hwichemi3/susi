@@ -67,10 +67,12 @@ header.top{position:sticky;top:0;z-index:40;background:var(--ground);border-bott
 .stat .v small{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:3px}
 
 .cols{display:grid;grid-template-columns:282px 1fr;gap:18px;align-items:start}
-.cols2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;margin-bottom:16px}
+.cols3even{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;align-items:start;margin-bottom:16px}
 /* 격자 칸이 표 너비만큼 늘어나 페이지 전체가 옆으로 밀리는 것 방지 */
-.cols>*,.cols2>*{min-width:0}
-@media(max-width:900px){.cols,.cols2{grid-template-columns:1fr}}
+.cols>*,.cols3even>*{min-width:0}
+@media(max-width:1100px){.cols3even{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+@media(max-width:640px){.cols3even{grid-template-columns:1fr}}
 .rail{position:sticky;top:62px;display:flex;flex-direction:column;max-height:calc(100vh - 80px);overflow:auto}
 @media(max-width:900px){.rail{position:static;max-height:none}}
 .step{padding:12px 14px;border-bottom:1px solid var(--line)}
@@ -991,7 +993,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   /* ★ 위(원본)의 같은 규칙을 여기서 다시 적어 준다 —
      이 파일 뒤쪽에 쓴 `.cols{grid-template-columns:250px …}` 이 화면 크기와 상관없이
      이겨 버려서, 좁은 화면에서 조건 줄과 표가 나란히 놓여 표가 잘렸다. */
-  .cols,.cols2,.cols3{grid-template-columns:minmax(0,1fr)}
+  .cols,.cols3even,.cols3{grid-template-columns:minmax(0,1fr)}
   /* 표는 위쪽 규칙이 이미 카드로 바꾼다. 고정 폭만 풀어 준다. */
   #v-find .tablewrap table{min-width:0;table-layout:auto;display:block}
   #v-find .tablewrap th{width:auto}
@@ -1482,12 +1484,6 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <button type="button" class="ghost railtog" id="railTog" aria-pressed="false">조건 접기</button>
         <span class="count" id="cnt"></span>
         <span class="grow"></span>
-        <button class="btn" id="copyView">화면 결과 복사</button>
-        <button class="btn" id="copyAll">전체 복사</button>
-        <button class="btn" id="saveCsv">파일로 저장(CSV)</button>
-        <button class="btn" id="saveXlsx">xlsx로 저장</button>
-        <button class="btn" id="saveAllXlsx">전체 xlsx</button>
-        <label class="mini"><input type="checkbox" id="withHdr" checked> 머리글</label>
         <label class="tag" for="sort">정렬</label>
         <select id="sort" class="mini-sel">
           <option value="def">대학·전형·학과순</option>
@@ -1532,7 +1528,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
 <!-- ══ 전형 관리 ══ -->
 <section class="wrap view hidden" id="v-plan">
-  <div class="cols2">
+  <div class="cols3even">
     <div class="panel pad">
       <h3 class="sec">내신 등급</h3>
       <p class="hint">이수단위 가중평균으로 직접 계산한 값을 넣으세요. 학과 계열에 맞는 값이 카드에 자동으로 들어갑니다.</p>
@@ -1545,6 +1541,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <label>판정 기준 <input type="number" step="0.05" min="0.05" max="2" id="g-th" value="0.3"> 등급</label>
         <span class="hint">본인내신이 70%컷보다 이만큼 나쁘면 상향, 좋으면 하향</span>
       </div>
+    </div>
+    <div class="panel pad">
+      <h3 class="sec">모의고사 등급</h3>
+      <p class="hint">선생님이 올려 둔 모의고사 성적입니다 — 여기서는 고칠 수 없습니다.</p>
+      <div id="mockGrades"></div>
     </div>
     <div class="panel pad">
       <h3 class="sec">요약</h3>
@@ -5131,34 +5132,13 @@ window.SUSI_CFG = {
     toast('칸이 가득 찼습니다');
   });
 
-  /* ───────── 16열 TSV ───────── */
-  function hdr16() {
-    return ['키', '대학명', '전형유형', '전형명', '학과명', YEAR + ' 전형방법', YEAR + ' 모집인원',
-      YEAR + '수능최저학력기준', '실기고사일', '50%컷', '70%컷', '면접고사일', PREV + '경쟁률', '최초합격자평균', '평균', '논술고사일'];
-  }
-  /* 16열 원본 배열에서 값을 그대로 가져오는 공용 빌더 — TSV·CSV·xlsx가 모두 이걸 씀 */
+  /* 16열 원본 배열에서 값을 그대로 가져오는 공용 빌더 — xlsx 내보내기가 이걸 씀 */
   function row16(r) {
     var uni = U[r[C.U]], jn = J[r[C.J]], dp = DP[r[C.D]];
     return [uni + '|' + jn + '|' + dp, uni, TYPEFULL[T[r[C.T]]], jn, dp,
       r[C.W] >= 0 ? W[r[C.W]] : '', r[C.N] || '', r[C.M] >= 0 ? M[r[C.M]] : '',
       r[C.K] >= 0 ? DP[r[C.K]] : '', r[C.A] || '', r[C.B] || '', r[C.F] >= 0 ? DP[r[C.F]] : '',
       r[C.C] || '', '', '', r[C.L] >= 0 ? DP[r[C.L]] : ''].map(clean);
-  }
-  function rowsOf(ids) {
-    return ids.map(function (i) { return row16(ROWS[i]); });
-  }
-  function tsv(ids, withHdr) {
-    var out = [];
-    if (withHdr) out.push(hdr16().join('\t'));
-    rowsOf(ids).forEach(function (row) { out.push(row.join('\t')); });
-    return out.join('\n');
-  }
-  function csvOf(ids, withHdr) {
-    var q = function (v) { v = clean(v); return /[",]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var out = [];
-    if (withHdr) out.push(hdr16().map(q).join(','));
-    rowsOf(ids).forEach(function (row) { out.push(row.map(q).join(',')); });
-    return '﻿' + out.join('\r\n');
   }
   function copyText(t, btn, n) {
     var done = function () {
@@ -5175,16 +5155,6 @@ window.SUSI_CFG = {
     var ok = false; try { ok = document.execCommand('copy'); } catch (e) { }
     ta.remove(); ok ? done() : toast('복사에 실패했습니다. 브라우저 권한을 확인하세요.');
   }
-  $('copyView').addEventListener('click', function (e) {
-    var ids = sortIds(filtered());
-    if (!ids.length) { toast('복사할 결과가 없습니다'); return; }
-    copyText(tsv(ids, $('withHdr').checked), e.currentTarget, ids.length);
-  });
-  $('copyAll').addEventListener('click', function (e) {
-    var ids = sortIds(ROWS.map(function (_, i) { return i; }));
-    copyText(tsv(ids, $('withHdr').checked), e.currentTarget, ids.length);
-  });
-
   /* ───────── 파일 저장 ───────── */
   var DL = null, dlReady = false;
   if (window.claude && claude.use) {
@@ -5251,11 +5221,6 @@ window.SUSI_CFG = {
       toast('파일 저장 실패 (' + (c || '알 수 없음') + '). 복사 버튼을 이용하세요.');
     });
   }
-  $('saveCsv').addEventListener('click', function () {
-    var ids = sortIds(filtered());
-    if (!ids.length) { toast('저장할 결과가 없습니다'); return; }
-    saveFile('전형데이터_' + YEAR, csvOf(ids, true));
-  });
 
   /* ───────── 진짜 xlsx 다운로드 (SheetJS, 파일 안에 내장) ─────────
      claude.ai 다운로드 권한은 xlsx 확장자를 허용하지 않아, DL(downloads capability)을 거치지 않고
@@ -5351,15 +5316,6 @@ window.SUSI_CFG = {
       }
     } catch (e) { toast('xlsx 만들기에 실패했습니다: ' + (e && e.message || '')); }
   }
-  $('saveXlsx').addEventListener('click', function () {
-    var ids = sortIds(filtered());
-    if (!ids.length) { toast('저장할 결과가 없습니다'); return; }
-    saveXlsxFile('전형데이터_' + YEAR + '_결과', [{ name: '전형데이터', aoa: [hdr16()].concat(rowsOf(ids)), cols: DATA_COLS }]);
-  });
-  $('saveAllXlsx').addEventListener('click', function () {
-    var ids = sortIds(ROWS.map(function (_, i) { return i; }));
-    saveXlsxFile('전형데이터_' + YEAR + '_전체', [{ name: '전형데이터', aoa: [hdr16()].concat(rowsOf(ids)), cols: DATA_COLS }]);
-  });
 
   /* ───────── 내 지원계획 ───────── */
   var NAT = ['공학', '공과', '전자', '전기', '기계', '컴퓨터', '소프트웨어', 'SW', 'AI', '인공지능', '데이터', '정보통신', '반도체',
@@ -5685,6 +5641,22 @@ window.SUSI_CFG = {
       markClamps(host);
     });
     renderPlanSummary();
+    renderMockGrades();
+  }
+  /* '내신 등급' 옆의 '모의고사 등급' 칸 — 읽기 전용. 선생님이 올린 자료를 그대로 보여준다
+     (WHO.mocks 는 로그인할 때·선생님이 이 학생 계획을 열 때 이미 받아 둔 것이다). */
+  function renderMockGrades() {
+    var host = $('mockGrades'); if (!host) return;
+    var mocks = (WHO && WHO.mocks) || {};
+    var rounds = FORM_MOCKS.filter(function (mo) { return mocks[mo]; });
+    if (!rounds.length) { host.innerHTML = '<p class="hint">아직 올라온 모의고사 성적이 없습니다.</p>'; return; }
+    host.innerHTML = '<table class="gt"><thead><tr><th>모의</th><th>국어</th><th>수학</th><th>영어</th><th>탐1</th><th>탐2</th></tr></thead><tbody>' +
+      rounds.map(function (mo) {
+        var m = mocks[mo] || {};
+        return '<tr><th>' + esc(mo) + '</th>' + ['korean', 'math', 'english', 'sci1', 'sci2'].map(function (k) {
+          return '<td>' + (m[k] == null || m[k] === '' ? '—' : esc(String(m[k]))) + '</td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
   }
   function renderPlanSummary() {
     var cnt = { up: 0, fit: 0, down: 0, none: 0 }, mainFilled = 0, candFilled = 0, collegeFilled = 0, dates = {};
@@ -5886,6 +5858,16 @@ window.SUSI_CFG = {
     var attrs = m[1].replace(/\s+t="[^"]*"/g, '');
     return xml.slice(0, m.index) + cellXml(ref, attrs, v) + xml.slice(m.index + m[0].length);
   }
+  /* 수식(공유 수식 포함)을 통째로 비운다 — putCell 은 값이 없으면 손대지 않고 그대로 두는데,
+     그러면 한 줄만 값을 채우고 남은 줄은 그대로 둘 때 '공유 수식'의 원본 칸만 지워지고
+     나머지 줄은 없는 원본을 가리키게 된다(고쳐 쓰지 않은 칸이 깨져 보일 수 있다). */
+  function clearCell(xml, ref) {
+    var re = new RegExp('<c r="' + ref + '"([^>]*?)(?:/>|>[\\s\\S]*?</c>)');
+    var m = re.exec(xml);
+    if (!m) return xml;
+    var attrs = m[1].replace(/\s+t="[^"]*"/g, '');
+    return xml.slice(0, m.index) + '<c r="' + ref + '"' + attrs + '/>' + xml.slice(m.index + m[0].length);
+  }
   /* 줄 하나를 통째로 복제해서 아래에 붙인다 (양식은 8칸뿐인데 계획은 더 많을 수 있다).
      ★ 수식 안의 줄 번호도 같이 바꿔야 한다. $H$5 처럼 $ 뒤에 오는 숫자는 그대로 둔다. */
   function cloneRow(xml, from, to) {
@@ -6002,17 +5984,42 @@ window.SUSI_CFG = {
     // 지원 줄 — 양식은 13~20줄(8칸). 더 있으면 마지막 줄을 복제해서 늘린다.
     var last = 20;
     for (var n = 8; n < picks.length; n++) { x1 = cloneRow(x1, last, last + 1); last++; }
+    /* ★ 양식의 F·G·H·K·L·N·P·Q·R 칸은 원래 VLOOKUP·INDEX 수식이 들어 있어
+       엑셀에서 열 때마다 새로 계산된다 — 판정 기준(0.3 고정)도, 화면에서 손으로
+       고친 상향/적정/하향 같은 값도 그 수식은 알지 못한다. 그래서 앱이 이미
+       계산해 둔 값(카드에 뜨는 것과 같은 값)을 그대로 찍어 수식을 없앤다. */
     picks.forEach(function (p, i) {
       var r = 13 + i, c = p.card || {}, row = p.r;
+      var vd = verdict(row), ev = effVerdict(c, vd);
       x1 = putCell(x1, 'B' + r, i + 1);
       x1 = putCell(x1, 'C' + r, U[row[C.U]]);
       x1 = putCell(x1, 'D' + r, J[row[C.J]]);
       x1 = putCell(x1, 'E' + r, DP[row[C.D]]);
+      if (vd) x1 = putCell(x1, 'F' + r, vd.mine);
+      x1 = putCell(x1, 'G' + r, nf(row[C.A]));
+      x1 = putCell(x1, 'H' + r, nf(row[C.B]));
       var tn = T[row[C.T]];
       x1 = putCell(x1, 'I' + r, TYPE_SHORT[TYPEFULL[tn] || tn] || TYPE_SHORT[tn] || '');
       x1 = putCell(x1, 'J' + r, c.examNo || '');
+      if (row[C.M] >= 0) x1 = putCell(x1, 'K' + r, (isNoMin(M[row[C.M]]) ? '[X] ' : '[O] ') + M[row[C.M]]);
+      x1 = putCell(x1, 'L' + r, row[C.W] >= 0 ? W[row[C.W]] : '');
       x1 = putCell(x1, 'M' + r, c.step1 || '');
+      x1 = putCell(x1, 'N' + r, (c.interview !== null && c.interview !== undefined) ? c.interview : examText(row[C.F]));
+      if (ev) x1 = putCell(x1, 'P' + r, VN[ev.v]);
+      x1 = putCell(x1, 'Q' + r, row[C.N] || '');
+      x1 = putCell(x1, 'R' + r, nf(row[C.C]));
+      x1 = putCell(x1, 'S' + r, AREA_LABEL[p.area] + ' ' + ((p.ix || 0) + 1));
+      x1 = putCell(x1, 'T' + r, c.fillNo || '');
+      x1 = putCell(x1, 'U' + r, c.passFail ? PF_LABEL[c.passFail] : '');
+      x1 = putCell(x1, 'V' + r, c.verdictOverride ? VN[c.verdictOverride] : '');
     });
+    /* 다 못 채운 나머지 줄은 F·K·P·V 의 '공유 수식' 원본 칸이 비어 있을 수 있다 —
+       그대로 두면 그 공유 수식을 물려받는 나머지 줄이 깨져 보인다. 통째로 비운다. */
+    for (var un = 13 + picks.length; un <= last; un++) {
+      ['F', 'G', 'H', 'K', 'L', 'N', 'P', 'Q', 'R', 'V'].forEach(function (col) {
+        x1 = clearCell(x1, col + un);
+      });
+    }
     x2 = appendData(x2, picks.map(function (p) { return row16(p.r); }));
 
     var files = [];
@@ -6034,9 +6041,6 @@ window.SUSI_CFG = {
     '수능최저', '전형요소(단계전형 등)', '1단계', '면접, 실기, 논술', '최종', '상향/적정/하향',
     '현인원(+/-)', '작년경쟁률', '구분', '충원합격', '합불', '판정(직접지정)'];
   var FORM_COLS = [4, 6, 15, 20, 19, 9, 11, 9, 7, 12, 24, 30, 16, 18, 12, 15, 12, 11, 8, 10, 8, 12]
-    .map(function (w) { return { wch: w }; });
-  // 전형데이터 16칸 너비 (hdr16 차례와 같다)
-  var DATA_COLS = [10, 14, 8, 20, 22, 32, 9, 26, 12, 8, 8, 12, 10, 13, 8, 12]
     .map(function (w) { return { wch: w }; });
   // 나열식(지원계획) 시트 21칸 너비 — planRows() 의 머리글 차례와 같다
   var LIST_COLS = [7, 5, 15, 11, 20, 19, 9, 8, 8, 10, 10, 8, 10, 26, 16, 18, 18, 12, 9, 8, 24]
@@ -6192,7 +6196,7 @@ window.SUSI_CFG = {
     if (tplGet()) {
       var picks = [];
       ['main', 'cand', 'college'].forEach(function (area) {
-        plan[area].forEach(function (c) { var r = rowOf(c); if (r) picks.push({ r: r, card: c }); });
+        plan[area].forEach(function (c, ix) { var r = rowOf(c); if (r) picks.push({ r: r, card: c, area: area, ix: ix }); });
       });
       try {
         var buf = buildFormBook(WHO, gg, mm, picks);
