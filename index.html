@@ -9,6 +9,7 @@
   --blue:#25506E; --blue-soft:#DEE8F0;
   /* 달력 전용 색 — 주말과 고사 종류는 한눈에 갈라져야 해서 본문 색보다 진하게 쓴다 */
   --cal-sun:#D6293E; --cal-sat:#1160C4;
+  --cal-sun-bg:#FBE7E9; --cal-sat-bg:#E1EBFA;   /* 주말 칸 전체에 까는 옅은 바탕 */
   --facts-bg:#F1EFE7;          /* 카드 가운데 '자료에서 오는 정보' 띠 바탕 */
   --kd-int:#12795F; --kd-ess:#A4650B; --kd-prac:#5B47B0; --kd-ink:#FFFFFF;
   --shadow:0 1px 2px rgba(23,32,28,.06),0 8px 24px -12px rgba(23,32,28,.18);
@@ -23,6 +24,7 @@
   --rose:#D98189; --rose-soft:#2C1B1D;
   --blue:#8FB8D6; --blue-soft:#1B2630;
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
+  --cal-sun-bg:#33191C; --cal-sat-bg:#161F2C;
   --facts-bg:#232C26;
   --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
@@ -36,6 +38,7 @@
   --rose:#D98189; --rose-soft:#2C1B1D;
   --blue:#8FB8D6; --blue-soft:#1B2630;
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
+  --cal-sun-bg:#33191C; --cal-sat-bg:#161F2C;
   --facts-bg:#232C26;
   --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
@@ -564,18 +567,24 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;min-width:660px}
 
-.calhd{font-size:11.5px;font-weight:700;color:var(--ink-2);text-align:center;padding:4px 0 2px}
-.calhd.sun{color:var(--cal-sun)}
-.calhd.sat{color:var(--cal-sat)}
+/* 요일 머리글을 옅은 줄 대신 색 띠로 — 어느 요일 칸인지 눈에 바로 들어오게 */
+.calhd{font-size:11.5px;font-weight:700;color:var(--accent-ink);text-align:center;
+  padding:6px 0;background:var(--accent);border-radius:6px}
+.calhd.sun{background:var(--cal-sun)}
+.calhd.sat{background:var(--cal-sat)}
 
 .calcell{min-width:0;min-height:150px;overflow:hidden;
   border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--surface);
   display:flex;flex-direction:column}
 .calcell.blank{background:transparent;border-color:transparent}
+/* 주말 칸은 늘 옅게 물들어 있다 — 안에 일정이 없어도 토·일요일 열이 한눈에 갈라진다 */
+.calcell.sun{background:var(--cal-sun-bg)}
+.calcell.sat{background:var(--cal-sat-bg)}
 .calcell .dn{font-size:11.5px;font-weight:700;color:var(--ink-3);margin-bottom:3px;flex:0 0 auto}
 .calcell.sun .dn{color:var(--cal-sun)}
 .calcell.sat .dn{color:var(--cal-sat)}
-/* 고사가 있는 날은 빈 날과 확실히 갈라 보이게 — 바탕을 옅게 깔고 왼쪽에 굵은 띠를 넣는다 */
+/* 고사가 있는 날은 빈 날과 확실히 갈라 보이게 — 바탕을 옅게 깔고 왼쪽에 굵은 띠를 넣는다
+   (주말 바탕보다 뒤에 와서, 주말이면서 고사가 있는 날은 이 색이 이긴다) */
 .calcell.has{background:var(--accent-soft);border-color:var(--accent-line);
   box-shadow:inset 3px 0 0 var(--accent)}
 .calcell.has .dn{color:var(--ink)}
@@ -692,10 +701,13 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   #calOut{flex:1;min-height:0;display:flex;flex-direction:column}
   .calmon{margin:0;flex:1;min-height:0;display:flex;flex-direction:column}
   .calmonhead{flex:none;border-bottom:2px solid #000;padding-bottom:5px;margin:0 0 5px}
-  .cm-no{font-size:24px;color:#000}
-  .cm-no span{font-size:11px;color:#000}
+  .cm-no .cm-mo{font-size:24px;color:#000}
+  .cm-no .cm-mo i{font-size:11px;color:#000}
+  .cm-no .cm-yr{font-size:9.5px;color:#444}
   .cm-t b{font-size:12px;color:#000}
   .cm-t span{font-size:9.5px;color:#444}
+  .cm-mark{background:none !important;color:#000 !important;border:1px solid #000}
+  .cm-bname{font-size:9.5px;color:#000}
   .cm-cnt{font-size:9.5px;color:#000 !important;background:none !important;padding:0}
 
   .calwrap{flex:1;min-height:0;overflow:hidden}
@@ -708,7 +720,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     column-gap:2px;row-gap:0;min-width:0 !important}
 
   .calhd{font-size:9.5px;font-weight:700;color:#000 !important;padding:1px 0;
-    border-bottom:1px solid #000}
+    background:none !important;border-radius:0;border-bottom:1px solid #000}
   .calcell{min-height:0;max-height:none;overflow:hidden;
     border:1px solid #999;border-radius:0;padding:2px 4px;
     background:#fff !important;display:flex;flex-direction:column}
@@ -717,7 +729,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .calcell.sel{outline:none !important}
   .calcell.clash{border:2.2px solid #000}
   .calcell .dn{font-size:9.5px;font-weight:700;color:#000 !important;margin-bottom:1px;flex:none}
-  .ddl{font-size:8px;line-height:1.25;color:#000 !important}
+  .ddl{font-size:8px;line-height:1.25;color:#000 !important;
+    background:none !important;padding:0 !important;border-radius:0 !important}
   .calcell .its{flex:1;min-height:0;overflow:hidden}
   .calcell .it{font-size:8.5px;line-height:1.3;color:#000 !important;
     white-space:normal !important;overflow:hidden;text-overflow:clip !important;
@@ -994,24 +1007,35 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .ddrow input{width:auto;min-width:150px}
 .ddrow .fh{flex-basis:100%}
 
-/* 종이 일정표처럼 큰 달 숫자를 앞세운다 — 어느 달인지 한눈에 */
+/* 종이 일정표처럼 큰 달 숫자를 앞세우고, 오른쪽에 학교 이름을 작은 마크와 함께 둔다 —
+   직접 만들었던 월간 일정표(첨부 이미지) 구도를 참고했다. */
 .calmonhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-  border-bottom:2px solid var(--ink);padding-bottom:8px;margin:14px 0 10px}
-.cm-no{font-family:"Gowun Batang",serif;font-size:42px;line-height:1;font-weight:700;color:var(--accent)}
-.cm-no span{font-size:15px;margin-left:2px;color:var(--ink-2)}
+  border-bottom:2px solid var(--ink);padding-bottom:10px;margin:14px 0 10px}
+.cm-no{display:flex;flex-direction:column;font-family:"Gowun Batang",serif;line-height:1}
+.cm-no .cm-mo{font-size:40px;font-weight:700;color:var(--accent)}
+.cm-no .cm-mo i{font-style:normal;font-size:15px;font-weight:600;margin-left:2px;color:var(--ink-2)}
+.cm-no .cm-yr{margin-top:3px;font-size:12.5px;font-weight:600;color:var(--ink-3);
+  letter-spacing:.04em;font-family:"IBM Plex Sans KR",sans-serif}
 .cm-t{min-width:0}
 .cm-t b{display:block;font-size:15px;font-weight:700;color:var(--ink)}
 .cm-t span{font-size:12px;color:var(--ink-3)}
-.cm-cnt{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent);
+/* 오른쪽 '레터헤드' — 학교 마크 + 이름, 그 아래 이 달 고사 건수 */
+.cm-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.cm-brand{display:flex;align-items:center;gap:6px}
+.cm-mark{flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:var(--accent);
+  color:var(--accent-ink);font-size:11px;font-weight:700;font-family:"Gowun Batang",serif;
+  display:flex;align-items:center;justify-content:center}
+.cm-bname{font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.cm-cnt{font-size:12px;font-weight:600;color:var(--accent);
   background:var(--accent-soft);border-radius:999px;padding:3px 11px;white-space:nowrap}
 .calmon.empty .cm-cnt{color:var(--ink-3);background:var(--surface-2)}
 .calmon{margin:0}
 
-/* D-day 줄 (수능 D-79 …). 지난 일정은 아예 안 그린다. */
-.calcell .dd{flex:0 0 auto;margin-bottom:2px}
-.ddl{display:block;font-size:9.5px;line-height:13px;color:var(--ink-3);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-.calcell.has .ddl{color:var(--ink-2)}
+/* D-day 줄 (수능 D-79 …) — 색이 있는 알약 배지로, 지난 일정은 아예 안 그린다. */
+.calcell .dd{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px}
+.ddl{display:inline-flex;align-items:center;font-size:9px;font-weight:700;line-height:1;
+  color:var(--rose);background:var(--rose-soft);border-radius:999px;padding:3px 6.5px;
+  white-space:nowrap;font-variant-numeric:tabular-nums}
 /* D-day 줄이 붙어도 넉넉하게 — 세로로 긴 칸 */
 .calcell{min-height:150px}
 
@@ -1044,7 +1068,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     font-size:10px;font-weight:700;line-height:1}
   .calcell.clash[data-n]::after{background:var(--rose);color:#fff}
   .calhd{font-size:10.5px}
-  .cm-no{font-size:32px}
+  .cm-no .cm-mo{font-size:32px}
   .calnav select{flex:1;min-width:0}
   .calnav .grow{display:none}
   .calcnt{flex-basis:100%;order:5}
@@ -3508,12 +3532,19 @@ window.SUSI_DATEFIX = function (text) {
     // 4주짜리 달과 6주짜리 달이 같은 칸 높이면 6주짜리 달은 종이 밖으로 넘친다.
     $('calOut').style.setProperty('--cal-weeks', cells.length / 7);
 
+    var brandName = SCHOOL.name ? esc(SCHOOL.name) : CFG.year + '학년도 수시 지원 센터';
     $('calOut').innerHTML = '<div class="calmon' + (cnt ? '' : ' empty') + '">' +
       '<div class="calmonhead">' +
-        '<div class="cm-no">' + m + '<span>월</span></div>' +
-        '<div class="cm-t"><b>' + y + ' 3학년 월간 일정표</b>' +
-          '<span>' + (SCHOOL.name ? esc(SCHOOL.name) : CFG.year + '학년도 수시') + '</span></div>' +
-        '<div class="cm-cnt">' + (cnt ? cnt + '건' : '고사 없음') + '</div>' +
+        '<div class="cm-no"><span class="cm-mo">' + m + '<i>월</i></span>' +
+          '<span class="cm-yr">' + y + '</span></div>' +
+        '<div class="cm-t"><b>3학년 월간 일정표</b>' +
+          '<span>' + CFG.year + '학년도 수시</span></div>' +
+        '<div class="cm-right">' +
+          '<div class="cm-brand"><span class="cm-mark">' +
+            (SCHOOL.name ? esc(SCHOOL.name.slice(0, 1)) : '수') + '</span>' +
+            '<span class="cm-bname">' + brandName + '</span></div>' +
+          '<div class="cm-cnt">' + (cnt ? cnt + '건' : '고사 없음') + '</div>' +
+        '</div>' +
       '</div>' +
       '<div class="calwrap"><div class="calgrid">' +
         WEEK.map(function (w, k) {
