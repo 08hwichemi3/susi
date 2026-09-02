@@ -288,6 +288,15 @@ td.jh{color:var(--ink-2)}
   position:absolute;right:0;width:32px;height:100%}
 .card input.pick:disabled{background-image:none;color:var(--ink-3)}
 .card .grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+/* 대학 입력칸 옆의 '목록에 없는 대학' 전환 단추. 과학기술원(KAIST 등)처럼
+   어디가 자료에 없는 곳을 직접 적어 넣을 때 쓴다. */
+.card .unirow{display:flex;gap:6px;align-items:center}
+.card .unirow input{flex:1;min-width:0}
+.card .customtoggle{flex:0 0 auto;border:1px solid var(--line-2);background:var(--surface-2);
+  color:var(--ink-3);border-radius:7px;padding:6px 9px;font-size:11.5px;font-family:inherit;
+  cursor:pointer;white-space:nowrap}
+.card .customtoggle:hover{border-color:var(--accent-line);color:var(--accent)}
+.facts.custom{color:var(--ink-3);font-size:11.5px}
 /* 자료에서 저절로 따라오는 '읽기만 하는' 정보. 직접 적는 칸과 한눈에 갈라 보이도록
    카드 폭을 꽉 채운 다른 색 띠로 깐다 — 흰 바탕은 적는 곳, 이 띠는 보여 주는 곳이다.
    (카드 좌우 여백이 14px 이라 그만큼 음수 여백을 줘서 양끝까지 늘린다) */
@@ -1619,7 +1628,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   </div>
 
   <p class="hint pad-h">입력한 내용은 이 브라우저에 자동으로 저장됩니다. <b>모든 기기에 저장</b>을 누르면 서버에 저장되어 다른 기기·다른 브라우저에서도 동일하게 확인할 수 있습니다.
-    카드의 <b>⇄</b> 버튼으로 다른 칸과 위치를 바꿀 수 있습니다(수시↔후보 포함).</p>
+    카드의 <b>⇄</b> 버튼으로 다른 칸과 위치를 바꿀 수 있습니다(수시↔후보 포함).
+    <b>한국과학기술원(KAIST)</b>처럼 목록에 없는 대학은 카드의 <b>목록에 없는 대학</b> 단추를 눌러 직접 적어 넣을 수 있습니다.
+    다만 이런 카드는 모집인원·컷 같은 자동 정보는 나오지 않으니 전형 일정과 결과를 직접 챙겨야 합니다.</p>
 </section>
 
 <!-- ══ 데이터 ══ -->
@@ -2182,7 +2193,9 @@ window.SUSI_DATEFIX = function (text) {
 
   var AREAS = ['main', 'cand', 'college'];
   function emptyCard() {
-    return { u: null, t: null, j: null, d: null, memo: '', verdictOverride: null,
+    return { u: null, t: null, j: null, d: null,
+             custom: false, uName: '', tName: '', jName: '', dName: '',
+             memo: '', verdictOverride: null,
              fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
   }
   function rowsToPlan(rows, grades) {
@@ -2196,6 +2209,13 @@ window.SUSI_DATEFIX = function (text) {
       var c = emptyCard();
       var got = window.SUSI_RESOLVE(r.uni_name, r.type_name, r.admission_name, r.dept_name);
       if (got) { c.u = got.u; c.t = got.t; c.j = got.j; c.d = got.d; }
+      else if (r.uni_name) {
+        // 어디가 자료에서 못 찾았지만 이름이 있다 — 직접 입력한 카드다(예: 과학기술원).
+        // 그대로 잃어버리지 않고 '직접 입력' 모드로 되살린다.
+        c.custom = true;
+        c.uName = r.uni_name || ''; c.tName = r.type_name || '';
+        c.jName = r.admission_name || ''; c.dName = r.dept_name || '';
+      }
       c.memo = r.memo || ''; c.verdictOverride = r.verdict_override || null;
       c.fillNo = r.fill_no || '';
       // 'wait' 를 떨어뜨리면, 학생이 로그인만 해도 다음 저장 때 선생님이 넣은 값이 지워진다
@@ -5009,6 +5029,12 @@ window.SUSI_DATEFIX = function (text) {
     var m = v.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})(?!\d)/);
     return m ? m[1] + '/' + (+m[2]) + '/' + (+m[3]) : null;
   }
+  /* examDay() 는 자료 문자열 색인(정수)을 받는다 — 직접 입력 카드는 면접·논술 값이
+     학생이 그대로 적은 텍스트라서(색인이 아니다) 문자열을 바로 받는 판이 따로 필요하다. */
+  function examDayText(v) {
+    var m = String(v || '').match(/(\d{4})\/(\d{1,2})\/(\d{1,2})(?!\d)/);
+    return m ? m[1] + '/' + (+m[2]) + '/' + (+m[3]) : null;
+  }
   function isNoMin(t) { return /^(미반영|없음|미적용|해당없음|-)$/.test(String(t).trim()) || /최저학력기준\s*없음/.test(t); }
   function minCell(mi) {
     if (mi < 0) return '<span class="dash">—</span>';
@@ -5172,9 +5198,9 @@ window.SUSI_DATEFIX = function (text) {
       toast('전문대 칸에 담았습니다: ' + U[r[C.U]] + ' ' + DP[r[C.D]]);
       return;
     }
-    var slot = plan.main.findIndex(function (c) { return c.u === null; });
+    var slot = plan.main.findIndex(function (c) { return !cardFilled(c); });
     if (slot >= 0) { plan.main[slot] = nc; savePlan(); toast('수시 ' + (slot + 1) + '번 칸에 담았습니다: ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
-    slot = plan.cand.findIndex(function (c) { return c.u === null; });
+    slot = plan.cand.findIndex(function (c) { return !cardFilled(c); });
     if (slot >= 0) { plan.cand[slot] = nc; savePlan(); toast('예비 ' + (slot + 1) + '번 칸에 담았습니다: ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
     toast('칸이 가득 찼습니다');
   });
@@ -5446,7 +5472,9 @@ window.SUSI_DATEFIX = function (text) {
   /* ───────── 지원계획 카드 모델: 수시(main, 6칸) · 후보(cand, 3칸) · 전문대(college, 무제한) ───────── */
   var VERDICT_KEYS = { up: 1, fit: 1, down: 1 };
   function emptyCard() {
-    return { u: null, t: null, j: null, d: null, memo: '', verdictOverride: null, fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
+    return { u: null, t: null, j: null, d: null,
+             custom: false, uName: '', tName: '', jName: '', dName: '',
+             memo: '', verdictOverride: null, fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
   }
   function normalizeCard(c) {
     c = c || {};
@@ -5455,6 +5483,9 @@ window.SUSI_DATEFIX = function (text) {
       t: (c.t === undefined || c.t === null) ? null : c.t,
       j: (c.j === undefined || c.j === null) ? null : c.j,
       d: (c.d === undefined || c.d === null) ? null : c.d,
+      // 목록에 없는 대학(과학기술원 등)을 직접 적어 넣는 칸 — u/t/j/d 는 그대로 비워 둔다.
+      custom: !!c.custom,
+      uName: c.uName || '', tName: c.tName || '', jName: c.jName || '', dName: c.dName || '',
       memo: c.memo || '',
       verdictOverride: VERDICT_KEYS[c.verdictOverride] ? c.verdictOverride : null,
       fillNo: c.fillNo || '',
@@ -5465,9 +5496,14 @@ window.SUSI_DATEFIX = function (text) {
       final: c.final || ''
     };
   }
+  /* '칸이 채워졌는가' — 목록에서 고른 카드는 u 로, 직접 입력한 카드는 uName/dName 으로 안다.
+     자리 찾기(전형 찾기에서 담기) · college 칸 정리 · 지우기 확인 등 여러 곳에서 같이 쓴다. */
+  function cardFilled(c) {
+    return !!(c && ((c.u !== null && c.u !== undefined) || (c.custom && (c.uName || c.dName))));
+  }
   /* college 칸은 항상 "채워진 칸들 + 맨 끝 빈 칸 1개"만 남긴다 — 추가·삭제·자리바꾸기 뒤 매번 불러 정리한다. */
   function ensureCollegeGrow() {
-    plan.college = (plan.college || []).filter(function (c) { return c && c.u !== null && c.u !== undefined; }).map(normalizeCard);
+    plan.college = (plan.college || []).filter(cardFilled).map(normalizeCard);
     plan.college.push(emptyCard());
   }
   /* 옛 버전(plan.cards 단일 배열, 최대 12칸)을 새 구조로 옮긴다. 전문대 행은 college로,
@@ -5593,12 +5629,13 @@ window.SUSI_DATEFIX = function (text) {
   var AREA_LABEL = { main: '지원', cand: '예비', college: '전문대' };
   var PF_LABEL = { pass: '합격', fail: '불합격' };
   function cardHTML(c, ix, area) {
-    var r = rowOf(c), vd = verdict(r);
+    var r = c.custom ? null : rowOf(c), vd = verdict(r);
     var ev = effVerdict(c, vd);
     var headBadge = ev ? '<span class="verdict ' + ev.v + '">' + VN[ev.v] + (ev.manual ? ' <small>(수동)</small>' : '') + '</span>'
-      : (r ? '<span class="verdict none">' + whyNoVerdict(r) + '</span>' : '<span class="tag">비어 있음</span>');
+      : (r ? '<span class="verdict none">' + whyNoVerdict(r) + '</span>'
+           : (c.custom && c.dName ? '<span class="tag">직접 입력</span>' : '<span class="tag">비어 있음</span>'));
     var isPick = swapPick && swapPick.area === area && swapPick.ix === ix;
-    var showDel = (area !== 'college') || (c.u !== null && c.u !== undefined);
+    var showDel = (area !== 'college') || cardFilled(c);
     var facts = '', results = '';
     if (r) {
       var mi = r[C.M], minTxt = mi >= 0 ? (isNoMin(M[mi]) ? '<span class="min-x">X</span> 미반영' : lc('<span class="min-o">O</span> ' + esc(M[mi]))) : '<span class="dash">어디가에 정보 없음</span>';
@@ -5616,7 +5653,13 @@ window.SUSI_DATEFIX = function (text) {
         (dates.length ? '<div class="frow"><span class="fk">고사일</span><span class="fv">' + lc(esc(dates.join(' · '))) + '</span></div>' : '') +
         (!(r[C.A] || r[C.B]) ? similarLine(r) : '') +
         '</div>';
-      var iAuto = examText(r[C.F]), eAuto = examText(r[C.L]);
+    } else if (c.custom) {
+      facts = '<div class="facts custom"><div class="frow"><span class="fk">안내</span><span class="fv dash">' +
+        '목록에 없는 대학이라 모집인원·컷·수능최저·전형방법 같은 자동 정보가 없습니다. ' +
+        '아래 결과 칸은 직접 채워 주세요.</span></div></div>';
+    }
+    if (r || c.custom) {
+      var iAuto = r ? examText(r[C.F]) : '', eAuto = r ? examText(r[C.L]) : '';
       var iVal = (c.interview !== null && c.interview !== undefined) ? c.interview : iAuto;
       var eVal = (c.essay !== null && c.essay !== undefined) ? c.essay : eAuto;
       results = '<div class="results">' +
@@ -5652,25 +5695,40 @@ window.SUSI_DATEFIX = function (text) {
       '<button class="swapbtn" type="button" data-swap="1" aria-pressed="' + (isPick ? 'true' : 'false') + '" title="자리 바꾸기">⇄</button>' +
       (showDel ? '<button class="del" data-del="1" title="' + (area === 'college' ? '삭제' : '비우기') + '">×</button>' : '') +
       '</div>' +
-      '<input class="pick" type="text" data-f="u" list="' + (area === 'college' ? 'dl-uni-col' : 'dl-uni') + '"' +
-        ' autocomplete="off" spellcheck="false"' +
-        ' value="' + esc(c.u !== null && c.u !== undefined ? U[c.u] : '') + '"' +
-        ' placeholder="' + (area === 'college' ? '전문대 이름을 치거나 ▾ 에서 고르세요'
-                                               : '대학 이름을 치거나 ▾ 에서 고르세요') + '">' +
-      '<div class="grid2">' +
-      '<select data-f="t"' + (c.u === null ? ' disabled' : '') + '>' + optList(c.u === null ? [] : typeOpts(c.u), c.t) + '</select>' +
-      '<select data-f="j"' + (c.t === null || c.u === null ? ' disabled' : '') + '>' + optList((c.u !== null && c.t !== null) ? jhOpts(c.u, c.t) : [], c.j) + '</select>' +
+      '<div class="unirow">' +
+      (c.custom
+        ? '<input type="text" data-f="uName" autocomplete="off" spellcheck="false"' +
+          ' value="' + esc(c.uName || '') + '"' +
+          ' placeholder="' + (area === 'college' ? '전문대 이름 (직접 입력)' : '대학 이름 (직접 입력, 예: 한국과학기술원)') + '">'
+        : '<input class="pick" type="text" data-f="u" list="' + (area === 'college' ? 'dl-uni-col' : 'dl-uni') + '"' +
+          ' autocomplete="off" spellcheck="false"' +
+          ' value="' + esc(c.u !== null && c.u !== undefined ? U[c.u] : '') + '"' +
+          ' placeholder="' + (area === 'college' ? '전문대 이름을 치거나 ▾ 에서 고르세요'
+                                                 : '대학 이름을 치거나 ▾ 에서 고르세요') + '">') +
+      '<button type="button" class="customtoggle" data-custom-toggle="1" title="KAIST 같은 과학기술원처럼 목록에 없는 곳을 직접 적어 넣습니다">' +
+      (c.custom ? '목록에서 고르기' : '목록에 없는 대학') + '</button>' +
       '</div>' +
-      (function () {
-        var ready = (c.u !== null && c.t !== null && c.j !== null && c.j !== undefined);
-        var items = ready ? deptOpts(c.u, c.t, c.j) : [];
-        var dlid = 'dl-d-' + area + '-' + ix;
-        return '<input class="pick" type="text" data-f="d" list="' + dlid + '" autocomplete="off" spellcheck="false"' +
-          (ready ? '' : ' disabled') +
-          ' value="' + esc(c.d !== null && c.d !== undefined ? DP[c.d] : '') + '"' +
-          ' placeholder="' + (ready ? '학과 이름을 치거나 ▾ 에서 고르세요' : '전형을 먼저 고르세요') + '">' +
-          '<datalist id="' + dlid + '">' + dlOptions(items) + '</datalist>';
-      })() +
+      (c.custom
+        ? '<div class="grid2">' +
+          '<input type="text" data-f="tName" value="' + esc(c.tName || '') + '" placeholder="전형유형 (예: 종합)">' +
+          '<input type="text" data-f="jName" value="' + esc(c.jName || '') + '" placeholder="전형명">' +
+          '</div>' +
+          '<input type="text" data-f="dName" autocomplete="off" spellcheck="false"' +
+          ' value="' + esc(c.dName || '') + '" placeholder="학과 이름">'
+        : '<div class="grid2">' +
+          '<select data-f="t"' + (c.u === null ? ' disabled' : '') + '>' + optList(c.u === null ? [] : typeOpts(c.u), c.t) + '</select>' +
+          '<select data-f="j"' + (c.t === null || c.u === null ? ' disabled' : '') + '>' + optList((c.u !== null && c.t !== null) ? jhOpts(c.u, c.t) : [], c.j) + '</select>' +
+          '</div>' +
+          (function () {
+            var ready = (c.u !== null && c.t !== null && c.j !== null && c.j !== undefined);
+            var items = ready ? deptOpts(c.u, c.t, c.j) : [];
+            var dlid = 'dl-d-' + area + '-' + ix;
+            return '<input class="pick" type="text" data-f="d" list="' + dlid + '" autocomplete="off" spellcheck="false"' +
+              (ready ? '' : ' disabled') +
+              ' value="' + esc(c.d !== null && c.d !== undefined ? DP[c.d] : '') + '"' +
+              ' placeholder="' + (ready ? '학과 이름을 치거나 ▾ 에서 고르세요' : '전형을 먼저 고르세요') + '">' +
+              '<datalist id="' + dlid + '">' + dlOptions(items) + '</datalist>';
+          })()) +
       '<input type="text" data-f="memo" placeholder="메모 (수험번호, 서류 마감 등)" value="' + esc(c.memo || '') + '">' +
       facts + results + '</div>';
   }
@@ -5706,13 +5764,24 @@ window.SUSI_DATEFIX = function (text) {
     var cnt = { up: 0, fit: 0, down: 0, none: 0 }, mainFilled = 0, candFilled = 0, collegeFilled = 0, dates = {};
     function tally(area) {
       plan[area].forEach(function (c) {
-        var r = rowOf(c); if (!r) return;
+        var r = c.custom ? null : rowOf(c);
+        var isCustom = c.custom && c.dName;
+        if (!r && !isCustom) return;
         if (area === 'main') mainFilled++; else if (area === 'cand') candFilled++; else collegeFilled++;
         var ev = effVerdict(c, verdict(r)); cnt[ev ? ev.v : 'none']++;
-        [[C.F, '면접'], [C.L, '논술'], [C.K, '실기']].forEach(function (p) {
-          var k = examDay(r[p[0]]);
-          if (k) (dates[k] = dates[k] || []).push(U[r[C.U]] + ' ' + p[1]);
-        });
+        var uniName = r ? U[r[C.U]] : c.uName;
+        if (r) {
+          [[C.F, '면접'], [C.L, '논술'], [C.K, '실기']].forEach(function (p) {
+            var k = examDay(r[p[0]]);
+            if (k) (dates[k] = dates[k] || []).push(uniName + ' ' + p[1]);
+          });
+        } else {
+          // 직접 입력 카드는 학생이 적은 면접·논술 날짜를 그대로 훑는다 (자료 색인이 아니라 문자열이다)
+          [[c.interview, '면접'], [c.essay, '논술']].forEach(function (p) {
+            var k = examDayText(p[0]);
+            if (k) (dates[k] = dates[k] || []).push(uniName + ' ' + p[1]);
+          });
+        }
       });
     }
     tally('main'); tally('cand'); tally('college');
@@ -5805,11 +5874,24 @@ window.SUSI_DATEFIX = function (text) {
       else if (f === 'interview') c.interview = e.target.value;
       else if (f === 'essay') c.essay = e.target.value;
       else if (f === 'final') c.final = e.target.value;
+      else if (f === 'uName') c.uName = e.target.value;
+      else if (f === 'tName') c.tName = e.target.value;
+      else if (f === 'jName') c.jName = e.target.value;
+      else if (f === 'dName') c.dName = e.target.value;
       else return;
       savePlan();
     });
     host.addEventListener('blur', function (e) {
       var f = e.target && e.target.dataset && e.target.dataset.f;
+      if (f === 'uName' || f === 'dName') {
+        /* 직접 입력 대학·학과 칸을 떠날 때 채워졌으면(전문대 칸은) 빈 칸을 하나 더 만든다.
+           타이핑하는 도중(매 글자마다)이 아니라 칸을 떠날 때만 다시 그려야
+           목록이 그 사이에 밀리면서 초점이 끊기지 않는다. */
+        var hitG = cardHit(e);
+        if (hitG && hitG.area === 'college') ensureCollegeGrow();
+        renderCards();
+        return;
+      }
       if (f !== 'interview' && f !== 'essay' && f !== 'final') return;
       /* 칸을 떠날 때 달력이 알아보는 형식으로 맞춘다 — 11/27 · 20261127 → 2026/11/27.
          날짜로 안 보이는 말(미실시 등)과 뒤에 붙인 메모는 그대로 둔다. */
@@ -5842,6 +5924,19 @@ window.SUSI_DATEFIX = function (text) {
         savePlan(); renderCards();
         return;
       }
+      var toggleBtn = e.target.closest('[data-custom-toggle]');
+      if (toggleBtn) {
+        var hit4 = cardHit(e); if (!hit4) return;
+        var c4 = hit4.c;
+        /* 목록 고르기 ↔ 직접 입력을 오가면 어느 쪽이든 이전에 골랐던 대학·전형·학과는
+           의미가 없어지므로 비운다. 결과 칸(메모·1단계·면접 등)은 그대로 둔다. */
+        c4.custom = !c4.custom;
+        c4.u = null; c4.t = null; c4.j = null; c4.d = null;
+        c4.uName = ''; c4.tName = ''; c4.jName = ''; c4.dName = '';
+        if (hit4.area === 'college') ensureCollegeGrow();
+        savePlan(); renderCards();
+        return;
+      }
     });
   });
   ['g-nat', 'g-hum', 'g-all'].forEach(function (id) {
@@ -5855,16 +5950,21 @@ window.SUSI_DATEFIX = function (text) {
     var out = [head];
     ['main', 'cand', 'college'].forEach(function (area) {
       plan[area].forEach(function (c, ix) {
-        var r = rowOf(c); if (!r) return;
+        var r = c.custom ? null : rowOf(c);
+        if (!r && !(c.custom && c.dName)) return;
         var vd = verdict(r);
-        out.push([AREA_LABEL[area], ix + 1, U[r[C.U]], TYPEFULL[T[r[C.T]]], J[r[C.J]], DP[r[C.D]],
-          vd ? vd.mine : '', nf(r[C.A]), nf(r[C.B]),
+        out.push([AREA_LABEL[area], ix + 1,
+          r ? U[r[C.U]] : (c.uName || ''),
+          r ? TYPEFULL[T[r[C.T]]] : (c.tName || ''),
+          r ? J[r[C.J]] : (c.jName || ''),
+          r ? DP[r[C.D]] : (c.dName || ''),
+          vd ? vd.mine : '', r ? nf(r[C.A]) : '', r ? nf(r[C.B]) : '',
           vd ? VN[vd.v] : '', c.verdictOverride ? VN[c.verdictOverride] : '',
-          r[C.N] || '', nf(r[C.C]), r[C.M] >= 0 ? M[r[C.M]] : '',
+          r ? (r[C.N] || '') : '', r ? nf(r[C.C]) : '', (r && r[C.M] >= 0) ? M[r[C.M]] : '',
           c.step1 || '',
-          (c.interview !== null && c.interview !== undefined) ? c.interview : examText(r[C.F]),
-          (c.essay !== null && c.essay !== undefined) ? c.essay : examText(r[C.L]),
-          r[C.K] >= 0 ? DP[r[C.K]] : '',
+          (c.interview !== null && c.interview !== undefined) ? c.interview : (r ? examText(r[C.F]) : ''),
+          (c.essay !== null && c.essay !== undefined) ? c.essay : (r ? examText(r[C.L]) : ''),
+          (r && r[C.K] >= 0) ? DP[r[C.K]] : '',
           c.final || '', c.passFail ? PF_LABEL[c.passFail] : '', c.fillNo || '',
           c.memo || ''].map(clean));
       });
@@ -6033,24 +6133,26 @@ window.SUSI_DATEFIX = function (text) {
     picks.forEach(function (p, i) {
       var r = 13 + i, c = p.card || {}, row = p.r;
       var vd = verdict(row), ev = effVerdict(c, vd);
+      // row 가 없으면(목록에 없는 대학을 직접 입력한 카드) 자료에서만 나오는 컷·모집인원
+      // 같은 칸은 비우고, 학생이 적어 넣은 이름만 채운다.
       x1 = putCell(x1, 'B' + r, i + 1);
-      x1 = putCell(x1, 'C' + r, U[row[C.U]]);
-      x1 = putCell(x1, 'D' + r, J[row[C.J]]);
-      x1 = putCell(x1, 'E' + r, DP[row[C.D]]);
+      x1 = putCell(x1, 'C' + r, row ? U[row[C.U]] : (c.uName || ''));
+      x1 = putCell(x1, 'D' + r, row ? J[row[C.J]] : (c.jName || ''));
+      x1 = putCell(x1, 'E' + r, row ? DP[row[C.D]] : (c.dName || ''));
       x1 = setCell(x1, 'F' + r, vd ? vd.mine : '');
-      x1 = setCell(x1, 'G' + r, nf(row[C.A]));
-      x1 = setCell(x1, 'H' + r, nf(row[C.B]));
-      var tn = T[row[C.T]];
-      x1 = putCell(x1, 'I' + r, TYPE_SHORT[TYPEFULL[tn] || tn] || TYPE_SHORT[tn] || '');
+      x1 = setCell(x1, 'G' + r, row ? nf(row[C.A]) : '');
+      x1 = setCell(x1, 'H' + r, row ? nf(row[C.B]) : '');
+      var tn = row ? T[row[C.T]] : null;
+      x1 = putCell(x1, 'I' + r, row ? (TYPE_SHORT[TYPEFULL[tn] || tn] || TYPE_SHORT[tn] || '') : (c.tName || ''));
       x1 = putCell(x1, 'J' + r, c.examNo || '');
-      x1 = setCell(x1, 'K' + r, row[C.M] >= 0 ? (isNoMin(M[row[C.M]]) ? '[X] ' : '[O] ') + M[row[C.M]] : '');
-      x1 = setCell(x1, 'L' + r, row[C.W] >= 0 ? W[row[C.W]] : '');
+      x1 = setCell(x1, 'K' + r, (row && row[C.M] >= 0) ? (isNoMin(M[row[C.M]]) ? '[X] ' : '[O] ') + M[row[C.M]] : '');
+      x1 = setCell(x1, 'L' + r, (row && row[C.W] >= 0) ? W[row[C.W]] : '');
       x1 = putCell(x1, 'M' + r, c.step1 || '');
-      x1 = setCell(x1, 'N' + r, (c.interview !== null && c.interview !== undefined) ? c.interview : examText(row[C.F]));
+      x1 = setCell(x1, 'N' + r, (c.interview !== null && c.interview !== undefined) ? c.interview : (row ? examText(row[C.F]) : ''));
       x1 = setCell(x1, 'O' + r, c.final || '');            // O 최종(발표일)
       x1 = setCell(x1, 'P' + r, ev ? VN[ev.v] : '');
-      x1 = setCell(x1, 'Q' + r, row[C.N] || '');
-      x1 = setCell(x1, 'R' + r, nf(row[C.C]));
+      x1 = setCell(x1, 'Q' + r, row ? (row[C.N] || '') : '');
+      x1 = setCell(x1, 'R' + r, row ? nf(row[C.C]) : '');
       x1 = setCell(x1, 'S' + r, AREA_LABEL[p.area]);
       x1 = putCell(x1, 'T' + r, c.fillNo || '');
       x1 = putCell(x1, 'U' + r, c.passFail ? PF_LABEL[c.passFail] : '');
@@ -6166,29 +6268,30 @@ window.SUSI_DATEFIX = function (text) {
     });
   }
 
-  /* 카드 하나 → 양식 한 줄 (C~V) */
+  /* 카드 하나 → 양식 한 줄 (C~V). r 가 없으면(목록에 없는 대학을 직접 입력한 카드)
+     자료에서만 나오는 컷·모집인원 같은 칸은 비워 두고 c.uName 등 적어 넣은 값만 채운다. */
   function formRow(area, c, r, vd) {
     var row = blank(22);
-    put(row, 2, U[r[C.U]]);                               // C 대학
-    put(row, 3, J[r[C.J]]);                               // D 전형명
-    put(row, 4, DP[r[C.D]]);                              // E 학과
-    put(row, 5, vd ? vd.mine : '');                       // F 본인내신
-    put(row, 6, nf(r[C.A]));                              // G 최초합격컷(50%)
-    put(row, 7, nf(r[C.B]));                              // H 70%컷
-    put(row, 8, TYPEFULL[T[r[C.T]]] || T[r[C.T]]);        // I 전형유형
-    put(row, 9, '');                                      // J 수험번호 (사람이 적는 칸)
-    put(row, 10, r[C.M] >= 0 ? M[r[C.M]] : '');           // K 수능최저
-    put(row, 11, r[C.W] >= 0 ? W[r[C.W]] : '');           // L 전형요소
-    put(row, 12, c.step1 || '');                          // M 1단계
-    put(row, 13, (c.interview !== null && c.interview !== undefined) ? c.interview : examText(r[C.F])); // N 면접·실기·논술
-    put(row, 14, c.final || '');                          // O 최종(발표일)
-    put(row, 15, vd ? VN[vd.v] : '');                     // P 상향/적정/하향(자동)
-    put(row, 16, r[C.N] || '');                           // Q 현인원(모집인원)
-    put(row, 17, nf(r[C.C]));                             // R 작년경쟁률
-    put(row, 18, AREA_LABEL[area]);                       // S 구분
-    put(row, 19, c.fillNo || '');                         // T 충원합격
-    put(row, 20, c.passFail ? PF_LABEL[c.passFail] : ''); // U 합불
-    put(row, 21, c.verdictOverride ? VN[c.verdictOverride] : ''); // V 판정(직접지정)
+    put(row, 2, r ? U[r[C.U]] : (c.uName || ''));                          // C 대학
+    put(row, 3, r ? J[r[C.J]] : (c.jName || ''));                          // D 전형명
+    put(row, 4, r ? DP[r[C.D]] : (c.dName || ''));                         // E 학과
+    put(row, 5, vd ? vd.mine : '');                                        // F 본인내신
+    put(row, 6, r ? nf(r[C.A]) : '');                                      // G 최초합격컷(50%)
+    put(row, 7, r ? nf(r[C.B]) : '');                                      // H 70%컷
+    put(row, 8, r ? (TYPEFULL[T[r[C.T]]] || T[r[C.T]]) : (c.tName || '')); // I 전형유형
+    put(row, 9, '');                                                       // J 수험번호 (사람이 적는 칸)
+    put(row, 10, (r && r[C.M] >= 0) ? M[r[C.M]] : '');                     // K 수능최저
+    put(row, 11, (r && r[C.W] >= 0) ? W[r[C.W]] : '');                     // L 전형요소
+    put(row, 12, c.step1 || '');                                          // M 1단계
+    put(row, 13, (c.interview !== null && c.interview !== undefined) ? c.interview : (r ? examText(r[C.F]) : '')); // N 면접·실기·논술
+    put(row, 14, c.final || '');                                          // O 최종(발표일)
+    put(row, 15, vd ? VN[vd.v] : '');                                     // P 상향/적정/하향(자동)
+    put(row, 16, r ? (r[C.N] || '') : '');                                // Q 현인원(모집인원)
+    put(row, 17, r ? nf(r[C.C]) : '');                                    // R 작년경쟁률
+    put(row, 18, AREA_LABEL[area]);                                       // S 구분
+    put(row, 19, c.fillNo || '');                                         // T 충원합격
+    put(row, 20, c.passFail ? PF_LABEL[c.passFail] : '');                 // U 합불
+    put(row, 21, c.verdictOverride ? VN[c.verdictOverride] : '');         // V 판정(직접지정)
     return row.map(clean);
   }
 
@@ -6196,7 +6299,8 @@ window.SUSI_DATEFIX = function (text) {
     var out = [];
     ['main', 'cand', 'college'].forEach(function (area) {
       plan[area].forEach(function (c) {
-        var r = rowOf(c); if (!r) return;
+        var r = c.custom ? null : rowOf(c);
+        if (!r && !(c.custom && c.dName)) return;
         out.push(formRow(area, c, r, verdict(r)));
       });
     });
@@ -6262,7 +6366,10 @@ window.SUSI_DATEFIX = function (text) {
     if (tplGet()) {
       var picks = [];
       ['main', 'cand', 'college'].forEach(function (area) {
-        plan[area].forEach(function (c, ix) { var r = rowOf(c); if (r) picks.push({ r: r, card: c, area: area, ix: ix }); });
+        plan[area].forEach(function (c, ix) {
+          var r = c.custom ? null : rowOf(c);
+          if (r || (c.custom && c.dName)) picks.push({ r: r, card: c, area: area, ix: ix });
+        });
       });
       try {
         var buf = buildFormBook(WHO, gg, mm, picks);
@@ -6403,7 +6510,7 @@ window.SUSI_DATEFIX = function (text) {
   }
   function planHasAnything() {
     return ['main', 'cand', 'college'].some(function (a) {
-      return (plan[a] || []).some(function (c) { return c && c.u !== null && c.u !== undefined; });
+      return (plan[a] || []).some(cardFilled);
     });
   }
   function startImport(list, kind) {
@@ -6424,16 +6531,19 @@ window.SUSI_DATEFIX = function (text) {
     $('impCnt').textContent = bad.length + '줄';
     $('impList').innerHTML = bad.map(function (b, i) {
       var p = b.pick, e = b.e;
-      return '<div class="improw' + (b.skip ? ' skip' : '') + '" data-i="' + i + '">' +
+      var canKeep = e.uName && e.dName;   // 대학·학과 이름이 다 있어야 직접 입력으로 살릴 수 있다
+      return '<div class="improw' + (b.skip ? ' skip' : '') + (b.keepCustom ? ' keep' : '') + '" data-i="' + i + '">' +
         '<div class="impsrc">파일: <b>' + esc(e.uName || '(빈칸)') + '</b><br>' +
         esc(e.jName || '(빈칸)') + ' / ' + esc(e.dName || '(빈칸)') +
         (e.area ? ' <span class="tag">' + AREA_LABEL[e.area] + '</span>' : '') + '</div>' +
-        '<select data-f="u">' + optList(uniOpts(), p.u) + '</select>' +
+        '<select data-f="u"' + (b.keepCustom ? ' disabled' : '') + '>' + optList(uniOpts(), p.u) + '</select>' +
         '<div class="grid2">' +
-        '<select data-f="t"' + (p.u === null ? ' disabled' : '') + '>' + optList(p.u === null ? [] : typeOpts(p.u), p.t) + '</select>' +
-        '<select data-f="j"' + (p.u === null || p.t === null ? ' disabled' : '') + '>' + optList((p.u !== null && p.t !== null) ? jhOpts(p.u, p.t) : [], p.j) + '</select>' +
+        '<select data-f="t"' + (b.keepCustom || p.u === null ? ' disabled' : '') + '>' + optList(p.u === null ? [] : typeOpts(p.u), p.t) + '</select>' +
+        '<select data-f="j"' + (b.keepCustom || p.u === null || p.t === null ? ' disabled' : '') + '>' + optList((p.u !== null && p.t !== null) ? jhOpts(p.u, p.t) : [], p.j) + '</select>' +
         '</div>' +
-        '<select data-f="d"' + (p.j === null ? ' disabled' : '') + '>' + optList((p.u !== null && p.t !== null && p.j !== null) ? deptOpts(p.u, p.t, p.j) : [], p.d) + '</select>' +
+        '<select data-f="d"' + (b.keepCustom || p.j === null ? ' disabled' : '') + '>' + optList((p.u !== null && p.t !== null && p.j !== null) ? deptOpts(p.u, p.t, p.j) : [], p.d) + '</select>' +
+        (canKeep ? '<label class="impskip"><input type="checkbox" data-f="keepCustom"' + (b.keepCustom ? ' checked' : '') +
+          '> 목록에 없는 대학입니다 — 파일에 적힌 그대로 직접 입력으로 담기</label>' : '') +
         '<label class="impskip"><input type="checkbox" data-f="skip"' + (b.skip ? ' checked' : '') + '> 이 줄 건너뛰기</label>' +
         '</div>';
     }).join('');
@@ -6442,18 +6552,26 @@ window.SUSI_DATEFIX = function (text) {
   function applyImport() {
     if (!PENDING_IMP) return;
     var all = PENDING_IMP.ok.slice();
-    PENDING_IMP.bad.forEach(function (b) { if (!b.skip && b.pick.d !== null) all.push(b); });
+    PENDING_IMP.bad.forEach(function (b) { if (!b.skip && (b.pick.d !== null || b.keepCustom)) all.push(b); });
     var main = [], cand = [], college = [], over = 0;
     all.forEach(function (x) {
       var e = x.e, c = emptyCard();
-      c.u = x.pick.u; c.t = x.pick.t; c.j = x.pick.j; c.d = x.pick.d;
+      if (x.keepCustom) {
+        c.custom = true;
+        c.uName = e.uName || ''; c.tName = e.tName || ''; c.jName = e.jName || ''; c.dName = e.dName || '';
+      } else {
+        c.u = x.pick.u; c.t = x.pick.t; c.j = x.pick.j; c.d = x.pick.d;
+      }
       c.memo = e.memo || ''; c.verdictOverride = e.verdictOverride;
       c.fillNo = e.fillNo || ''; c.passFail = e.passFail; c.step1 = e.step1 || '';
       c.final = e.final || '';
-      var r = rowOf(c);
-      // 면접·논술은 자료의 자동값과 다를 때만 「수정됨」으로 넣는다 (같으면 자동값 그대로 두기)
-      c.interview = (e.interview && r && e.interview !== examText(r[C.F])) ? e.interview : null;
-      c.essay = (e.essay && r && e.essay !== examText(r[C.L])) ? e.essay : null;
+      var r = x.keepCustom ? null : rowOf(c);
+      // 면접·논술은 자료의 자동값과 다를 때만 「수정됨」으로 넣는다(같으면 자동값 그대로 두기).
+      // 직접 입력 카드는 자동값 자체가 없으니 적힌 값을 그대로 쓴다.
+      c.interview = x.keepCustom ? (e.interview || null)
+        : (e.interview && r && e.interview !== examText(r[C.F])) ? e.interview : null;
+      c.essay = x.keepCustom ? (e.essay || null)
+        : (e.essay && r && e.essay !== examText(r[C.L])) ? e.essay : null;
       var area = e.area || (r && isCol(r) ? 'college' : 'main');
       if (area === 'college') college.push(c);
       else if (area === 'cand') { cand.length < 3 ? cand.push(c) : over++; }
@@ -6477,6 +6595,7 @@ window.SUSI_DATEFIX = function (text) {
     var b = PENDING_IMP.bad[+row.dataset.i]; if (!b) return;
     var f = e.target.dataset.f;
     if (f === 'skip') { b.skip = e.target.checked; renderImpPanel(); return; }
+    if (f === 'keepCustom') { b.keepCustom = e.target.checked; renderImpPanel(); return; }
     var v = e.target.value === '' ? null : +e.target.value;
     if (f === 'u') { b.pick.u = v; b.pick.t = null; b.pick.j = null; b.pick.d = null; }
     else if (f === 't') { b.pick.t = v; b.pick.j = null; b.pick.d = null; }
@@ -6695,7 +6814,7 @@ window.SUSI_DATEFIX = function (text) {
     migratePlanIfNeeded();
     var main = plan.main.map(remapOne);
     var cand = plan.cand.map(remapOne);
-    var college = plan.college.filter(function (c) { return c.u !== null && c.u !== undefined; }).map(remapOne);
+    var college = plan.college.filter(cardFilled).map(remapOne);
     return { main: main, cand: cand, college: college, lost: lost };
   }
   function swapData(nd) {
@@ -6827,6 +6946,12 @@ window.SUSI_DATEFIX = function (text) {
   };
 
   window.SUSI_NAMES = function (c) {
+    if (c.custom) {
+      var uni = String(c.uName || '').trim(), dept = String(c.dName || '').trim();
+      if (!uni || !dept) return null;   // 대학·학과는 필수 — 나머지는 비워도 저장은 된다
+      return { uni: uni, type: String(c.tName || '').trim() || null,
+               jh: String(c.jName || '').trim() || null, dept: dept };
+    }
     if (c.u === null || c.u === undefined || c.d === null || c.d === undefined) return null;
     return { uni: U[c.u], type: c.t == null ? null : T[c.t],
              jh: J[c.j], dept: DP[c.d] };
