@@ -628,13 +628,22 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calcell.clash[data-d][tabindex]:hover{background:var(--rose-soft)}
 
 /* 칸을 세로로 길게 쓴다 — 여섯 줄까지 칸 안에 그대로 적고, 그보다 많으면 「+N건」으로 접는다. */
-.calcell .its{min-width:0;flex:0 0 auto;overflow:hidden}
-.calcell .it{font-size:11.5px;line-height:17px;color:var(--ink-2);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 「+N건」이 늘 보이게 목록 쪽이 남는 자리를 갖는다(flex:1 + min-height:0).
+   예전에는 목록이 자기 높이를 그대로 갖고 있어서, 줄이 넘쳐 길어지면 그 아래의
+   「+N건」까지 칸 밖으로 밀려나 «더 있다»는 사실 자체가 안 보였다. */
+.calcell .its{min-width:0;flex:1 1 auto;min-height:0;overflow:hidden}
+/* 예전에는 한 줄을 통째로 잘랐다(nowrap + …). 그런데 대학명을 줄임말로 쓰지 않기로
+   하면서 줄이 길어졌고, 좁은 화면에서는 끝에 붙은 면접·논술·실기 딱지가 먼저 잘려
+   색만 남고 무슨 고사인지 못 읽었다. 학생 이름이 「정…」 이 되기도 했다.
+   그래서 자르지 않고 «자리가 모자라면 다음 줄로 넘긴다» 로 바꿨다.
+   대학명·학생 이름·딱지는 각각 통째로만 넘어간다(안에서 쪼개지지 않는다). */
+.calcell .it{display:flex;flex-wrap:wrap;align-items:center;column-gap:4px;
+  font-size:11.5px;line-height:17px;color:var(--ink-2);word-break:keep-all}
 /* 한눈에 봐야 하는 건 '어느 대학인지' 다 — 대학명을 진하게, 학생 이름은 옅게 둔다.
    (처음엔 반대였는데 대학명이 회색이라 잘 안 보인다는 지적을 받아 바꿨다) */
-.calcell .it b{color:var(--ink);font-weight:600}
+.calcell .it b{color:var(--ink);font-weight:600;max-width:100%}
 .calcell .it .who{color:var(--ink-3)}
+.calcell .it .kd{flex:0 0 auto}
 /* 이름을 .calmore 로 둔 이유: app.css 에 이미 `.more{padding:14px}` (결과표의
    「더 보기」 단추)가 있어서, .more 를 쓰면 그 여백 14px 를 그대로 물려받아
    칸 밖으로 삐져나간다. 실제로 그렇게 만들었다가 잘려서 고쳤다. */
@@ -773,9 +782,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .ddl{font-size:8px;line-height:1.25;font-weight:700;color:#8C2F39 !important;
     background:#F6E2E3 !important;padding:1.5px 4.5px !important;border-radius:999px !important}
   .calcell .its{flex:1;min-height:0;overflow:hidden}
-  .calcell .it{font-size:8.5px;line-height:1.3;color:#000 !important;
+  /* 인쇄는 줄바꿈으로 다 보여 준다 — 화면에서 쓰는 가로 배치·자르기를 되돌린다 */
+  .calcell .it{display:block !important;font-size:8.5px;line-height:1.3;color:#000 !important;
     white-space:normal !important;overflow:hidden;text-overflow:clip !important;
     word-break:keep-all !important;overflow-wrap:normal !important}
+  .calcell .it b, .calcell .it .who{
+    overflow:visible !important;text-overflow:clip !important;white-space:normal !important}
   .calcell .it .who{color:#333 !important}
   .calcell .calmore{flex:none;font-size:8px;color:#1F5D4C !important;background:none !important}
   .calcell .itrest{display:none !important}   /* 화면과 똑같이 접어 둔다 — 칸 높이를 흔들지 않는다 */
@@ -3685,17 +3697,17 @@ window.SUSI_DATES = function (text) {
 
   /* 달력 칸은 좁다 — 대학 이름을 통용 약칭으로 줄이고(홍익대학교→홍대),
      전문대는 앞에 (전) 을 붙여 4년제와 바로 구분되게 한다. */
-  var UNI_NICK = { '연세대': '연대', '고려대': '고대', '홍익대': '홍대', '이화여대': '이대',
-                   '성균관대': '성대', '중앙대': '중대', '한국외국어대': '외대',
-                   '서울시립대': '시립대', '건국대': '건대', '숙명여대': '숙대' };
+  /* 달력 칸에 넣을 대학 이름.
+     ★ 줄임말(성대·중대·외대…)을 쓰지 않는다.
+       칸을 아끼려고 «성균관대 → 성대», «중앙대 → 중대» 로 줄여 봤는데,
+       한 글자짜리 줄임말은 학교마다 부르는 말이 달라 오히려 못 알아본다는
+       지적을 받았다. 「○○대」 형태를 그대로 둔다.
+     「대학교」를 「대」로만 줄인다 — 성균관대학교 → 성균관대. */
   function calUni(name) {
     var v = String(name || '').trim();
     var col = /\(전문대\)/.test(v);
     v = v.replace(/\s*\(전문대\)\s*/g, '');
     v = v.replace(/여자대학교/g, '여대').replace(/대학교/g, '대');
-    for (var k in UNI_NICK) {
-      if (v.indexOf(k) === 0) { v = UNI_NICK[k] + v.slice(k.length); break; }
-    }
     return (col ? '(전)' : '') + v;
   }
   function itLine(it) {
@@ -4623,7 +4635,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-02.5';
+  var BUILD_ID = '2026-09-02.6';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
