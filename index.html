@@ -158,9 +158,9 @@ input:focus-visible,select:focus-visible,button:focus-visible,li:focus-visible,t
 .count b{color:var(--ink);font-weight:600}
 
 .tablewrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
-th{position:sticky;top:0;background:var(--surface-2);font-size:10.5px;letter-spacing:.07em;
+th{position:sticky;top:0;background:var(--surface-2);font-size:11.5px;letter-spacing:.06em;
   text-transform:uppercase;color:var(--ink-3);font-weight:600;white-space:nowrap;z-index:1}
 th.r,td.num{text-align:right}
 th[data-col]{padding:0}
@@ -183,7 +183,7 @@ td.jh{color:var(--ink-2)}
 .pill.sg{background:var(--blue-soft);color:var(--blue)}
 .min-o{color:var(--amber);font-weight:600;font-size:11px;margin-right:5px}
 .min-x{color:var(--ink-3);font-weight:600;font-size:11px}
-.min-txt{color:var(--ink-2);font-size:12px}
+.min-txt{color:var(--ink-2);font-size:13px}
 .dash{color:var(--ink-3)}
 
 /* ── 긴 글: 두 줄만 보이고 눌러서 펼치기 ── */
@@ -429,7 +429,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 /* 촘촘하게 */
 .tablewrap.dense td,.tablewrap.dense th{padding-top:5px;padding-bottom:5px}
 .tablewrap.dense .lc{-webkit-line-clamp:1}
-.tablewrap.dense td{font-size:12.5px}
+.tablewrap.dense td{font-size:13.5px}
 /* 촘촘히 볼 때는 「더 보기」 단추를 숨긴다 — 그 단추 때문에 긴 이름이 있는 줄만
    높아져서 줄 높이가 들쭉날쭉해진다. 글자를 눌러도 펴지므로 기능은 그대로다. */
 .tablewrap.dense .lcbtn{display:none!important}
@@ -532,16 +532,16 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .stlist .empty{color:var(--ink-3);cursor:default;justify-content:center;padding:22px}
 .stlist .empty:hover{background:transparent}
 
-.gt{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:12px}
+.gt{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:13px}
 .gt th,.gt td{border:1px solid var(--line);padding:5px 8px;text-align:center}
-.gt thead th{background:var(--surface-2);color:var(--ink-3);font-weight:600;font-size:11px}
+.gt thead th{background:var(--surface-2);color:var(--ink-3);font-weight:600;font-size:12px}
 .gt tbody th{background:var(--surface-2);text-align:left;font-weight:600;color:var(--ink-2)}
 
-.plantbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+.plantbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
 .plantbl th,.plantbl td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
-.plantbl thead th{background:var(--surface-2);color:var(--ink-3);font-size:11px;font-weight:600;
+.plantbl thead th{background:var(--surface-2);color:var(--ink-3);font-size:12px;font-weight:600;
   white-space:nowrap}
-.plantbl .areatag{font-size:10px;padding:1px 6px;border-radius:999px;font-weight:700;white-space:nowrap}
+.plantbl .areatag{font-size:10.5px;padding:1px 6px;border-radius:999px;font-weight:700;white-space:nowrap}
 .at-main{background:var(--accent-soft);color:var(--accent)}
 .at-cand{background:var(--surface-2);color:var(--ink-3)}
 .at-college{background:var(--blue-soft);color:var(--blue)}
@@ -738,13 +738,13 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .sec #planEditBtn,.sec #stPrintBtn{margin-left:16px;font-size:11.5px;padding:3px 10px}
 .sec .calorient{margin-left:16px;font-weight:400;text-transform:none;letter-spacing:normal;display:inline-flex;align-items:center;gap:4px}
 .gt.ed td{padding:3px}
-.gt.ed input{width:100%;min-width:52px;padding:4px 6px;font-size:12px;text-align:center}
+.gt.ed input{width:100%;min-width:52px;padding:4px 6px;font-size:13px;text-align:center}
 .edbtns{display:flex;align-items:center;gap:8px;margin-top:12px}
 .edbtns .msg{margin:0}
 /* 선생님이 고치는 지원계획 표 */
 .plantbl.edit td.auto{background:var(--surface-2);color:var(--ink-2)}
 .plantbl.edit td{padding:4px 6px;vertical-align:middle}
-.plantbl.edit input,.plantbl.edit select{width:100%;min-width:74px;padding:4px 6px;font-size:12px}
+.plantbl.edit input,.plantbl.edit select{width:100%;min-width:74px;padding:4px 6px;font-size:13px}
 /* 판정 칸의 첫 항목은 '자동 (적정)' 처럼 계산 결과를 같이 보여 준다.
    74px 로는 「자동 (적…」 로 잘려서 무엇이 자동값인지 알 수가 없다. */
 .plantbl.edit select[data-f="verdict_override"]{min-width:96px}
@@ -847,7 +847,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .fmthelp[open] summary::before{content:'▾ '}
 .fmthelp > *:not(summary){margin-left:13px;margin-right:13px}
 .fmthelp > *:last-child{margin-bottom:11px}
-.gt.kv{font-size:12px;margin-top:2px;width:100%;table-layout:auto}
+.gt.kv{font-size:13px;margin-top:2px;width:100%;table-layout:auto}
 .gt.kv th{width:88px;text-align:left;color:var(--ink-2);font-weight:600;white-space:nowrap;
   vertical-align:top}
 /* .gt 는 값을 가운데로 모으는데, 여기는 설명 문장이라 왼쪽 정렬이 읽기 편하다 */
