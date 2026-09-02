@@ -629,6 +629,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   /* 종이에서는 색이 안 나올 수 있으니 검정 글씨에 테두리로 구분한다 */
   body{background:#fff;color:#000}
   .printhead{display:block;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid #000}
+  #calHead{display:none}   /* 달 머리글과 겹쳐 보여서 뺐다 — 내용도 비워 둔다(calHeadHtml 참고) */
   .printhead .pt{font-size:17px;font-weight:700;margin-bottom:3px}
   .printhead .ps{font-size:11px;color:#444}
 
@@ -656,7 +657,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .calcell .dn{font-size:10px;font-weight:700;color:#000 !important;margin-bottom:2px}
   .calcell .its{height:auto !important;flex:none !important;overflow:visible !important}
   .calcell .it{font-size:9px;line-height:1.35;color:#000 !important;
-    white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
+    white-space:normal !important;overflow:visible !important;text-overflow:clip !important;
+    word-break:keep-all !important;overflow-wrap:normal !important}
   .calcell .it .who{color:#333 !important}
   .calcell .calmore{display:none !important}   /* 「+N건」 대신 */
   .calcell .itrest{display:block !important}   /* 진짜 나머지를 펼친다 */
@@ -3377,7 +3379,7 @@ window.SUSI_CFG = {
     if (!STUDENTS.length) {
       var ms = seasonMonths();
       CALST = { days: {}, months: ms, sel: null, cur: pickMonth(ms, {}) };
-      calHeadHtml(0, 0);
+      calFootHtml();
       drawCalendar();
       $('calDay').innerHTML = '<p class="hint">담당 학생이 없습니다. 달력만 보여 드립니다.</p>';
       return;
@@ -3431,9 +3433,8 @@ window.SUSI_CFG = {
         CALST = { days: days, months: months, sel: null, cur: pickMonth(months, days) };
 
         var total = keys.reduce(function (n, k) { return n + days[k].length; }, 0);
-        var clashDays = keys.filter(isClash).length;
 
-        calHeadHtml(total, clashDays);
+        calFootHtml();
         drawCalendar();
         $('calDay').innerHTML = total
           ? '<p class="hint">날짜를 누르면 그 날 전체가 여기에 펼쳐집니다.</p>'
@@ -3475,15 +3476,10 @@ window.SUSI_CFG = {
     return Object.keys(per).some(function (x) { return per[x] > 1; });
   }
 
-  /* 종이만 보고도 누구의 무슨 표인지 알 수 있어야 한다 (인쇄용 머리글·꼬리글) */
-  function calHeadHtml(total, clashDays) {
-    var now = new Date();
-    $('calHead').innerHTML =
-      '<div class="pt">' + CFG.year + '학년도 수시 달력 — ' + esc(ME.name) + '</div>' +
-      '<div class="ps">' + (SCHOOL.name ? esc(SCHOOL.name) + ' · ' : '') +
-      '담당 학생 ' + STUDENTS.length + '명 · 고사 ' + total + '건' +
-      (clashDays ? ' · 겹치는 날 ' + clashDays + '일(⚠ 표시)' : '') +
-      ' · 출력 ' + now.getFullYear() + '.' + pad(now.getMonth() + 1) + '.' + pad(now.getDate()) + '</div>';
+  /* 달 머리글(calmonhead)에 이미 학교·학년도·고사 건수가 나온다 — 인쇄용 머리글까지
+     같은 내용을 또 찍으면 "10월" 위에 필요 없는 줄이 겹쳐 보인다는 지적을 받아 뺐다.
+     꼬리글(범례 설명)만 남긴다. */
+  function calFootHtml() {
     var f = $('calFoot');
     if (f) f.innerHTML = '한 학생이 같은 날 두 곳 이상이면 굵은 테두리와 ⚠ 로 표시됩니다.';
   }
