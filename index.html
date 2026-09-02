@@ -673,6 +673,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .gt.fmt td{color:var(--ink-3)}
 .sec #gEdit{margin-left:16px;font-size:11.5px;padding:3px 10px}
 .sec #planEditBtn,.sec #stPrintBtn{margin-left:16px;font-size:11.5px;padding:3px 10px}
+.sec .calorient{margin-left:16px;font-weight:400;text-transform:none;letter-spacing:normal;display:inline-flex;align-items:center;gap:4px}
 .gt.ed td{padding:3px}
 .gt.ed input{width:100%;min-width:52px;padding:4px 6px;font-size:12px;text-align:center}
 .edbtns{display:flex;align-items:center;gap:8px;margin-top:12px}
@@ -1271,6 +1272,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <section class="tview hidden" id="tv-cal">
       <div class="panel pad">
         <h3 class="sec">수시 달력
+          <label class="fh calorient"><input type="checkbox" id="calLandscape"> 가로로 인쇄</label>
           <button class="btn" id="calPrintBtn">이 달 인쇄</button>
         </h3>
         <p class="hint">한 화면에 <b>한 달만</b> 보여 줍니다 — 화살표로 달을 옮기세요.
@@ -1313,13 +1315,18 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
       <div class="panel pad">
         <h3 class="sec">학교 · 반</h3>
-        <p class="hint">한 학년에 몇 반까지 있는지 정합니다. 아래 <b>교직원 계정</b>의 반 고르는 칸이 이 수만큼 나옵니다.</p>
+        <p class="hint">한 학년에 몇 반까지 있는지 정합니다. 아래 <b>교직원 계정</b>의 반 고르는 칸이 이 수만큼 나옵니다.
+          <b>사이트 제목</b>은 로그인 화면과 브라우저 탭 제목에 씁니다 — 비워 두면 "계획서"로 나갑니다
+          (예: 부광고등학교 수시 원서 시스템).</p>
         <div class="setrow">
           <label>학교 이름
             <input type="text" id="schName" placeholder="○○고등학교" autocomplete="off">
           </label>
           <label><span class="lt">반 개수 <span class="fh">1~20</span></span>
             <input type="number" id="schClasses" min="1" max="20" step="1">
+          </label>
+          <label>사이트 제목
+            <input type="text" id="schTitle" placeholder="계획서" autocomplete="off">
           </label>
           <button class="btn primary" id="schSave">저장</button>
           <span class="msg hidden" id="schMsg"></span>
@@ -2295,7 +2302,9 @@ window.SUSI_CFG = {
       if (r.error) throw r.error;
       SCHOOL.name = r.data.name || '';
       SCHOOL.class_count = r.data.class_count || 9;
+      SCHOOL.site_title = r.data.site_title || '';
       SCHOOL.loaded = true;
+      applyBrand(SCHOOL.site_title);
     }).catch(function (e) {
       SCHOOL.loaded = false;
       console.warn('학교 정보를 읽지 못했습니다', e);
@@ -2981,6 +2990,7 @@ window.SUSI_CFG = {
   function enterAdmin() {
     $('schName').value = SCHOOL.name;
     $('schClasses').value = SCHOOL.class_count;
+    $('schTitle').value = SCHOOL.site_title || '';
     renderNewTeacherRoles();
     renderStudentAccounts();
     return loadStaff();
@@ -3245,17 +3255,23 @@ window.SUSI_CFG = {
     var n = parseInt($('schClasses').value, 10);
     if (!n || n < 1 || n > 20) { say('schMsg', '반 개수는 1~20 사이로 넣어 주세요.', true); return; }
     var nm = ($('schName').value || '').trim();
+    var title = ($('schTitle').value || '').trim();
     say('schMsg', '저장 중…');
     sb.rpc('set_class_count', { p_n: n })
       .then(function (r) {
         if (r.error) throw r.error;
-        if (!nm || nm === SCHOOL.name) return { error: null };
-        return sb.from('schools').update({ name: nm }).eq('id', ME.school_id);
+        var patch = {};
+        if (nm && nm !== SCHOOL.name) patch.name = nm;                    // 빈 칸이면 이름은 그대로 둔다
+        if (title !== (SCHOOL.site_title || '')) patch.site_title = title || null;  // 제목은 비워서 기본값으로 되돌릴 수 있다
+        if (!Object.keys(patch).length) return { error: null };
+        return sb.from('schools').update(patch).eq('id', ME.school_id);
       })
       .then(function (r2) {
         if (r2 && r2.error) throw r2.error;
         SCHOOL.class_count = n;
         if (nm) SCHOOL.name = nm;
+        SCHOOL.site_title = title;
+        applyBrand(title);
         renderNewTeacherRoles();
         say('schMsg', '저장했습니다.');
         setTimeout(function () { say('schMsg', ''); }, 2000);
@@ -3615,7 +3631,19 @@ window.SUSI_CFG = {
   function printArea(kind) {
     var b = document.body;
     b.classList.add('pmode-' + kind);
-    var clear = function () { b.classList.remove('pmode-cal', 'pmode-plan'); };
+    /* ★ @page 는 body 클래스로 못 고른다(CSS 스펙상 @page 는 :first 같은
+       가상클래스만 받는다) — 그래서 '가로로 인쇄'를 체크했을 때만 <style> 을
+       그때그때 넣었다 뺀다. */
+    var lc = $('calLandscape'), pageStyle = null;
+    if (kind === 'cal' && lc && lc.checked) {
+      pageStyle = document.createElement('style');
+      pageStyle.textContent = '@page{size:landscape}';
+      document.head.appendChild(pageStyle);
+    }
+    var clear = function () {
+      b.classList.remove('pmode-cal', 'pmode-plan');
+      if (pageStyle) { pageStyle.remove(); pageStyle = null; }
+    };
     // 인쇄창이 닫힌 뒤 되돌린다. onafterprint 를 안 주는 브라우저가 있어 예비도 둔다.
     if (window.onafterprint !== undefined) {
       var once = function () { clear(); window.removeEventListener('afterprint', once); };
@@ -4308,7 +4336,24 @@ window.SUSI_CFG = {
     savePlan: function () { scheduleSave(); }
   };
 
+  /* 총관리자가 설정에서 정한 사이트 제목(브랜드명)을 반영한다.
+     ★ 로그인 전 화면(브라우저 탭 제목·첫 화면 큰 글씨)은 서버에 물어볼 수 없다 —
+     학교 정보는 로그인한 사람에게만 보여주기 때문이다. 그래서 지난번 로그인 때
+     저장해 둔 값을 이 브라우저에서 우선 보여주고, 로그인하면 실제 값으로 다시 맞춘다.
+     한 번도 로그인한 적 없는 기기에서는 기본값("계획서")이 보인다. */
+  function applyBrand(title) {
+    var t = (title && String(title).trim()) || '계획서';
+    document.title = t;
+    var b = document.querySelector('.brand'); if (b) b.innerHTML = '<em>' + escHtml(t) + '</em>';
+    var g = document.querySelector('.gtitle'); if (g) g.innerHTML = '<em>' + escHtml(t) + '</em>';
+    try { localStorage.setItem('susi_site_title', t); } catch (e) { /* 사생활 보호 모드 등 — 그냥 넘어간다 */ }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    try {
+      var cached = localStorage.getItem('susi_site_title');
+      if (cached) applyBrand(cached);
+    } catch (e) { /* 무시 */ }
     try { boot(); }
     catch (e) { showFatal('시작', e); }
     if (BOOTBAD.length) showFatal('화면 칸이 빠졌습니다', new Error('연결하지 못한 곳이 있습니다'));
