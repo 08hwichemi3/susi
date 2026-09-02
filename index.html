@@ -250,8 +250,13 @@ td.jh{color:var(--ink-2)}
 .sumtile .v{font-size:19px;font-weight:600}
 .warn{margin-top:12px;padding:9px 12px;border-radius:8px;background:var(--rose-soft);color:var(--rose);font-size:12.5px}
 .plansec{margin:18px 0}
-/* 간단히 보기 인덱스 — 일반대/전문대만 골라 본다 */
-.planidx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 0}
+/* 간단히 보기 인덱스 — 지원·기술원·예비·전문대 중 한 묶음만 골라 본다.
+   ★ 화면 위에 붙여 둔다(sticky) — 카드가 길어 아래로 내려가도 이 줄에서 바로
+   다른 묶음으로 건너뛰고, 저장 단추도 계속 손에 닿는다. 새 판 알림 띠가 떠 있으면
+   그 높이만큼 내려 붙는다(--topbar 는 알림 띠를 띄울 때 SHELLJS 가 정해 준다). */
+.planidx{position:sticky;top:var(--topbar,0px);z-index:30;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 0;
+  padding:8px 0;background:var(--ground);border-bottom:1px solid var(--line)}
 .planidx .pi-label{font-size:12px;font-weight:700;color:var(--ink-3)}
 .pib{padding:7px 14px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);
   color:var(--ink-2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
@@ -259,8 +264,16 @@ td.jh{color:var(--ink-2)}
 .pib:hover{border-color:var(--accent-line);color:var(--accent)}
 .pib[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pib[aria-pressed="true"] .n{color:var(--accent-ink);opacity:.85}
-#v-plan.pi-only-uni .plansec.pi-college{display:none}
-#v-plan.pi-only-college .plansec.pi-uni{display:none}
+/* 한 묶음만 고르면 나머지 묶음은 감춘다 — 6칸을 보려고 한참 내려가지 않아도 된다 */
+#v-plan[data-only] .plansec{display:none}
+#v-plan[data-only="main"] .plansec.pi-main,
+#v-plan[data-only="tech"] .plansec.pi-tech,
+#v-plan[data-only="cand"] .plansec.pi-cand,
+#v-plan[data-only="college"] .plansec.pi-college{display:block}
+/* 결과 칸(합불·1단계·면접·논술·최종…) 접기 — 대학을 고르는 동안에는 안 쓰는 칸이라
+   접어 두면 카드 키가 절반쯤 줄어 한 화면에 훨씬 많이 들어온다 */
+#v-plan.foldres .card .results{display:none}
+.pib.fold[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#fff}
 .plansec .sec{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
 .plansec .sec .tag{text-transform:none;letter-spacing:0;font-size:11.5px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:14px}
@@ -1293,7 +1306,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <form class="gform" id="fPw" autocomplete="off">
       <label>새 비밀번호
         <input type="password" id="newPw" autocomplete="new-password">
-        <span class="fh">8자 이상</span>
+        <span class="fh" id="pwMinHint">4자 이상</span>
       </label>
       <label>한 번 더
         <input type="password" id="newPw2" autocomplete="new-password">
@@ -1689,9 +1702,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
   <div class="planidx" id="planIdx" role="tablist" aria-label="간단히 보기">
     <span class="pi-label">간단히 보기</span>
-    <button type="button" class="pib" data-pi="uni" aria-pressed="false">일반대 <span class="n" id="piUniN"></span></button>
+    <button type="button" class="pib" data-pi="main" aria-pressed="false">일반대 <span class="n" id="piMainN"></span></button>
+    <button type="button" class="pib" data-pi="tech" aria-pressed="false">기술원 <span class="n" id="piTechN"></span></button>
+    <button type="button" class="pib" data-pi="cand" aria-pressed="false">예비 <span class="n" id="piCandN"></span></button>
     <button type="button" class="pib" data-pi="college" aria-pressed="false">전문대 <span class="n" id="piColN"></span></button>
-    <span class="fh">선택하면 해당 항목만 표시되며, 다시 누르면 전체가 표시됩니다.</span>
+    <button type="button" class="pib fold" id="piFold" aria-pressed="false" title="합불·1단계·면접 같은 결과 칸을 접어 카드를 짧게 봅니다">결과 칸 접기</button>
+    <span class="fh">다시 누르면 전체</span>
     <span class="grow"></span>
     <button class="btn" id="savePlanCsv">파일로 저장(CSV)</button>
     <button class="btn" id="savePlanXlsx">xlsx로 저장</button>
@@ -1700,7 +1716,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <button class="btn solid" id="persist">모든 기기에 저장</button>
   </div>
 
-  <div class="plansec pi-uni">
+  <div class="plansec pi-main">
     <h3 class="sec">일반대 수시 지원<span class="tag">6칸 · 전형 찾기에서 <b>담기</b> 한 항목이 여기에 표시됩니다 · <b>⇄</b> 로 6칸 안에서도 순서를 바꿀 수 있습니다</span></h3>
     <!-- 대학 목록. 카드마다 넣으면 수천 줄이 되므로 여기 한 번만 둔다.
          수시·후보 칸은 일반대만, 전문대 칸은 전문대만 보여 준다. -->
@@ -1708,11 +1724,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <datalist id="dl-uni-col"></datalist>
     <div class="cards" id="cardsMain"></div>
   </div>
-  <div class="plansec pi-uni">
+  <div class="plansec pi-tech">
     <h3 class="sec">기술원 등<span class="tag">칸 수 제한 없음 · 수시 6회 제한과 무관하게 따로 지원할 수 있는 대학입니다(KAIST 등)</span></h3>
     <div class="cards" id="cardsTech"></div>
   </div>
-  <div class="plansec pi-uni">
+  <div class="plansec pi-cand">
     <h3 class="sec">예비<span class="tag">최대 3칸 · 다른 칸과 자리 바꾸기 가능</span></h3>
     <div class="cards cand" id="cardsCand"></div>
   </div>
@@ -2203,10 +2219,11 @@ window.SUSI_DATEFIX = function (text) {
     $('pwTitle').textContent = voluntary ? '비밀번호 바꾸기' : '비밀번호를 정해 주세요';
     $('pwWho').textContent = ME.name + (ME.student_no ? ' · ' + ME.student_no : '');
     $('pwWarn').innerHTML = voluntary
-      ? '새 비밀번호는 <b>8자 이상</b>으로 정해 주세요.'
+      ? '새 비밀번호는 <b>' + PW_MIN + '자 이상</b>으로 정해 주세요.'
       /* 강제 변경 화면은 이제 '담임' 에게만 뜬다 (susi_20 · 학생은 비밀번호 고정) */
       : '<b>초기 비밀번호는 누구나 아는 값</b>입니다. ' +
         '지금 바꾸지 않으면 다른 분이 선생님 계정으로 들어와 담당 학생 자료를 볼 수 있습니다.';
+    var mh = $('pwMinHint'); if (mh) mh.textContent = PW_MIN + '자 이상';
     $('pwCancel').classList.toggle('hidden', !voluntary);
     $('newPw').value = ''; $('newPw2').value = '';
     say('pwMsg', '');
@@ -2223,7 +2240,7 @@ window.SUSI_DATEFIX = function (text) {
   function changePw(e) {
     if (e) e.preventDefault();
     var a = $('newPw').value, b = $('newPw2').value;
-    if (a.length < 8) { say('pwMsg', '8자 이상으로 정해 주세요.', true); return; }
+    if (a.length < PW_MIN) { say('pwMsg', PW_MIN + '자 이상으로 정해 주세요.', true); return; }
     if (a !== b) { say('pwMsg', '두 칸이 서로 다릅니다.', true); return; }
     $('pwSave').disabled = true;
     say('pwMsg', '바꾸는 중…');
@@ -2250,10 +2267,25 @@ window.SUSI_DATEFIX = function (text) {
       })
       .catch(function (err) {
         $('pwSave').disabled = false;
-        say('pwMsg', '변경하지 못했습니다: ' + (err && err.message || '') +
-            ' 기존 비밀번호가 유지됩니다.', true);
+        /* Supabase(인증 서버)에도 자체 최소 길이 설정이 따로 있다. 앱에서 통과해도
+           서버가 막으면 영어 메시지가 그대로 뜬다 — 무엇을 어떻게 해야 하는지
+           우리말로 바꿔서 알려 준다. */
+        var m = (err && err.message) || '';
+        if (/password/i.test(m) && /(at least|length|short|weak)/i.test(m)) {
+          var n = (m.match(/(\d+)/) || [])[1];
+          say('pwMsg', '비밀번호가 너무 짧습니다' + (n ? ' — ' + n + '자 이상이어야 합니다' : '') +
+              '. 더 짧게 쓰시려면 Supabase 설정(Authentication → Sign In / Providers → ' +
+              'Minimum password length)에서 최소 길이를 낮춰 주세요. 기존 비밀번호가 유지됩니다.', true);
+          return;
+        }
+        say('pwMsg', '변경하지 못했습니다: ' + m + ' 기존 비밀번호가 유지됩니다.', true);
       });
   }
+
+  /* 교직원이 스스로 정하는 비밀번호의 최소 길이. 여기 한 곳만 고치면 안내 문구까지 같이 바뀐다.
+     ★ Supabase(인증 서버)에도 같은 설정이 따로 있다 — 그쪽이 더 길게 잡혀 있으면 서버가 막는다.
+       Authentication → Sign In / Providers → Minimum password length 도 같이 맞춰야 한다. */
+  var PW_MIN = 4;
 
   var ROLENAME = { student: '학생', teacher: '담임', super_admin: '총관리자' };
 
@@ -4494,7 +4526,11 @@ window.SUSI_DATEFIX = function (text) {
         var t = new Date(lm).getTime();
         if (t && t > BOOT_LAST_MOD) {
           var bar = document.getElementById('updateBar');
-          if (bar) bar.classList.remove('hidden');
+          if (!bar) return;
+          bar.classList.remove('hidden');
+          /* 아래에 화면 위로 붙는 줄(지원계획의 간단히 보기)이 이 띠에 가리지 않게,
+             띠 높이를 알려 준다 — 그만큼 내려서 붙는다. */
+          document.body.style.setProperty('--topbar', bar.offsetHeight + 'px');
         }
       })
       .catch(function () { /* 오프라인이면 그냥 다음 차례에 다시 본다 */ });
@@ -6022,9 +6058,10 @@ window.SUSI_DATEFIX = function (text) {
     }
     tally('main'); tally('tech'); tally('cand'); tally('college');
     $('planCnt').innerHTML = '<b>일반대 ' + mainFilled + '/6</b> · <b>기술원 ' + techFilled + '</b>개 · <b>예비 ' + candFilled + '/3</b> · <b>전문대 ' + collegeFilled + '</b>개';
-    var pu = $('piUniN'), pc = $('piColN');
-    if (pu) pu.textContent = (mainFilled + candFilled) + '건';
-    if (pc) pc.textContent = collegeFilled + '건';
+    [['piMainN', mainFilled], ['piTechN', techFilled],
+     ['piCandN', candFilled], ['piColN', collegeFilled]].forEach(function (x) {
+      var el = $(x[0]); if (el) el.textContent = x[1] + '건';
+    });
     $('planSum').innerHTML = [['상향', cnt.up], ['적정', cnt.fit], ['하향', cnt.down], ['판정 불가', cnt.none]]
       .map(function (x) { return '<div class="sumtile"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join('');
     var clash = Object.keys(dates).filter(function (k) { return dates[k].length > 1; });
@@ -6570,19 +6607,33 @@ window.SUSI_DATEFIX = function (text) {
     setWho: function (w) { WHO = w || null; } };
 
   function planTable() { return planRows().map(function (row) { return row.join('\t'); }); }
-  /* 간단히 보기 인덱스 — 일반대/전문대 한쪽만 보기. 다시 누르면 전체로 돌아온다. */
+  /* 간단히 보기 인덱스 — 지원·기술원·예비·전문대 중 한 묶음만 보기.
+     다시 누르면 전체로 돌아온다. 고른 뒤에는 그 줄이 화면 위로 오게 맞춰 준다. */
   $('planIdx').addEventListener('click', function (e) {
     var b = e.target.closest('.pib[data-pi]'); if (!b) return;
     var view = $('v-plan');
     var was = b.getAttribute('aria-pressed') === 'true';
-    Array.prototype.forEach.call(document.querySelectorAll('#planIdx .pib'),
+    Array.prototype.forEach.call(document.querySelectorAll('#planIdx .pib[data-pi]'),
       function (x) { x.setAttribute('aria-pressed', 'false'); });
-    view.classList.remove('pi-only-uni', 'pi-only-college');
-    if (!was) {
-      b.setAttribute('aria-pressed', 'true');
-      view.classList.add(b.dataset.pi === 'uni' ? 'pi-only-uni' : 'pi-only-college');
-    }
+    if (was) { delete view.dataset.only; return; }
+    b.setAttribute('aria-pressed', 'true');
+    view.dataset.only = b.dataset.pi;
+    /* 아래쪽 묶음(전문대 등)을 보다가 다른 묶음을 고르면, 감춰진 만큼 화면이
+       위로 딸려 올라가 엉뚱한 자리에 서 있게 된다. 인덱스 줄로 맞춰 준다. */
+    try { $('planIdx').scrollIntoView({ block: 'start' }); } catch (err) { }
   });
+  /* 결과 칸 접기 — 이 브라우저에 기억해 둔다(다음에 열어도 접힌 채로) */
+  var FOLDKEY = 'susi.plan.foldres';
+  function setFoldRes(on) {
+    $('v-plan').classList.toggle('foldres', !!on);
+    $('piFold').setAttribute('aria-pressed', on ? 'true' : 'false');
+    $('piFold').textContent = on ? '결과 칸 펴기' : '결과 칸 접기';
+    try { localStorage.setItem(FOLDKEY, on ? '1' : ''); } catch (err) { }
+  }
+  $('piFold').addEventListener('click', function () {
+    setFoldRes($('piFold').getAttribute('aria-pressed') !== 'true');
+  });
+  try { if (localStorage.getItem(FOLDKEY)) setFoldRes(true); } catch (err) { }
 
   $('savePlanCsv').addEventListener('click', function () {
     var rows = planTable();
