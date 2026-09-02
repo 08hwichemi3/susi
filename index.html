@@ -1310,17 +1310,14 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
       <div class="panel pad">
         <h3 class="sec">교직원 계정 만들기</h3>
-        <p class="hint"><b>이름만 넣고 [만들기]</b> 를 누르면 <b>이름이 그대로 아이디</b>가 됩니다 (한글 그대로 로그인).
-          같은 이름이 이미 있으면 아이디 칸에 「김담임2」 처럼 구분해 넣어 주세요.
+        <p class="hint"><b>이름을 넣고 [만들기]</b> 를 누르면 <b>이름이 그대로 아이디</b>가 됩니다 (한글 그대로 로그인).
+          같은 이름이 이미 있으면 이름 칸에 「김담임2」 처럼 구분해 넣어 주세요.
           초기 비밀번호는 정해진 값이고, 그 선생님이 <b>처음 들어갈 때 바로 바꾸게</b> 됩니다.
           만든 아이디와 초기 비밀번호는 아래에 한 번 보여 드리니 <b>그때 적어 두고 전해 주세요.</b>
           담당 반은 여기서 바로 고르거나, 나중에 아래 <b>교직원 계정</b>에서 바꿀 수 있습니다.</p>
         <div class="setrow">
           <label>이름
             <input type="text" id="ntName" placeholder="김담임" autocomplete="off">
-          </label>
-          <label><span class="lt">아이디 <span class="fh">비워 두면 이름이 아이디</span></span>
-            <input type="text" id="ntLogin" placeholder="자동 (이름 그대로)" autocomplete="off">
           </label>
           <label>담당
             <select id="ntRole"></select>
@@ -2997,18 +2994,12 @@ window.SUSI_CFG = {
 
   function makeTeacher() {
     var name = ($('ntName').value || '').trim();
-    var login = ($('ntLogin').value || '').trim().toLowerCase();
     var kind = $('ntRole').value || 'general';
     var out = $('ntOut');
     if (!name) { out.innerHTML = '<div class="upres"><span class="badline">이름을 넣어 주세요.</span></div>'; return; }
-    if (login && !/^[a-z0-9가-힣_.@-]{2,40}$/.test(login)) {
-      out.innerHTML = '<div class="upres"><span class="badline">아이디는 한글·영문 소문자·숫자로 2~40자입니다. ' +
-        '(비워 두면 이름이 그대로 아이디가 됩니다)</span></div>';
-      return;
-    }
     var btn = $('ntMake'); btn.disabled = true;
     out.innerHTML = '<p class="hint">만드는 중…</p>';
-    var args = { p_name: name, p_login: login || null,
+    var args = { p_name: name, p_login: null,
                  p_kind: kind === 'all' ? 'all' : (kind === 'general' ? 'general' : 'homeroom'),
                  p_grade: 3, p_class: /^c\d+$/.test(kind) ? parseInt(kind.slice(1), 10) : null };
     Promise.resolve(sb.rpc('admin_create_teacher', args))
@@ -3023,7 +3014,7 @@ window.SUSI_CFG = {
           '</tbody></table>' +
           '<p class="hint">이 두 줄을 <b>지금 적어 두고</b> 전해 주세요 — 화면을 옮기면 다시 볼 수 없습니다. ' +
           '그 선생님이 처음 들어가면 <b>비밀번호를 새로 정하는 화면</b>이 먼저 뜹니다.</p></div>';
-        $('ntName').value = ''; $('ntLogin').value = '';
+        $('ntName').value = '';
         return loadStaff();
       })
       .catch(function (e) {
@@ -4418,7 +4409,6 @@ window.SUSI_CFG = {
     on('schSave', 'click', saveSchool);
     on('ntMake', 'click', makeTeacher);
     on('ntName', 'keydown', function (e) { if (e.key === 'Enter') makeTeacher(); });
-    on('ntLogin', 'keydown', function (e) { if (e.key === 'Enter') makeTeacher(); });
     on('sacFilter', 'input', renderStudentAccounts);
     on('sacList', 'click', function (e) {
       var a = e.target.closest('[data-pwstu]');

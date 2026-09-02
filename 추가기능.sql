@@ -40,7 +40,7 @@ end $$;
 
 -- ───────── ① 교직원 계정 만들기 ─────────
 -- 이름만 주면 **이름이 그대로 아이디**가 됩니다(한글 그대로 로그인 가능).
--- 같은 이름이 이미 있으면 아이디를 「김담임2」 처럼 구분해서 넣어야 합니다.
+-- 같은 이름이 이미 있으면 이름을 「김담임2」 처럼 구분해서 넣어야 합니다.
 -- 되돌려 주는 값: {"login": "...", "password": "...", "name": "...", "id": "..."}
 create or replace function public.admin_create_teacher(
   p_name  text,
@@ -72,7 +72,7 @@ begin
     v_login := lower(btrim(p_name));
     if exists (select 1 from auth.users
                 where email = v_login || '@susi.local') then
-      raise exception '같은 이름의 아이디가 이미 있습니다 — 아이디 칸에 「%2」 처럼 구분해서 넣어 주세요', v_login;
+      raise exception '같은 이름의 아이디가 이미 있습니다 — 이름 칸에 「%2」 처럼 구분해서 넣어 주세요', p_name;
     end if;
   else
     if v_login !~ '^[a-z0-9가-힣_.@-]{2,40}$' then
