@@ -276,7 +276,9 @@ td.jh{color:var(--ink-2)}
 .pib.fold[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#fff}
 .plansec .sec{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
 .plansec .sec .tag{text-transform:none;letter-spacing:0;font-size:11.5px}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:14px}
+/* 지원 6칸이 넓은 화면에서 한 줄에 다 들어가게 한 칸의 최소 너비를 잡았다.
+   창이 1,760px쯤부터 6칸이 한 줄에 서고, 좁아지면 5·4·3칸으로 알아서 줄어든다. */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:12px}
 .cards.cand .card{opacity:.72;border-style:dashed}
 .cards.cand .card:focus-within,.cards.cand .card:hover{opacity:1}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
@@ -2877,7 +2879,7 @@ window.SUSI_DATEFIX = function (text) {
         '</td>' +
         '<td class="auto" data-label="모집">' + (info && info.n ? info.n : '—') + '</td>' +
         '<td class="auto" data-label="경쟁률">' + (info && info.rate ? nf(info.rate) : '—') + '</td>' +
-        '<td data-label="1단계"><input type="text" data-f="step1" value="' + esc(a.step1 || '') + '" placeholder="직접 입력"></td>' +
+        '<td data-label="1단계"><input type="text" data-f="step1" value="' + esc(a.step1 || '') + '" placeholder="예: 1120"></td>' +
         '<td class="two" data-label="면접 · 논술">' +
           '<input type="text" data-f="interview" value="' + esc(a.interview != null ? a.interview : iAuto) +
             '" placeholder="면접' + (iAuto ? '' : ' 없음') + '">' +
@@ -3094,7 +3096,7 @@ window.SUSI_DATEFIX = function (text) {
     /* 고사일 칸은 적어 넣은 값을 달력이 알아보는 형식으로 맞춘 뒤에 저장한다
        (11/27 · 20261127 처럼 적어도 2026/11/27 로 바뀐다). */
     var fixDates = function (tr) {
-      ['interview', 'essay', 'final_date'].forEach(function (f) {
+      ['step1', 'interview', 'essay', 'final_date'].forEach(function (f) {
         var el = tr.querySelector('[data-f="' + f + '"]');
         if (!el || !el.value) return;
         var v = window.SUSI_DATEFIX(el.value);
@@ -4553,7 +4555,7 @@ window.SUSI_DATEFIX = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-02.3';
+  var BUILD_ID = '2026-09-02.4';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -4895,7 +4897,7 @@ window.SUSI_DATEFIX = function (text) {
   });
   function remarkAll() {
     markClamps(document.getElementById('tb'));
-    ['cardsMain', 'cardsCand', 'cardsCollege'].forEach(function (id) { markClamps(document.getElementById(id)); });
+    ['cardsMain', 'cardsTech', 'cardsCand', 'cardsCollege'].forEach(function (id) { markClamps(document.getElementById(id)); });
   }
   var rsT = null;
   window.addEventListener('resize', function () { clearTimeout(rsT); rsT = setTimeout(remarkAll, 200); });
@@ -5990,7 +5992,7 @@ window.SUSI_DATEFIX = function (text) {
         '</select></label>' +
         '<label>충원합격 번호<input type="text" data-f="fillNo" value="' + esc(c.fillNo || '') + '" placeholder="예: 3"></label>' +
         '</div>' +
-        '<div class="rrow"><label>1단계<input type="text" data-f="step1" value="' + esc(c.step1 || '') + '" placeholder="1단계 합격 여부 등 직접 입력"></label></div>' +
+        '<div class="rrow"><label>1단계<input type="text" data-f="step1" value="' + esc(c.step1 || '') + '" placeholder="예: 1120 → 2026/11/20"></label></div>' +
         '<div class="rrow"><label>면접<input type="text" data-f="interview" value="' + esc(iVal) + '" placeholder="예: 1127 → 2026/11/27"></label>' +
         ((c.interview !== null && c.interview !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="interview" title="자동값으로 되돌리기">⟲</button>' : '') +
         '</div>' +
@@ -6126,12 +6128,23 @@ window.SUSI_DATEFIX = function (text) {
     if (!plan[area] || !plan[area][ix]) return null;
     return { card: card, area: area, ix: ix, c: plan[area][ix] };
   }
-  ['cardsMain', 'cardsCand', 'cardsCollege'].forEach(function (id) {
+  /* ★ cardsTech 를 빠뜨리면 기술원 칸은 그려지기만 하고 아무 반응이 없다 —
+     적은 이름이 저장되지 않고, 칸을 떠나도 다음 빈 칸이 생기지 않고, 지우기·자리바꾸기도
+     먹지 않는다. 실제로 그랬다. 카드가 놓이는 자리를 늘릴 때는 이 줄도 같이 늘려야 한다. */
+  ['cardsMain', 'cardsTech', 'cardsCand', 'cardsCollege'].forEach(function (id) {
     var host = $(id);
     host.addEventListener('change', function (e) {
       var hit = cardHit(e); if (!hit) return;
       var f = e.target.dataset.f; if (!f) return;
       var c = hit.c, v;
+
+      /* ★ 직접 입력 칸(uName·tName·jName·dName)은 적은 글자가 곧 이름이라 번호로 바꿀 게 없다.
+         그런데 기술원 칸의 대학 이름 칸에는 이름 도움말 목록(datalist)이 붙어 있어서,
+         바로 아래 '쳐서 찾는 칸' 처리에 잘못 걸렸다. 그 바람에 «해당 학과가 없습니다» 라는
+         엉뚱한 알림이 뜨고 방금 적은 이름이 칸에서 지워졌다 — 지워진 탓에 그 뒤에 오는
+         정식 명칭 맞추기(카이스트 → 한국과학기술원(KAIST))까지 건너뛰었다.
+         이 칸들은 input · blur 에서 이미 저장·정리하므로 여기서는 손대지 않는다. */
+      if (f === 'uName' || f === 'tName' || f === 'jName' || f === 'dName') return;
 
       /* '쳐서 찾는 칸'(대학·학과) 은 값이 이름이다. 번호로 바꿔 준다.
          못 알아본 이름은 조용히 지우지 않는다 — 지우면 학생이 방금 고른 것이
@@ -6173,7 +6186,7 @@ window.SUSI_DATEFIX = function (text) {
       else if (f === 'verdict') { c.verdictOverride = e.target.value || null; }
       else if (f === 'passFail') { c.passFail = e.target.value || null; }
       else return;
-      if (hit.area === 'college') ensureCollegeGrow();
+      growUnboundedArea(hit.area);
       savePlan();
       /* ★ '쳐서 찾는 칸' 에서는 곧바로 다시 그리면 안 된다.
          change 는 그 칸에 아직 초점이 있을 때 나는데, 그 자리에서 innerHTML 을 갈아치우면
@@ -6222,9 +6235,10 @@ window.SUSI_DATEFIX = function (text) {
       /* 이 대학 반영 내신은 칸을 떠날 때 판정을 다시 계산해 보여 준다
          (글자를 칠 때마다 다시 그리면 초점이 끊긴다). */
       if (f === 'manualGrade') { renderCards(); return; }
-      if (f !== 'interview' && f !== 'essay' && f !== 'final') return;
+      if (f !== 'step1' && f !== 'interview' && f !== 'essay' && f !== 'final') return;
       /* 칸을 떠날 때 달력이 알아보는 형식으로 맞춘다 — 11/27 · 20261127 → 2026/11/27.
-         날짜로 안 보이는 말(미실시 등)과 뒤에 붙인 메모는 그대로 둔다. */
+         1단계 발표일도 같은 날짜 칸이다. 날짜로 안 보이는 말(미실시·합격 등)과
+         뒤에 붙인 메모는 그대로 둔다. */
       var hit = cardHit(e);
       if (hit && e.target.value) {
         var v = window.SUSI_DATEFIX(e.target.value);
