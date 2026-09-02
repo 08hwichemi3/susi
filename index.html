@@ -1851,7 +1851,7 @@ window.SUSI_CFG = {
 };
 
 /* ───────── 고사일 형식 맞추기 ─────────
-   달력은 'YYYY/MM/DD' 로 적힌 날짜만 알아봅니다(buildCalendar 의 정규식).
+   달력은 'YYYY/MM/DD' 로 적힌 날짜를 읽습니다(아래 SUSI_DATES).
    그런데 선생님마다 2026-11-27 · 2026.11.27 · 11/27 · 11월 27일 · 20261127 처럼
    다르게 적기 때문에, 적어 넣은 뒤 이 함수가 그 형식으로 맞춰 줍니다.
 
@@ -1879,6 +1879,75 @@ window.SUSI_DATEFIX = function (text) {
     if (!okmd(m, d)) return all;
     return pre + y + '/' + p2(m) + '/' + p2(d);
   });
+};
+
+/* ───────── 고사일에서 날짜 뽑기 ─────────
+   달력과 「같은 날 겹침」 검사가 함께 씁니다. 적힌 글에서 날짜를 모두 찾아
+   'YYYY-MM-DD' 목록으로 돌려줍니다.
+
+   ★ 기간으로 적힌 고사일을 하루로 읽지 않습니다.
+     원자료의 실기 고사일 절반쯤이 기간입니다 — 2026/10/14~10/15 ·
+     2026/10/15/~ 10/16/ · 2026/10/23/~24/ · 2026/9/27/~10/2/ 처럼
+     끝날짜를 «연/월/일» · «월/일» · «일» 중 아무렇게나 적습니다.
+     예전에는 앞의 하루만 집어서 뒤쪽 날들이 달력에서 통째로 빠졌습니다.
+     이제 기간에 든 날을 하루하루 다 찍습니다.
+
+   ★ 시각 범위와 헷갈리지 않습니다.
+     '2026/10/21/13:00~17:00 /2026/10/22/13:00~17:00 중 택1' 처럼 물결이
+     시각에 붙은 자료가 많습니다. 날짜 바로 뒤에 (슬래시·공백을 빼고) 물결이
+     와야만 기간으로 보므로, 사이에 시각이 끼면 기간이 아니라 그냥 두 날입니다. */
+window.SUSI_DATES = function (text) {
+  var s = String(text == null ? '' : text), out = [], seen = {};
+  if (!s) return out;
+  var p2 = function (n) { return n < 10 ? '0' + n : '' + n; };
+  var key = function (y, m, d) { return y + '-' + p2(m) + '-' + p2(d); };
+  var okmd = function (m, d) { return m >= 1 && m <= 12 && d >= 1 && d <= 31; };
+  var real = function (y, m, d) {
+    var t = new Date(y, m - 1, d);
+    return (t.getFullYear() === y && t.getMonth() === m - 1 && t.getDate() === d) ? t : null;
+  };
+  var push = function (k) { if (k && !seen[k]) { seen[k] = 1; out.push(k); } };
+
+  var RE = /(\d{4})\/(\d{1,2})\/(\d{1,2})(?!\d)/g, m;
+  // 끝날짜: 2026/10/16 · 10/16 · 16 — 앞에 슬래시·공백이 있어도 되고 물결은 꼭 있어야 한다
+  var TAIL = /^\/?\s*[~∼〜]\s*(?:(\d{4})\/(\d{1,2})\/(\d{1,2})|(\d{1,2})\s*\/\s*(\d{1,2})|(\d{1,2}))(?!\d)/;
+  while ((m = RE.exec(s))) {
+    var y = +m[1], mo = +m[2], d = +m[3];
+    if (!okmd(mo, d)) continue;
+    var start = real(y, mo, d);
+    if (!start) continue;
+    push(key(y, mo, d));
+
+    var r = s.slice(RE.lastIndex).match(TAIL);
+    if (!r) continue;
+    var ey, em, ed;
+    if (r[1] != null) { ey = +r[1]; em = +r[2]; ed = +r[3]; }
+    else if (r[4] != null) { ey = y; em = +r[4]; ed = +r[5]; }
+    else { ey = y; em = mo; ed = +r[6]; }
+    if (!okmd(em, ed)) continue;
+    var end = real(ey, em, ed);
+    if (!end) continue;
+    // 12/30~1/2 처럼 해를 넘기는 기간
+    if (end < start) end = real(ey + 1, em, ed);
+    if (!end) continue;
+    var span = Math.round((end - start) / 86400000);
+    if (span < 0 || span > 60) continue;      // 자료가 잘못 적힌 것 — 시작일만 남긴다
+    /* ★ 긴 기간은 하루하루 다 찍지 않는다.
+       '2026/10/08~10/26' 같은 자료는 «이 기간 중 학과별로 다른 날» 이라는 뜻이지
+       19일 내내 시험이 있다는 뜻이 아니다. 그런데 달력 칸은 높이가 정해져 있어서,
+       한 학생의 19일치가 들어오면 그 날 진짜 고사가 밀려 안 보인다.
+       그래서 일주일까지는 하루하루 다 찍고, 그보다 길면 시작일과 마지막 날만 찍는다. */
+    if (span > 7) { push(key(end.getFullYear(), end.getMonth() + 1, end.getDate())); }
+    else {
+      var cur = new Date(start);
+      for (var i = 0; i <= span; i++) {
+        push(key(cur.getFullYear(), cur.getMonth() + 1, cur.getDate()));
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+    RE.lastIndex += r[0].length;   // 끝날짜를 다시 시작날짜로 읽지 않게 건너뛴다
+  }
+  return out;
 };
 
 </script><script id="SHELLJS">
@@ -3570,15 +3639,14 @@ window.SUSI_DATEFIX = function (text) {
             ['실기', info ? info.practical : '']
           ];
           pairs.forEach(function (p) {
-            // 한 칸에 날짜가 여럿 적힌 경우(예: "2026/11/27 ; 2026/12/04")도 다 집는다
-            var re = /(\d{4})\/(\d{1,2})\/(\d{1,2})(?!\d)/g, m;
-            while ((m = re.exec(String(p[1] || '')))) {
-              var key = m[1] + '-' + pad(m[2]) + '-' + pad(m[3]);
+            /* 한 칸에 날짜가 여럿 적힌 경우("2026/11/27 ; 2026/12/04")도,
+               기간으로 적힌 경우("2026/10/14~10/15")도 SUSI_DATES 가 다 풀어 준다. */
+            window.SUSI_DATES(p[1]).forEach(function (key) {
               var st = byName[a.student_id];
               (days[key] = days[key] || []).push({
                 who: st ? st.name : '?', no: st ? (st.student_no || 0) : 0,
                 sid: a.student_id, uni: a.uni_name, dept: a.dept_name, kind: p[0] });
-            }
+            });
           });
         });
 
@@ -4555,7 +4623,7 @@ window.SUSI_DATEFIX = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-02.4';
+  var BUILD_ID = '2026-09-02.5';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -5283,17 +5351,12 @@ window.SUSI_DATEFIX = function (text) {
     if (!parts.length) return '<span class="dash">—</span>';
     return lc(parts.join('<br>'), 'day');
   }
-  function examDay(i) {
-    var v = examText(i);
-    var m = v.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})(?!\d)/);
-    return m ? m[1] + '/' + (+m[2]) + '/' + (+m[3]) : null;
-  }
-  /* examDay() 는 자료 문자열 색인(정수)을 받는다 — 직접 입력 카드는 면접·논술 값이
+  /* 고사일에 걸린 날을 모두 돌려준다 — 기간으로 적힌 고사일(2026/10/14~10/15)은
+     그 사이 날까지 다 나온다. 「같은 날 둘 이상」 겹침 안내가 이 값을 쓴다. */
+  function examDays(i) { return window.SUSI_DATES(examText(i)); }
+  /* examDays() 는 자료 문자열 색인(정수)을 받는다 — 직접 입력 카드는 면접·논술 값이
      학생이 그대로 적은 텍스트라서(색인이 아니다) 문자열을 바로 받는 판이 따로 필요하다. */
-  function examDayText(v) {
-    var m = String(v || '').match(/(\d{4})\/(\d{1,2})\/(\d{1,2})(?!\d)/);
-    return m ? m[1] + '/' + (+m[2]) + '/' + (+m[3]) : null;
-  }
+  function examDaysText(v) { return window.SUSI_DATES(v); }
   function isNoMin(t) { return /^(미반영|없음|미적용|해당없음|-)$/.test(String(t).trim()) || /최저학력기준\s*없음/.test(t); }
   function minCell(mi) {
     if (mi < 0) return '<span class="dash">—</span>';
@@ -6095,14 +6158,16 @@ window.SUSI_DATEFIX = function (text) {
         var uniName = r ? U[r[C.U]] : c.uName;
         if (r) {
           [[C.F, '면접'], [C.L, '논술'], [C.K, '실기']].forEach(function (p) {
-            var k = examDay(r[p[0]]);
-            if (k) (dates[k] = dates[k] || []).push(uniName + ' ' + p[1]);
+            examDays(r[p[0]]).forEach(function (k) {
+              (dates[k] = dates[k] || []).push(uniName + ' ' + p[1]);
+            });
           });
         } else {
           // 직접 입력 카드는 학생이 적은 면접·논술 날짜를 그대로 훑는다 (자료 색인이 아니라 문자열이다)
           [[c.interview, '면접'], [c.essay, '논술']].forEach(function (p) {
-            var k = examDayText(p[0]);
-            if (k) (dates[k] = dates[k] || []).push(uniName + ' ' + p[1]);
+            examDaysText(p[0]).forEach(function (k) {
+              (dates[k] = dates[k] || []).push(uniName + ' ' + p[1]);
+            });
           });
         }
       });
@@ -6115,11 +6180,14 @@ window.SUSI_DATEFIX = function (text) {
     });
     $('planSum').innerHTML = [['상향', cnt.up], ['적정', cnt.fit], ['하향', cnt.down], ['판정 불가', cnt.none]]
       .map(function (x) { return '<div class="sumtile"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join('');
-    var clash = Object.keys(dates).filter(function (k) { return dates[k].length > 1; });
+    var clash = Object.keys(dates).filter(function (k) { return dates[k].length > 1; }).sort();
     var el = $('clash');
     if (clash.length) {
       el.classList.remove('hidden');
-      el.innerHTML = '고사일이 겹칩니다: ' + clash.map(function (k) { return esc(k) + ': ' + esc(dates[k].join(', ')); }).join(' / ');
+      el.innerHTML = '고사일이 겹칩니다: ' + clash.map(function (k) {
+        var p = k.split('-');                       // 2026-10-14 → 10/14
+        return esc((+p[1]) + '/' + (+p[2])) + ': ' + esc(dates[k].join(', '));
+      }).join(' / ');
     } else el.classList.add('hidden');
   }
   function cardHit(e) {
