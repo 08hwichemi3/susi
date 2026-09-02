@@ -931,7 +931,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
    옆으로 스크롤해야만 보였습니다.
    이제 표를 **화면 폭에 맞추고**(table-layout:fixed + %) 글자는 두 줄까지 보인 뒤
    …으로 줄입니다. 열이 잘려 나가는 일이 없으니 담기 단추는 늘 제자리에 있습니다. */
-.wrap{max-width:1560px}
+/* 창을 최대화한 넓은 모니터에서는 1560px 로 못박아 두면 양옆이 많이 남는다 —
+   화면 폭에 따라 같이 늘어나게 하되(전형 찾기 표·달력이 그만큼 넓어진다),
+   한 줄이 너무 길어지지 않게 위 한도만 넉넉히 둔다. 머리글(.top-in)도 본문과
+   같은 폭이어야 좌우 끝이 맞아 보인다. */
+.wrap{max-width:min(96vw, 1960px)}
+.top-in{max-width:min(96vw, 1960px)}
 .cols{grid-template-columns:250px minmax(0,1fr)}
 .cols.railoff{grid-template-columns:minmax(0,1fr)}
 .cols.railoff>.rail{display:none}
@@ -1067,6 +1072,28 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   #v-find .tablewrap td{overflow:visible}
   #v-find td.c-add{padding-left:0;padding-right:0}
   #v-find .addbtn{padding:11px;font-size:14px;border-radius:9px}
+
+  /* 카드 하나가 화면을 거의 다 차지한다는 지적 — 담기 단추를 대학 이름 옆으로 올리고
+     (맨 아래 전체 너비 줄로 두면 그만큼 세로를 더 먹는다), 모집·경쟁률·컷처럼 숫자만
+     짧게 나오는 항목들은 한 줄에 나란히 작은 상자로 묶어 카드 키를 크게 줄인다. */
+  #v-find tr{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:8px}
+  #v-find td{flex:0 0 100%}
+  #v-find td.c-uni{flex:1 1 auto;order:1;padding-bottom:2px}
+  #v-find td.c-add{flex:0 0 auto;order:2;padding:0!important;margin:0;border:0}
+  #v-find td.c-add .addbtn{width:auto;padding:7px 15px;font-size:12.5px;border-radius:999px}
+  #v-find td.c-type{flex:0 0 auto;order:3;padding-bottom:4px}
+  #v-find td.c-jh{order:4}
+  #v-find td.c-dept{order:5}
+  #v-find td.c-way,#v-find td.c-day{order:6}
+  #v-find td.c-n,#v-find td.c-rate,#v-find td.c-cut50,#v-find td.c-cut70{
+    order:7;flex:1 1 70px;min-width:0;background:var(--surface-2);border-radius:7px;
+    padding:5px 8px!important;margin-top:6px;text-align:center}
+  /* 수능최저는 글이 길어 숫자 상자들과 한 줄에 못 어울린다 — 순서를 뒤로 미뤄
+     숫자 상자들이 먼저 한 줄에 모이게 하고, 자기는 다음 줄 전체를 혼자 쓴다.
+     (같은 order 에 두면 이 칸이 먼저 나와 줄을 끊어서 「모집」 상자가 혼자 남아
+     줄 전체로 늘어나 버렸다 — 실제로 그렇게 보여서 고쳤다.) */
+  #v-find td.c-min{order:8;flex:1 1 100%;text-align:left;background:var(--surface-2);
+    border-radius:7px;padding:5px 8px!important;margin-top:6px}
 }
 
 @media(max-width:700px){
@@ -1116,8 +1143,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .grades{grid-template-columns:minmax(0,1fr)}
   .sacrow{font-size:12.5px}
   .sacrow .btn{flex:1 1 auto}
-  /* 카드로 바뀐 결과 표: 이름표와 값을 한 줄에 나란히 놓아 카드 길이를 줄인다 */
-  #v-find td[data-label]{display:grid;grid-template-columns:74px minmax(0,1fr);
+  /* 카드로 바뀐 결과 표: 이름표와 값을 한 줄에 나란히 놓아 카드 길이를 줄인다.
+     숫자 항목(모집·수능최저·경쟁률·컷)은 옆의 900px 규칙에서 이미 작은 상자로 나란히
+     놓았으니 여기서는 손대지 않는다 — 안 그러면 상자 안이 「이름표 74px + 값」 grid 로
+     다시 깨진다. */
+  #v-find td[data-label]:not(.c-n):not(.c-min):not(.c-rate):not(.c-cut50):not(.c-cut70){
+    display:grid;grid-template-columns:74px minmax(0,1fr);
     gap:8px;align-items:baseline;padding:4px 0}
   #v-find td[data-label]::before{margin-bottom:0;font-size:11px;text-transform:none;letter-spacing:0}
   #v-find td.actd{display:block}
