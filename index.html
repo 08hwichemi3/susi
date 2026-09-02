@@ -126,7 +126,6 @@ input:focus-visible,select:focus-visible,button:focus-visible,li:focus-visible,t
 .btn:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.solid{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.solid:hover{filter:brightness(1.08)}
-.btn.ok{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn[disabled]{opacity:.45;cursor:default}
 .ghost{padding:6px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface-2);
   color:var(--ink-2);font-family:inherit;font-size:12.5px;cursor:pointer}
@@ -1691,7 +1690,6 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <button type="button" class="pib" data-pi="college" aria-pressed="false">전문대 <span class="n" id="piColN"></span></button>
     <span class="fh">선택하면 해당 항목만 표시되며, 다시 누르면 전체가 표시됩니다.</span>
     <span class="grow"></span>
-    <button class="btn" id="copyPlan">계획표 복사</button>
     <button class="btn" id="savePlanCsv">파일로 저장(CSV)</button>
     <button class="btn" id="savePlanXlsx">xlsx로 저장</button>
     <button class="btn" id="loadPlanXlsx">엑셀 불러오기</button>
@@ -5339,21 +5337,6 @@ window.SUSI_DATEFIX = function (text) {
     toast('칸이 가득 찼습니다');
   });
 
-  function copyText(t, btn, n) {
-    var done = function () {
-      if (btn) { btn.classList.add('ok'); var o = btn.textContent; btn.textContent = '복사됨'; setTimeout(function () { btn.classList.remove('ok'); btn.textContent = o; }, 1500); }
-      toast(n.toLocaleString() + '행이 복사되었습니다. 엑셀 전형데이터 시트 A2 칸에 붙여넣으세요.');
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(t).then(done, function () { fallback(t, done); });
-    } else fallback(t, done);
-  }
-  function fallback(t, done) {
-    var ta = document.createElement('textarea'); ta.value = t;
-    ta.style.cssText = 'position:fixed;top:-9999px'; document.body.appendChild(ta); ta.select();
-    var ok = false; try { ok = document.execCommand('copy'); } catch (e) { }
-    ta.remove(); ok ? done() : toast('복사에 실패했습니다. 브라우저 권한을 확인하세요.');
-  }
   /* ───────── 파일 저장 ───────── */
   var DL = null, dlReady = false;
   if (window.claude && claude.use) {
@@ -6502,11 +6485,6 @@ window.SUSI_DATEFIX = function (text) {
     }
   });
 
-  $('copyPlan').addEventListener('click', function (e) {
-    var rows = planTable();
-    if (rows.length < 2) { toast('담긴 전형이 없습니다'); return; }
-    copyText(rows.join('\n'), e.currentTarget, rows.length - 1);
-  });
   $('savePlanCsv').addEventListener('click', function () {
     var rows = planTable();
     if (rows.length < 2) { toast('담긴 전형이 없습니다'); return; }
