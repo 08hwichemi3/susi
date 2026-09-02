@@ -691,6 +691,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   body *{visibility:hidden}
   /* 새 판 알림 띠는 인쇄물에 자리만 차지하므로 아예 뺀다 */
   .updatebar{display:none!important}
+  #planFill{display:none!important}
 
   /* ★ position:absolute 는 '가장 가까운 position 있는 조상'을 기준으로 자리를 잡는다.
      그 조상이 (안 보이지만 여전히 자리를 차지하는) 다른 탭들 밑 깊숙한 곳에 있으면,
@@ -1750,6 +1751,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <b>대학마다 내신 반영 과목·가중치가 달라</b> 평균 내신으로는 상향·적정·하향이 맞지 않을 때가 있습니다.
     그럴 때는 카드의 <b>이 대학 반영 내신</b> 칸에 그 대학 기준으로 계산한 등급을 적으면 <b>그 카드만 그 값으로 다시 판정</b>합니다
     (비워 두면 지금처럼 계열 평균 내신을 씁니다). 선생님도 학생 상세 화면의 표에서 같은 값을 넣을 수 있습니다.</p>
+
+  <!-- 한 묶음만 볼 때, 남은 내용이 한 화면보다 짧으면 그만큼만 아래를 채워 둔다.
+       이게 없으면 문서가 짧아진 순간 브라우저가 스크롤을 맨 위로 되돌려 화면이 튄다. -->
+  <div id="planFill" aria-hidden="true"></div>
 </section>
 
 <!-- ══ 데이터 ══ -->
@@ -4548,7 +4553,7 @@ window.SUSI_DATEFIX = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-02.2';
+  var BUILD_ID = '2026-09-02.3';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -6654,29 +6659,52 @@ window.SUSI_DATEFIX = function (text) {
   /* 간단히 보기 인덱스 — 지원·기술원·예비·전문대 중 한 묶음만 보기.
      다시 누르면 전체로 돌아온다.
 
-     ★ 누를 때마다 «인덱스 줄이 화면 맨 위» 라는 한 자리로만 선다.
-       예전에는 인덱스 줄 자신에게 scrollIntoView 를 걸었는데, 이 줄은 화면 위에
-       붙어 다니는(sticky) 줄이라 붙어 있을 때와 아닐 때 결과가 달라서 누를 때마다
-       화면이 들쭉날쭉 움직였다. 게다가 다른 묶음을 감추면 문서가 짧아지면서
-       브라우저가 스크롤을 맨 위로 되돌려 버려, 엉뚱하게 화면 꼭대기로 튀기도 했다.
-       그래서 줄 바로 위에 눈에 안 보이는 표식(#planIdxTop)을 두고 늘 그 표식으로 맞춘다.
-       한 번 맞춘 뒤에는 몇 번을 더 눌러도 이미 그 자리라 화면이 그대로 서 있는다. */
-  function snapToPlanIdx() {
-    var a = $('planIdxTop'); if (!a) return;
-    var off = parseFloat(getComputedStyle(document.body).getPropertyValue('--topbar')) || 0;
-    var y = Math.max(0, a.getBoundingClientRect().top + window.pageYOffset - off);
-    try { window.scrollTo(0, y); } catch (err) { }
+     ★ 누를 때 화면이 움직이지 않게 하는 것이 이 코드의 절반이다. 걸림돌이 둘이었다.
+       (1) 인덱스 줄은 화면 위에 붙어 다니는(sticky) 줄이라, 이 줄에 scrollIntoView 를
+           걸면 붙어 있을 때와 아닐 때 결과가 달라 누를 때마다 자리가 달라졌다.
+       (2) 다른 묶음을 감추면 문서가 짧아지는데, 그러면 브라우저가 «문서보다 아래»를
+           보고 있을 수 없으므로 스크롤을 맨 위로 되돌려 버린다.
+     그래서 누르기 전의 상태를 먼저 적어 두고,
+       · 줄이 이미 화면 맨 위에 붙어 있었으면 → 맨 위에 붙은 그대로
+       · 아니면                              → 보고 있던 자리 그대로
+     를 목표로 삼은 뒤, 남은 내용이 한 화면보다 짧으면 모자란 만큼만 아래를
+     빈칸(#planFill)으로 채워 스크롤이 되돌려지지 않게 한다.
+     그래서 몇 번을 눌러도 화면이 그 자리에 서 있는다. */
+  function planTopOffset() {
+    return parseFloat(getComputedStyle(document.body).getPropertyValue('--topbar')) || 0;
+  }
+  function planViewBefore() {
+    var a = $('planIdxTop'), off = planTopOffset();
+    return { y: window.pageYOffset,
+             stuck: a ? (a.getBoundingClientRect().top <= off + 1) : false };
+  }
+  function holdPlanView(before) {
+    var a = $('planIdxTop'), f = $('planFill');
+    if (!a) return;
+    var off = planTopOffset();
+    // 인덱스 줄이 문서 안에서 실제로 있는 자리 — 스크롤이 되돌려졌어도 이 값은 그대로다
+    var anchor = a.getBoundingClientRect().top + window.pageYOffset;
+    var want = before.stuck ? Math.max(0, anchor - off) : before.y;
+    if (f) {
+      f.style.height = '0px';
+      var need = want + window.innerHeight - document.documentElement.scrollHeight;
+      f.style.height = need > 0 ? Math.ceil(need) + 'px' : '0px';
+    }
+    try { window.scrollTo(0, want); } catch (err) { }
   }
   $('planIdx').addEventListener('click', function (e) {
     var b = e.target.closest('.pib[data-pi]'); if (!b) return;
     var view = $('v-plan');
+    var before = planViewBefore();
     var was = b.getAttribute('aria-pressed') === 'true';
     Array.prototype.forEach.call(document.querySelectorAll('#planIdx .pib[data-pi]'),
       function (x) { x.setAttribute('aria-pressed', 'false'); });
-    if (was) { delete view.dataset.only; return; }
-    b.setAttribute('aria-pressed', 'true');
-    view.dataset.only = b.dataset.pi;
-    snapToPlanIdx();
+    if (was) { delete view.dataset.only; }
+    else {
+      b.setAttribute('aria-pressed', 'true');
+      view.dataset.only = b.dataset.pi;
+    }
+    holdPlanView(before);
   });
   /* 결과 칸 접기 — 이 브라우저에 기억해 둔다(다음에 열어도 접힌 채로) */
   var FOLDKEY = 'susi.plan.foldres';
