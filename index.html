@@ -1727,7 +1727,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <b>한국과학기술원(KAIST)</b>처럼 목록에 없는 대학은 위의 <b>기술원 등</b> 칸에 직접 적어 넣으세요 —
     과학기술원은 수시 6회 제한과 무관하게 따로 지원할 수 있어서, <b>지원 6칸을 쓰지 않고</b> 필요한 만큼 늘어납니다.
     이름은 "카이스트"처럼 편하게 적어도 칸을 벗어나면 정식 명칭(KAIST·GIST·DGIST·UNIST·KENTECH)으로 자동으로 맞춰져,
-    학생마다 이름이 다르게 저장되지 않습니다. 다만 이런 카드는 모집인원·컷 같은 자동 정보는 나오지 않으니 전형 일정과 결과를 직접 챙겨야 합니다.</p>
+    학생마다 이름이 다르게 저장되지 않습니다. 다만 이런 카드는 모집인원·컷 같은 자동 정보는 나오지 않으니 전형 일정과 결과를 직접 챙겨야 합니다.
+    <b>대학마다 내신 반영 과목·가중치가 달라</b> 평균 내신으로는 상향·적정·하향이 맞지 않을 때가 있습니다.
+    그럴 때는 카드의 <b>이 대학 반영 내신</b> 칸에 그 대학 기준으로 계산한 등급을 적으면 <b>그 카드만 그 값으로 다시 판정</b>합니다
+    (비워 두면 지금처럼 계열 평균 내신을 씁니다). 선생님도 학생 상세 화면의 표에서 같은 값을 넣을 수 있습니다.</p>
 </section>
 
 <!-- ══ 데이터 ══ -->
@@ -2292,7 +2295,7 @@ window.SUSI_DATEFIX = function (text) {
   function emptyCard() {
     return { u: null, t: null, j: null, d: null,
              custom: false, uName: '', tName: '', jName: '', dName: '',
-             memo: '', verdictOverride: null,
+             memo: '', verdictOverride: null, manualGrade: '',
              fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
   }
   function rowsToPlan(rows, grades) {
@@ -2314,6 +2317,7 @@ window.SUSI_DATEFIX = function (text) {
         c.jName = r.admission_name || ''; c.dName = r.dept_name || '';
       }
       c.memo = r.memo || ''; c.verdictOverride = r.verdict_override || null;
+      c.manualGrade = (r.manual_grade === null || r.manual_grade === undefined) ? '' : String(r.manual_grade);
       c.fillNo = r.fill_no || '';
       // 'wait' 를 떨어뜨리면, 학생이 로그인만 해도 다음 저장 때 선생님이 넣은 값이 지워진다
       c.passFail = (r.result === 'pass' || r.result === 'fail' || r.result === 'wait') ? r.result : null;
@@ -2347,6 +2351,7 @@ window.SUSI_DATEFIX = function (text) {
         out.push({ student_id: owner.id, area: area, slot: i + 1, year: CFG.year,
           uni_name: n.uni, type_name: n.type, admission_name: n.jh, dept_name: n.dept,
           verdict_override: c.verdictOverride || null, step1: c.step1 || null,
+          manual_grade: (function () { var n = parseFloat(c.manualGrade); return isFinite(n) && n > 0 ? n : null; })(),
           interview: c.interview, essay: c.essay, final_date: c.final || null,
           fill_no: c.fillNo || null,
           result: c.passFail || null, memo: c.memo || null });
@@ -2494,7 +2499,7 @@ window.SUSI_DATEFIX = function (text) {
     /* 칸 차례는 화면(교사용 표)과 같게 둔다 — 1단계 → 면접·실기·논술 → 최종 → 합불 → 충원.
        다시 올릴 때는 머리글 '이름'으로 찾으므로 차례가 바뀌어도 읽는 데는 문제가 없다. */
     var aoa = [['학번', '반', '번호', '이름', '구분', '칸', '대학', '전형유형', '전형명', '학과',
-                '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '최종', '합불', '충원합격', '메모']];
+                '대학별내신', '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '최종', '합불', '충원합격', '메모']];
     (apps || []).slice().sort(function (a, b) {
       var sa = byId[a.student_id], sb2 = byId[b.student_id];
       return ((sa && sa.student_no) || 0) - ((sb2 && sb2.student_no) || 0)
@@ -2505,6 +2510,7 @@ window.SUSI_DATEFIX = function (text) {
         /* slot 은 서버에 이미 1부터 들어간다(저장할 때 i+1). 여기서 또 +1 하면 한 칸씩 밀린다. */
         PLAN_AREA[a.area] || a.area, a.slot,
         a.uni_name || '', a.type_name || '', a.admission_name || '', a.dept_name || '',
+        a.manual_grade == null ? '' : a.manual_grade,
         PLAN_VERDICT[a.verdict_override] || '', a.exam_no || '', a.step1 || '',
         a.interview === null || a.interview === undefined ? '' : a.interview,
         a.final_date || '', PLAN_RESULT[a.result] || '', a.fill_no || '', a.memo || '']);
@@ -2512,7 +2518,7 @@ window.SUSI_DATEFIX = function (text) {
     return aoa;
   }
 
-  var LIST_COLS_PLAN = [8, 5, 6, 10, 9, 5, 15, 12, 20, 19, 13, 12, 14, 16, 13, 8, 10, 26]
+  var LIST_COLS_PLAN = [8, 5, 6, 10, 9, 5, 15, 12, 20, 19, 11, 13, 12, 14, 16, 13, 8, 10, 26]
     .map(function (w) { return { wch: w }; });
 
   function downloadAllXlsx() {
@@ -2775,13 +2781,17 @@ window.SUSI_DATEFIX = function (text) {
       '<b>면접 · 논술</b>과 <b>최종</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
       '칸을 떠날 때 <b>2026/11/27</b> 형식으로 자동으로 맞춰집니다. 달력에는 면접 · 논술 · 실기 날짜가 표시됩니다.</p>';
     h += '<div class="tblwrap"><table class="plantbl edit"><thead><tr>' +
-      '<th>구분</th><th>대학 · 전형 · 학과</th><th>70%컷</th><th>판정</th>' +
+      '<th>구분</th><th>대학 · 전형 · 학과</th><th>70%컷</th><th>내신</th><th>판정</th>' +
       '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>최종</th><th>합불</th><th>충원</th>' +
       '</tr></thead><tbody>';
     apps.forEach(function (a) {
       var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name);
       var cut = info ? (info.cut70 || info.cut50) : null;
-      var mine = gr ? pickGrade(gr, a.dept_name) : null;
+      /* 대학마다 내신 반영 방법이 달라, 이 카드에 적어 둔 '이 대학 반영 내신' 이 있으면
+         계열 평균 대신 그 값으로 판정한다. */
+      var manual = parseFloat(a.manual_grade);
+      manual = isFinite(manual) && manual > 0 ? manual : null;
+      var mine = manual || (gr ? pickGrade(gr, a.dept_name) : null);
       var vd = window.SUSI_VERDICT(cut, mine, 0.3);
       // 판정이 왜 비었는지 보이게 한다 — 그냥 '—' 면 고장인지 자료 문제인지 알 수 없다
       var why = !info ? '자료에 없음' : (!cut ? '컷 없음' : (!mine ? '내신 없음' : ''));
@@ -2791,6 +2801,9 @@ window.SUSI_DATEFIX = function (text) {
         '<td class="auto"><b>' + esc(a.uni_name) + '</b><br><span class="who">' +
           esc(a.admission_name) + ' · ' + esc(a.dept_name) + '</span></td>' +
         '<td class="auto" data-label="70%컷">' + (cut ? nf(cut) : '—') + '</td>' +
+        '<td data-label="내신"><input type="text" inputmode="decimal" data-f="manual_grade" value="' +
+          esc(a.manual_grade == null ? '' : String(a.manual_grade)) + '" placeholder="' +
+          (gr && pickGrade(gr, a.dept_name) ? '평균 ' + pickGrade(gr, a.dept_name) : '예: 2.35') + '"></td>' +
         '<td data-label="판정">' +
           '<select data-f="verdict_override">' +
             '<option value="">' + (vd ? '자동 (' + VN[vd.v] + ')' : '자동') + '</option>' +
@@ -2827,7 +2840,7 @@ window.SUSI_DATEFIX = function (text) {
     h += '<span class="msg hidden" id="planMsg"></span>';
     $('stDetail').innerHTML = h;
     wire();
-    wirePlanEdit(st, apps);
+    wirePlanEdit(st, apps, gr);
   }
   /* 학생 한 명의 성적만 손으로 고치는 화면.
      엑셀을 통째로 다시 올리지 않고 한 명만 바로잡을 때 쓴다. */
@@ -2966,7 +2979,7 @@ window.SUSI_DATEFIX = function (text) {
   /* 선생님이 표에서 고친 값을 그 줄만 바로 저장한다.
      면접·논술은 '자료의 자동값과 같으면 비워 둔다' — 그래야 자료가 바뀌면 따라간다. */
   // planTimer 는 위(pickSeq 옆)에서 선언한다 — pickStudent 가 먼저 참조하기 때문
-  function wirePlanEdit(st, apps) {
+  function wirePlanEdit(st, apps, gr) {
     var byId = {}; apps.forEach(function (a) { byId[a.id] = a; });
     var host = $('stDetail').querySelector('.plantbl.edit');
     if (!host) return;
@@ -2983,10 +2996,25 @@ window.SUSI_DATEFIX = function (text) {
         interview: (iv === '' || iv === iAuto) ? null : iv,
         essay:     (ev === '' || ev === eAuto) ? null : ev,
         final_date: get('final_date') || null,
+        // 이 대학 기준으로 다시 계산한 내신. 숫자로 안 읽히면 비운다(평균 내신을 다시 쓴다).
+        manual_grade: (function () { var n = parseFloat(get('manual_grade')); return isFinite(n) && n > 0 ? n : null; })(),
         fill_no: get('fill_no') || null,
         result: get('result') || null
       };
       Object.keys(patch).forEach(function (k) { a[k] = patch[k]; });
+      /* '이 대학 반영 내신' 을 고치면 판정이 달라진다 — 다시 그리지 않아도
+         그 줄의 「자동 (적정)」 안내가 새 값으로 바로 바뀌게 해 준다. */
+      (function () {
+        var cut = info ? (info.cut70 || info.cut50) : null;
+        var mg = parseFloat(a.manual_grade); mg = isFinite(mg) && mg > 0 ? mg : null;
+        var mine = mg || (gr ? pickGrade(gr, a.dept_name) : null);
+        var vd2 = window.SUSI_VERDICT(cut, mine, 0.3);
+        var opt = tr.querySelector('[data-f="verdict_override"] option[value=""]');
+        if (opt) opt.textContent = vd2 ? '자동 (' + VN[vd2.v] + ')' : '자동';
+        var wh = tr.querySelector('.whyno');
+        var why2 = !info ? '자료에 없음' : (!cut ? '컷 없음' : (!mine ? '내신 없음' : ''));
+        if (wh) wh.textContent = (why2 && !a.verdict_override) ? why2 : '';
+      })();
       var m = $('planMsg');
       if (m) { m.className = 'msg'; m.textContent = '저장 중…'; }
       /* Promise.resolve() 로 한 번 감싼다 — supabase-js 의 질의 빌더는 then 만 있고
@@ -5541,19 +5569,27 @@ window.SUSI_DATEFIX = function (text) {
     }
     return null;
   }
-  function verdict(r) {
+  /* 대학마다 내신 반영 방법(과목·가중치)이 달라 계열 평균 하나로는 안 맞는 경우가 있다.
+     카드에 '이 대학 반영 내신' 을 적어 두면 그 카드만 그 값으로 판정한다. */
+  function manualGradeOf(c) {
+    if (!c) return null;
+    var n = parseFloat(c.manualGrade);
+    return isFinite(n) && n > 0 ? n : null;
+  }
+  function verdict(r, c) {
     if (!r) return null;
     var cut = r[C.B] || r[C.A];
-    var mine = myGrade(DP[r[C.D]]);
+    var mine = manualGradeOf(c) || myGrade(DP[r[C.D]]);
     if (!cut || !mine) return null;
     var th = parseFloat(plan.th) || 0.3, diff = mine - cut;
-    return { v: diff > th ? 'up' : (diff < -th ? 'down' : 'fit'), diff: diff, cut: cut, mine: mine };
+    return { v: diff > th ? 'up' : (diff < -th ? 'down' : 'fit'), diff: diff, cut: cut, mine: mine,
+             manualMine: !!manualGradeOf(c) };
   }
   var VN = { up: '상향', fit: '적정', down: '하향' };
-  function whyNoVerdict(r) {
+  function whyNoVerdict(r, c) {
     if (!r) return '비어 있음';
     if (!(r[C.B] || r[C.A])) return '컷 정보 없음';
-    if (!myGrade(DP[r[C.D]])) return '내신 입력 필요';
+    if (!(manualGradeOf(c) || myGrade(DP[r[C.D]]))) return '내신 입력 필요';
     return '판정 불가';
   }
 
@@ -5603,7 +5639,8 @@ window.SUSI_DATEFIX = function (text) {
   function emptyCard() {
     return { u: null, t: null, j: null, d: null,
              custom: false, uName: '', tName: '', jName: '', dName: '',
-             memo: '', verdictOverride: null, fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
+             memo: '', verdictOverride: null, manualGrade: '',
+             fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
   }
   function normalizeCard(c) {
     c = c || {};
@@ -5617,6 +5654,8 @@ window.SUSI_DATEFIX = function (text) {
       uName: c.uName || '', tName: c.tName || '', jName: c.jName || '', dName: c.dName || '',
       memo: c.memo || '',
       verdictOverride: VERDICT_KEYS[c.verdictOverride] ? c.verdictOverride : null,
+      // 이 대학 기준으로 다시 계산한 내신(비어 있으면 계열 평균 내신을 쓴다)
+      manualGrade: (c.manualGrade === null || c.manualGrade === undefined) ? '' : String(c.manualGrade),
       fillNo: c.fillNo || '',
       passFail: (c.passFail === 'pass' || c.passFail === 'fail') ? c.passFail : null,
       step1: c.step1 || '',
@@ -5808,10 +5847,10 @@ window.SUSI_DATEFIX = function (text) {
   var AREA_LABEL = { main: '지원', cand: '예비', college: '전문대', tech: '기술원' };
   var PF_LABEL = { pass: '합격', fail: '불합격' };
   function cardHTML(c, ix, area) {
-    var r = c.custom ? null : rowOf(c), vd = verdict(r);
+    var r = c.custom ? null : rowOf(c), vd = verdict(r, c);
     var ev = effVerdict(c, vd);
     var headBadge = ev ? '<span class="verdict ' + ev.v + '">' + VN[ev.v] + (ev.manual ? ' <small>(수동)</small>' : '') + '</span>'
-      : (r ? '<span class="verdict none">' + whyNoVerdict(r) + '</span>'
+      : (r ? '<span class="verdict none">' + whyNoVerdict(r, c) + '</span>'
            : (c.custom && c.dName ? '<span class="tag">직접 입력</span>' : '<span class="tag">비어 있음</span>'));
     var isPick = swapPick && swapPick.area === area && swapPick.ix === ix;
     var showDel = (area !== 'college' && area !== 'tech') || cardFilled(c);
@@ -5826,7 +5865,7 @@ window.SUSI_DATEFIX = function (text) {
         '<div class="frow"><span class="fk">모집인원</span><span class="fv">' + (r[C.N] || '—') + '명 · 작년 경쟁률 ' + (nf(r[C.C]) || '—') + '</span></div>' +
         '<div class="frow"><span class="fk">50 / 70%컷</span><span class="fv">' + (nf(r[C.A]) || '—') + ' / ' + (nf(r[C.B]) || '—') +
         (vd ? ' <span class="verdict ' + vd.v + '">' + VN[vd.v] + ' ' + (vd.diff > 0 ? '+' : '') + (Math.round(vd.diff * 100) / 100) + '</span>'
-          : ' <span class="verdict none">' + whyNoVerdict(r) + '</span>') + '</span></div>' +
+          : ' <span class="verdict none">' + whyNoVerdict(r, c) + '</span>') + '</span></div>' +
         '<div class="frow"><span class="fk">수능최저</span><span class="fv">' + minTxt + '</span></div>' +
         '<div class="frow"><span class="fk">전형방법</span><span class="fv">' + (r[C.W] >= 0 ? lc(esc(W[r[C.W]])) : '—') + '</span></div>' +
         (dates.length ? '<div class="frow"><span class="fk">고사일</span><span class="fv">' + lc(esc(dates.join(' · '))) + '</span></div>' : '') +
@@ -5841,7 +5880,16 @@ window.SUSI_DATEFIX = function (text) {
       var iAuto = r ? examText(r[C.F]) : '', eAuto = r ? examText(r[C.L]) : '';
       var iVal = (c.interview !== null && c.interview !== undefined) ? c.interview : iAuto;
       var eVal = (c.essay !== null && c.essay !== undefined) ? c.essay : eAuto;
+      var autoMine = r ? myGrade(DP[r[C.D]]) : null;   // 이 학과 계열의 평균 내신(안내용)
       results = '<div class="results">' +
+        /* 대학마다 내신 반영 방법이 달라 계열 평균으로는 안 맞는 경우가 있다.
+           여기에 그 대학 기준 내신을 적으면 판정을 그 값으로 다시 계산한다. */
+        '<div class="rrow"><label>이 대학 반영 내신' +
+        '<input type="text" inputmode="decimal" data-f="manualGrade" value="' + esc(c.manualGrade || '') +
+        '" placeholder="' + (autoMine ? '비우면 평균 ' + autoMine + ' 사용' : '예: 2.35') + '"></label>' +
+        (manualGradeOf(c) ? ' <span class="modtag">이 값으로 판정</span>' +
+          '<button class="reseta" type="button" data-reset="manualGrade" title="평균 내신으로 되돌리기">⟲</button>' : '') +
+        '</div>' +
         '<div class="rrow"><label>판정 직접 지정<select data-f="verdict">' +
         '<option value="">자동' + (vd ? ' (' + VN[vd.v] + ')' : '') + '</option>' +
         '<option value="up"' + (c.verdictOverride === 'up' ? ' selected' : '') + '>상향(수동)</option>' +
@@ -5956,7 +6004,7 @@ window.SUSI_DATEFIX = function (text) {
         if (!r && !isCustom) return;
         if (area === 'main') mainFilled++; else if (area === 'cand') candFilled++;
         else if (area === 'tech') techFilled++; else collegeFilled++;
-        var ev = effVerdict(c, verdict(r)); cnt[ev ? ev.v : 'none']++;
+        var ev = effVerdict(c, verdict(r, c)); cnt[ev ? ev.v : 'none']++;
         var uniName = r ? U[r[C.U]] : c.uName;
         if (r) {
           [[C.F, '면접'], [C.L, '논술'], [C.K, '실기']].forEach(function (p) {
@@ -6062,6 +6110,7 @@ window.SUSI_DATEFIX = function (text) {
       else if (f === 'interview') c.interview = e.target.value;
       else if (f === 'essay') c.essay = e.target.value;
       else if (f === 'final') c.final = e.target.value;
+      else if (f === 'manualGrade') c.manualGrade = e.target.value;
       else if (f === 'uName') c.uName = e.target.value;
       else if (f === 'tName') c.tName = e.target.value;
       else if (f === 'jName') c.jName = e.target.value;
@@ -6084,6 +6133,9 @@ window.SUSI_DATEFIX = function (text) {
         renderCards();
         return;
       }
+      /* 이 대학 반영 내신은 칸을 떠날 때 판정을 다시 계산해 보여 준다
+         (글자를 칠 때마다 다시 그리면 초점이 끊긴다). */
+      if (f === 'manualGrade') { renderCards(); return; }
       if (f !== 'interview' && f !== 'essay' && f !== 'final') return;
       /* 칸을 떠날 때 달력이 알아보는 형식으로 맞춘다 — 11/27 · 20261127 → 2026/11/27.
          날짜로 안 보이는 말(미실시 등)과 뒤에 붙인 메모는 그대로 둔다. */
@@ -6146,7 +6198,7 @@ window.SUSI_DATEFIX = function (text) {
   });
   $('g-th').addEventListener('input', function (e) { plan.th = e.target.value; savePlan(); renderCards(); });
   function planRows() {
-    var head = ['구분', '번호', '대학', '전형유형', '전형명', '학과', '본인내신', '50%컷', '70%컷',
+    var head = ['구분', '번호', '대학', '전형유형', '전형명', '학과', '본인내신', '대학별내신', '50%컷', '70%컷',
       '판정(자동)', '판정(수동)', '모집인원', '작년경쟁률', '수능최저', '1단계', '면접', '논술', '실기',
       '최종', '합불', '충원합격', '메모'];
     var out = [head];
@@ -6154,13 +6206,13 @@ window.SUSI_DATEFIX = function (text) {
       plan[area].forEach(function (c, ix) {
         var r = c.custom ? null : rowOf(c);
         if (!r && !(c.custom && c.dName)) return;
-        var vd = verdict(r);
+        var vd = verdict(r, c);
         out.push([AREA_LABEL[area], ix + 1,
           r ? U[r[C.U]] : (c.uName || ''),
           r ? TYPEFULL[T[r[C.T]]] : (c.tName || ''),
           r ? J[r[C.J]] : (c.jName || ''),
           r ? DP[r[C.D]] : (c.dName || ''),
-          vd ? vd.mine : '', r ? nf(r[C.A]) : '', r ? nf(r[C.B]) : '',
+          vd ? vd.mine : '', c.manualGrade || '', r ? nf(r[C.A]) : '', r ? nf(r[C.B]) : '',
           vd ? VN[vd.v] : '', c.verdictOverride ? VN[c.verdictOverride] : '',
           r ? (r[C.N] || '') : '', r ? nf(r[C.C]) : '', (r && r[C.M] >= 0) ? M[r[C.M]] : '',
           c.step1 || '',
@@ -6334,7 +6386,7 @@ window.SUSI_DATEFIX = function (text) {
        값이 없는 칸은 (수식이 남아 #REF! 로 보이지 않도록) 통째로 비운다. */
     picks.forEach(function (p, i) {
       var r = 13 + i, c = p.card || {}, row = p.r;
-      var vd = verdict(row), ev = effVerdict(c, vd);
+      var vd = verdict(row, c), ev = effVerdict(c, vd);
       // row 가 없으면(목록에 없는 대학을 직접 입력한 카드) 자료에서만 나오는 컷·모집인원
       // 같은 칸은 비우고, 학생이 적어 넣은 이름만 채운다.
       x1 = putCell(x1, 'B' + r, i + 1);
@@ -6503,7 +6555,7 @@ window.SUSI_DATEFIX = function (text) {
       plan[area].forEach(function (c) {
         var r = c.custom ? null : rowOf(c);
         if (!r && !(c.custom && c.dName)) return;
-        out.push(formRow(area, c, r, verdict(r)));
+        out.push(formRow(area, c, r, verdict(r, c)));
       });
     });
     return out;
@@ -6668,6 +6720,7 @@ window.SUSI_DATEFIX = function (text) {
       out.push({
         area: areaOf(g('구분')), uName: g('대학'), tName: g('전형유형'), jName: g('전형명'), dName: g('학과'),
         verdictOverride: verdictKeyOf(g('판정(수동)')), step1: g('1단계'),
+        manualGrade: g('대학별내신'),
         interview: g('면접'), essay: g('논술'), final: g('최종'),
         fillNo: g('충원합격'), passFail: pfOf(g('합불')), memo: g('메모')
       });
@@ -6761,6 +6814,7 @@ window.SUSI_DATEFIX = function (text) {
         c.u = x.pick.u; c.t = x.pick.t; c.j = x.pick.j; c.d = x.pick.d;
       }
       c.memo = e.memo || ''; c.verdictOverride = e.verdictOverride;
+      c.manualGrade = e.manualGrade || '';
       c.fillNo = e.fillNo || ''; c.passFail = e.passFail; c.step1 = e.step1 || '';
       c.final = e.final || '';
       var r = x.keepCustom ? null : rowOf(c);

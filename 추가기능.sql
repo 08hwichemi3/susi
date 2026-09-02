@@ -546,6 +546,18 @@ end $$;
 notify pgrst, 'reload schema';
 
 -- ═══════════════════════════════════════════════════════════════
+--    ⑭ applications.manual_grade — 대학별로 다시 계산한 내신
+--       대학마다 내신 반영 과목·가중치가 달라서, 앱이 쓰는 '계열 평균 내신'
+--       하나로 상향/적정/하향을 판단하면 맞지 않는 경우가 있습니다. 그 대학
+--       기준으로 다시 계산한 내신을 카드에 적어 두면 그 카드만 이 값으로
+--       판정합니다(비워 두면 지금까지처럼 평균 내신을 씁니다).
+-- ═══════════════════════════════════════════════════════════════
+alter table public.applications add column if not exists manual_grade numeric;
+comment on column public.applications.manual_grade is
+  '이 대학 기준으로 다시 계산한 내신 등급. 비어 있으면 계열 평균 내신을 쓴다.';
+notify pgrst, 'reload schema';
+
+-- ═══════════════════════════════════════════════════════════════
 --    ⑬ plan_area 에 'tech' 추가 — 과학기술원(KAIST 등) 전용 칸
 --       수시 지원은 원래 6회 제한이 있지만, 과학기술원(KAIST·GIST·DGIST·
 --       UNIST)과 KENTECH 은 이 6회 제한과 무관한 특별법인 학교라 별도로
@@ -570,6 +582,4 @@ alter table public.applications add constraint applications_slot_range
     or ((area = 'college'::plan_area) and (slot >= 1))
     or ((area = 'tech'::plan_area) and (slot >= 1))
   );
-notify pgrst, 'reload schema';
-
 notify pgrst, 'reload schema';
