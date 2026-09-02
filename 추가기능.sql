@@ -361,3 +361,30 @@ comment on column public.applications.final_date is
 -- 칸을 새로 만들었으면 반드시 알려 줘야 합니다. 이 줄이 없으면 화면에서 저장할 때
 -- "final_date 칸을 찾을 수 없다" 는 오류가 납니다(주소창 API 가 칸 목록을 캐둡니다).
 notify pgrst, 'reload schema';
+
+-- ═══════════════════════════════════════════════════════════════
+--    ⑪ site_brand() — 로그인 전 화면에 학교 이름·제목을 보여 주기 위한 함수
+--       schools 는 로그인한 사람에게만 열려 있어서, 로그인 화면과 브라우저 탭
+--       제목이 늘 기본값("계획서")으로만 보였습니다(링크를 받은 사람·처음
+--       들어온 사람은 특히). 이름과 제목 두 칸만 내주는 함수를 두고 로그인
+--       전에는 이것만 물어봅니다. 반 개수 등 나머지 정보는 그대로 잠겨 있습니다.
+--       (로그인 화면에 어차피 적히는 값이라 공개해도 되는 정보입니다.)
+--       학교 하나당 Supabase 프로젝트 하나를 쓰므로 가장 먼저 만들어진 학교를 줍니다.
+-- ═══════════════════════════════════════════════════════════════
+create or replace function public.site_brand()
+returns table (name text, site_title text)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select s.name, s.site_title
+  from public.schools s
+  order by s.created_at
+  limit 1
+$$;
+
+revoke all on function public.site_brand() from public;
+grant execute on function public.site_brand() to anon, authenticated;
+
+notify pgrst, 'reload schema';

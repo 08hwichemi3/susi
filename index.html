@@ -444,7 +444,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   background:var(--ground);overflow:auto}
 .gatebox{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);
   border-radius:14px;padding:28px 26px;box-shadow:0 8px 30px rgba(0,0,0,.06)}
-.gtitle{font-family:var(--serif);font-size:26px;margin:0 0 2px;font-weight:400;color:var(--ink)}
+/* 학교 이름 + 제목이 길어지면 두 줄이 된다. 낱말 가운데가 아니라 낱말 사이에서
+   끊기게 하고(keep-all), 줄 길이를 고르게 나눈다 — 「…수시 지원 센 / 터」 방지. */
+.gtitle{font-family:var(--serif);font-size:26px;margin:0 0 2px;font-weight:400;color:var(--ink);
+  word-break:keep-all;overflow-wrap:break-word;text-wrap:balance;line-height:1.3}
 .gtitle em{font-style:normal;color:var(--accent);font-weight:700}
 .gsub{margin:0 0 20px;font-size:12px;color:var(--ink-3)}
 
@@ -1306,8 +1309,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       <div class="panel pad">
         <h3 class="sec">학교 · 반</h3>
         <p class="hint">한 학년에 몇 반까지 있는지 정합니다. 아래 <b>교직원 계정</b>의 반 고르는 칸이 이 수만큼 나옵니다.
-          <b>사이트 제목</b>은 로그인 화면과 브라우저 탭 제목에 사용됩니다. 비워 두면 <b>학교 이름</b>이 대신
-          표시되고, 학교 이름도 비어 있으면 "계획서"로 표시됩니다. (사이트 제목 예: 부광고등학교 수시 원서 시스템)</p>
+          로그인 화면의 큰 글씨와 브라우저 탭 제목에는 <b>학교 이름 뒤에 제목을 이어 붙여</b> 표시됩니다
+          (예: 학교 이름 <b>부광고등학교</b> + 제목 <b>수시 지원 센터</b> → <b>부광고등학교 수시 지원 센터</b>).
+          제목만 비우면 학교 이름만, 둘 다 비우면 "계획서"로 표시됩니다.</p>
         <div class="setrow">
           <label>학교 이름
             <input type="text" id="schName" placeholder="○○고등학교" autocomplete="off">
@@ -1315,8 +1319,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <label><span class="lt">반 개수 <span class="fh">1~20</span></span>
             <input type="number" id="schClasses" min="1" max="20" step="1">
           </label>
-          <label>사이트 제목
-            <input type="text" id="schTitle" placeholder="계획서" autocomplete="off">
+          <label><span class="lt">제목 <span class="fh">학교 이름 뒤에 붙습니다</span></span>
+            <input type="text" id="schTitle" placeholder="수시 지원 센터" autocomplete="off">
           </label>
           <button class="btn primary" id="schSave">저장</button>
           <span class="msg hidden" id="schMsg"></span>
@@ -2327,7 +2331,7 @@ window.SUSI_DATEFIX = function (text) {
       SCHOOL.class_count = r.data.class_count || 9;
       SCHOOL.site_title = r.data.site_title || '';
       SCHOOL.loaded = true;
-      applyBrand(SCHOOL.site_title || SCHOOL.name);
+      applyBrand(brandText());
     }).catch(function (e) {
       SCHOOL.loaded = false;
       console.warn('학교 정보를 읽지 못했습니다', e);
@@ -3203,7 +3207,7 @@ window.SUSI_DATEFIX = function (text) {
         SCHOOL.class_count = n;
         if (nm) SCHOOL.name = nm;
         SCHOOL.site_title = title;
-        applyBrand(title || SCHOOL.name);
+        applyBrand(brandText());
         renderNewTeacherRoles();
         say('schMsg', '저장했습니다.');
         setTimeout(function () { say('schMsg', ''); }, 2000);
@@ -4280,11 +4284,14 @@ window.SUSI_DATEFIX = function (text) {
     savePlan: function () { scheduleSave(); }
   };
 
-  /* 총관리자가 설정에서 정한 사이트 제목(브랜드명)을 반영한다.
-     ★ 로그인 전 화면(브라우저 탭 제목·첫 화면 큰 글씨)은 서버에 물어볼 수 없다 —
-     학교 정보는 로그인한 사람에게만 보여주기 때문이다. 그래서 지난번 로그인 때
-     저장해 둔 값을 이 브라우저에서 우선 보여주고, 로그인하면 실제 값으로 다시 맞춘다.
-     한 번도 로그인한 적 없는 기기에서는 기본값("계획서")이 보인다. */
+  /* 로그인 화면 큰 글씨·브라우저 탭 제목에 쓰는 이름.
+     설정의 「학교 이름」 뒤에 「제목」을 이어 붙인다 — 부광고등학교 + 수시 지원 센터. */
+  function brandOf(name, title) {
+    var a = (name || '').trim(), b = (title || '').trim();
+    return (a && b) ? (a + ' ' + b) : (a || b);
+  }
+  function brandText() { return brandOf(SCHOOL.name, SCHOOL.site_title); }
+
   function applyBrand(title) {
     var t = (title && String(title).trim()) || '계획서';
     document.title = t;
@@ -4293,7 +4300,27 @@ window.SUSI_DATEFIX = function (text) {
     try { localStorage.setItem('susi_site_title', t); } catch (e) { /* 사생활 보호 모드 등 — 그냥 넘어간다 */ }
   }
 
+  /* ★ 로그인 '전' 화면의 제목.
+     schools 테이블은 로그인한 사람에게만 열려 있어서, 예전에는 이 브라우저에
+     지난번 로그인 때 저장해 둔 값밖에 쓸 수 없었다 — 그래서 링크를 받은 사람이나
+     처음 들어온 사람에게는 늘 기본값("계획서")만 보였다(실제로 그렇게 보인다는
+     지적을 받았다). 지금은 이름·제목 두 칸만 내주는 함수(site_brand)를 서버에 두고
+     로그인 전에도 그것만 물어본다. 나머지 학교 정보는 그대로 잠겨 있다. */
+  function loadBrandBeforeLogin() {
+    if (!sb) return;
+    Promise.resolve(sb.rpc('site_brand'))
+      .then(function (r) {
+        if (!r || r.error) return;                       // 구판 서버(함수 없음)면 조용히 넘어간다
+        var row = r.data && r.data.length ? r.data[0] : null;
+        if (!row) return;
+        var t = brandOf(row.name, row.site_title);
+        if (t) applyBrand(t);
+      })
+      .catch(function () { /* 인터넷이 막혀 있으면 캐시된 이름을 그대로 둔다 */ });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    // 서버에 물어보는 동안 깜빡이지 않게, 지난번 값이 있으면 먼저 그려 둔다
     try {
       var cached = localStorage.getItem('susi_site_title');
       if (cached) applyBrand(cached);
@@ -4334,6 +4361,7 @@ window.SUSI_DATEFIX = function (text) {
         }
     });
     window.SUSI_SB = sb;
+    loadBrandBeforeLogin();          // 로그인 전에도 학교 이름·제목이 보이게
 
     /* 예전에 localStorage 에 남아 있던 세션을 지운다.
        안 지우면 이미 로그인해 둔 분들은 이 판을 받아도 계속 자동 로그인된다. */
