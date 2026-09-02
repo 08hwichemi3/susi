@@ -688,9 +688,13 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     display:flex;flex-direction:column;overflow:hidden;
   }
 
-  /* 종이에서는 색이 안 나올 수 있으니 검정 글씨에 테두리로 구분한다 */
   body{background:#fff;color:#000}
   #calHead{display:none}   /* 달 머리글과 겹쳐 보여서 뺐다 — 내용도 비워 둔다(calFootHtml 참고) */
+
+  /* 화면과 같은 색으로 인쇄한다(요일 띠·주말 칸·D-day 배지 등) — "배경 그래픽" 인쇄 설정이
+     꺼져 있으면 브라우저가 이 색을 그냥 무시할 뿐이니, 그래도 글씨는 항상 검정이고 칸은
+     테두리로 구분돼 흑백으로 나와도 알아보는 데는 지장 없다. */
+  #calPrint, #calPrint *{-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
 
   /* ★ 한 달이 페이지 밖으로 넘치지 않게, '내용만큼 늘어나는' 대신 페이지 높이를 그 달의
      주(週) 수만큼 나눠 칸 하나하나의 키를 CSS 로 딱 정해 버린다(--cal-weeks, drawCalendar
@@ -700,15 +704,15 @@ td.c-cut70{font-weight:600;color:var(--ink)}
      자꾸 어긋났다. 이 방식은 애초에 재는 것이 없어 항상 같은 결과가 나온다. */
   #calOut{flex:1;min-height:0;display:flex;flex-direction:column}
   .calmon{margin:0;flex:1;min-height:0;display:flex;flex-direction:column}
-  .calmonhead{flex:none;border-bottom:2px solid #000;padding-bottom:5px;margin:0 0 5px}
-  .cm-no .cm-mo{font-size:24px;color:#000}
-  .cm-no .cm-mo i{font-size:11px;color:#000}
-  .cm-no .cm-yr{font-size:9.5px;color:#444}
+  .calmonhead{flex:none;border-bottom:2px solid #1F5D4C;padding-bottom:5px;margin:0 0 5px}
+  .cm-no .cm-mo{font-size:24px;color:#1F5D4C}
+  .cm-no .cm-mo i{font-size:11px;color:#4A544E}
+  .cm-no .cm-yr{font-size:9.5px;color:#7C857E}
   .cm-t b{font-size:12px;color:#000}
   .cm-t span{font-size:9.5px;color:#444}
-  .cm-mark{background:none !important;color:#000 !important;border:1px solid #000}
+  .cm-mark{background:#1F5D4C !important;color:#fff !important;border:none}
   .cm-bname{font-size:9.5px;color:#000}
-  .cm-cnt{font-size:9.5px;color:#000 !important;background:none !important;padding:0}
+  .cm-cnt{font-size:9.5px;color:#1F5D4C !important;background:#DFEAE4 !important;padding:2px 8px}
 
   .calwrap{flex:1;min-height:0;overflow:hidden}
   /* ★ 주(週) 줄은 1fr 대신 calc(%) 로 나눈다. grid 의 1fr 트랙은 안이 꽉 차면
@@ -719,26 +723,35 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     grid-template-rows:18px repeat(var(--cal-weeks,5),calc((100% - 18px)/var(--cal-weeks,5)));
     column-gap:2px;row-gap:0;min-width:0 !important}
 
-  .calhd{font-size:9.5px;font-weight:700;color:#000 !important;padding:1px 0;
-    background:none !important;border-radius:0;border-bottom:1px solid #000}
+  .calhd{font-size:9.5px;font-weight:700;color:#fff !important;padding:2px 0;
+    background:#1F5D4C !important;border-radius:3px}
+  .calhd.sun{background:#D6293E !important}
+  .calhd.sat{background:#1160C4 !important}
   .calcell{min-height:0;max-height:none;overflow:hidden;
     border:1px solid #999;border-radius:0;padding:2px 4px;
     background:#fff !important;display:flex;flex-direction:column}
-  .calcell.blank{border-color:#e6e6e6}
+  /* 주말 칸 옅은 색 — 고사·겹침 표시가 이 뒤에 와서 그 색이 이긴다(화면과 같은 순서) */
+  .calcell.sun{background:#FBE7E9 !important}
+  .calcell.sat{background:#E1EBFA !important}
+  .calcell.blank{border-color:#e6e6e6;background:#fff !important}
+  .calcell.has{background:#DFEAE4 !important;border-color:#A9C7BB}
   .calcell.today{box-shadow:none !important;border-color:#999}
   .calcell.sel{outline:none !important}
-  .calcell.clash{border:2.2px solid #000}
+  .calcell.clash{border:2.2px solid #8C2F39;background:#F6E2E3 !important}
   .calcell .dn{font-size:9.5px;font-weight:700;color:#000 !important;margin-bottom:1px;flex:none}
-  .ddl{font-size:8px;line-height:1.25;color:#000 !important;
-    background:none !important;padding:0 !important;border-radius:0 !important}
+  .ddl{font-size:8px;line-height:1.25;font-weight:700;color:#8C2F39 !important;
+    background:#F6E2E3 !important;padding:1.5px 4.5px !important;border-radius:999px !important}
   .calcell .its{flex:1;min-height:0;overflow:hidden}
   .calcell .it{font-size:8.5px;line-height:1.3;color:#000 !important;
     white-space:normal !important;overflow:hidden;text-overflow:clip !important;
     word-break:keep-all !important;overflow-wrap:normal !important}
   .calcell .it .who{color:#333 !important}
-  .calcell .calmore{flex:none;font-size:8px;color:#000 !important;background:none !important}
+  .calcell .calmore{flex:none;font-size:8px;color:#1F5D4C !important;background:none !important}
   .calcell .itrest{display:none !important}   /* 화면과 똑같이 접어 둔다 — 칸 높이를 흔들지 않는다 */
-  .kd{background:none !important;color:#000 !important;font-size:8px;padding:0}
+  .kd{color:#fff !important;font-size:8px;padding:1px 4px !important;border-radius:3px}
+  .kd.k-면접{background:#12795F !important}
+  .kd.k-논술{background:#A4650B !important}
+  .kd.k-실기{background:#5B47B0 !important}
 
   .calday-panel{display:none !important}       /* 옆 패널은 종이에 안 낸다 */
 
@@ -1654,7 +1667,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   <p class="hint pad-h">입력한 내용은 이 브라우저에 자동으로 저장됩니다. <b>모든 기기에 저장</b>을 누르면 서버에 저장되어 다른 기기·다른 브라우저에서도 동일하게 확인할 수 있습니다.
     카드의 <b>⇄</b> 버튼으로 다른 칸과 위치를 바꿀 수 있습니다(수시↔후보 포함).
     <b>한국과학기술원(KAIST)</b>처럼 목록에 없는 대학은 카드의 <b>목록에 없는 대학</b> 단추를 눌러 직접 적어 넣을 수 있습니다.
-    다만 이런 카드는 모집인원·컷 같은 자동 정보는 나오지 않으니 전형 일정과 결과를 직접 챙겨야 합니다.</p>
+    과학기술원(KAIST·GIST·DGIST·UNIST·KENTECH) 이름은 "카이스트"처럼 편하게 적어도 칸을 벗어나면 정식 명칭으로 자동으로 맞춰져,
+    학생마다 이름이 다르게 저장되지 않습니다. 다만 이런 카드는 모집인원·컷 같은 자동 정보는 나오지 않으니 전형 일정과 결과를 직접 챙겨야 합니다.</p>
 </section>
 
 <!-- ══ 데이터 ══ -->
@@ -5532,6 +5546,28 @@ window.SUSI_DATEFIX = function (text) {
   function cardFilled(c) {
     return !!(c && ((c.u !== null && c.u !== undefined) || (c.custom && (c.uName || c.dName))));
   }
+  /* 목록에 없는 대학은 대부분 4대 과학기술원 + KENTECH 다 — 학생마다 "카이스트"/"KAIST"/
+     "한국과학기술원"처럼 제각각 적으면 나중에 통계·인쇄에서 같은 학교가 여러 이름으로
+     흩어진다. 자주 쓰는 이름을 정식 명칭으로 자동으로 맞춰 준다(입력을 막지는 않는다 —
+     목록에 없는 진짜 다른 학교도 있을 수 있어서 그대로 남겨 둔다). */
+  var TECH_INST = [
+    { canon: '한국과학기술원(KAIST)', keys: ['카이스트', 'kaist', '한국과학기술원'] },
+    { canon: '광주과학기술원(GIST)', keys: ['지스트', 'gist', '광주과학기술원'] },
+    { canon: '대구경북과학기술원(DGIST)', keys: ['디지스트', 'dgist', '대구경북과학기술원'] },
+    { canon: '울산과학기술원(UNIST)', keys: ['유니스트', 'unist', '울산과학기술원'] },
+    { canon: '한국에너지공과대학교(KENTECH)', keys: ['켄텍', 'kentech', '한국에너지공과대학교', '한국에너지공과대학'] }
+  ];
+  function normUniKey(s) { return String(s || '').toLowerCase().replace(/[\s()]/g, ''); }
+  function normalizeUniName(v) {
+    var k = normUniKey(v);
+    if (!k) return v;
+    for (var i = 0; i < TECH_INST.length; i++) {
+      var t = TECH_INST[i];
+      if (normUniKey(t.canon) === k) return t.canon;
+      for (var j = 0; j < t.keys.length; j++) if (normUniKey(t.keys[j]) === k) return t.canon;
+    }
+    return v;
+  }
   /* college 칸은 항상 "채워진 칸들 + 맨 끝 빈 칸 1개"만 남긴다 — 추가·삭제·자리바꾸기 뒤 매번 불러 정리한다. */
   function ensureCollegeGrow() {
     plan.college = (plan.college || []).filter(cardFilled).map(normalizeCard);
@@ -5728,9 +5764,12 @@ window.SUSI_DATEFIX = function (text) {
       '</div>' +
       '<div class="unirow">' +
       (c.custom
-        ? '<input type="text" data-f="uName" autocomplete="off" spellcheck="false"' +
+        ? '<input type="text" data-f="uName" list="dl-tech-uni-' + area + '-' + ix + '" autocomplete="off" spellcheck="false"' +
           ' value="' + esc(c.uName || '') + '"' +
-          ' placeholder="' + (area === 'college' ? '전문대 이름 (직접 입력)' : '대학 이름 (직접 입력, 예: 한국과학기술원)') + '">'
+          ' placeholder="' + (area === 'college' ? '전문대 이름 (직접 입력)' : '대학 이름 (직접 입력, 예: 한국과학기술원(KAIST))') + '">' +
+          '<datalist id="dl-tech-uni-' + area + '-' + ix + '">' + TECH_INST.map(function (t) {
+            return '<option value="' + esc(t.canon) + '">';
+          }).join('') + '</datalist>'
         : '<input class="pick" type="text" data-f="u" list="' + (area === 'college' ? 'dl-uni-col' : 'dl-uni') + '"' +
           ' autocomplete="off" spellcheck="false"' +
           ' value="' + esc(c.u !== null && c.u !== undefined ? U[c.u] : '') + '"' +
@@ -5919,6 +5958,10 @@ window.SUSI_DATEFIX = function (text) {
            타이핑하는 도중(매 글자마다)이 아니라 칸을 떠날 때만 다시 그려야
            목록이 그 사이에 밀리면서 초점이 끊기지 않는다. */
         var hitG = cardHit(e);
+        if (f === 'uName' && hitG && e.target.value) {
+          var vu = normalizeUniName(e.target.value);
+          if (vu !== e.target.value) { hitG.c.uName = vu; savePlan(); }
+        }
         if (hitG && hitG.area === 'college') ensureCollegeGrow();
         renderCards();
         return;
@@ -6589,7 +6632,7 @@ window.SUSI_DATEFIX = function (text) {
       var e = x.e, c = emptyCard();
       if (x.keepCustom) {
         c.custom = true;
-        c.uName = e.uName || ''; c.tName = e.tName || ''; c.jName = e.jName || ''; c.dName = e.dName || '';
+        c.uName = normalizeUniName(e.uName || ''); c.tName = e.tName || ''; c.jName = e.jName || ''; c.dName = e.dName || '';
       } else {
         c.u = x.pick.u; c.t = x.pick.t; c.j = x.pick.j; c.d = x.pick.d;
       }
