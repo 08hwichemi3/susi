@@ -1679,7 +1679,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   </div>
 
   <div class="plansec pi-uni">
-    <h3 class="sec">일반대 수시 지원<span class="tag">6칸. 전형 찾기에서 <b>담기</b> 한 항목이 여기에 표시됩니다.</span></h3>
+    <h3 class="sec">일반대 수시 지원<span class="tag">6칸 · 전형 찾기에서 <b>담기</b> 한 항목이 여기에 표시됩니다 · <b>⇄</b> 로 6칸 안에서도 순서를 바꿀 수 있습니다</span></h3>
     <!-- 대학 목록. 카드마다 넣으면 수천 줄이 되므로 여기 한 번만 둔다.
          수시·후보 칸은 일반대만, 전문대 칸은 전문대만 보여 준다. -->
     <datalist id="dl-uni"></datalist>
@@ -1687,7 +1687,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <div class="cards" id="cardsMain"></div>
   </div>
   <div class="plansec pi-uni">
-    <h3 class="sec">예비<span class="tag">최대 3칸 · 지원칸과 자리 바꾸기 가능</span></h3>
+    <h3 class="sec">예비<span class="tag">최대 3칸 · 다른 칸과 자리 바꾸기 가능</span></h3>
     <div class="cards cand" id="cardsCand"></div>
   </div>
   <div class="plansec pi-college">
@@ -1696,7 +1696,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   </div>
 
   <p class="hint pad-h">입력한 내용은 이 브라우저에 자동으로 저장됩니다. <b>모든 기기에 저장</b>을 누르면 서버에 저장되어 다른 기기·다른 브라우저에서도 동일하게 확인할 수 있습니다.
-    카드의 <b>⇄</b> 버튼으로 다른 칸과 위치를 바꿀 수 있습니다(수시↔후보 포함).
+    카드의 <b>⇄</b> 버튼을 누르면(테두리가 굵어집니다) 바꾸고 싶은 다른 카드의 <b>⇄</b> 버튼을 눌러 자리를 바꿀 수 있습니다 —
+    <b>지원 6칸 안에서 순서를 바꾸는 것도, 후보와 자리를 바꾸는 것도</b> 같은 방법입니다.
     <b>한국과학기술원(KAIST)</b>처럼 목록에 없는 대학은 카드의 <b>목록에 없는 대학</b> 단추를 눌러 직접 적어 넣을 수 있습니다.
     과학기술원(KAIST·GIST·DGIST·UNIST·KENTECH) 이름은 "카이스트"처럼 편하게 적어도 칸을 벗어나면 정식 명칭으로 자동으로 맞춰져,
     학생마다 이름이 다르게 저장되지 않습니다. 다만 이런 카드는 모집인원·컷 같은 자동 정보는 나오지 않으니 전형 일정과 결과를 직접 챙겨야 합니다.</p>
@@ -6015,6 +6016,15 @@ window.SUSI_DATEFIX = function (text) {
       var delBtn = e.target.closest('button[data-del]');
       if (delBtn) {
         var hit = cardHit(e); if (!hit) return;
+        // 채워진 카드만 확인을 받는다 — 이미 빈 칸을 누른 거면(주로 college 칸에서 곧장
+        // 삭제 버튼이 보이는 경우) 물어봐야 잃을 게 없어 그냥 진행한다.
+        if (cardFilled(hit.c)) {
+          var nm = window.SUSI_NAMES ? window.SUSI_NAMES(hit.c) : null;
+          var label = nm ? (nm.uni + (nm.dept ? ' ' + nm.dept : '')) : '이 카드';
+          var q = (hit.area === 'college' ? (label + ' 지원을 목록에서 지웁니다.') : (label + ' 칸을 비웁니다.')) +
+            '\n되돌릴 수 없습니다. 계속할까요?';
+          if (!window.confirm(q)) return;
+        }
         if (hit.area === 'college') { plan.college.splice(hit.ix, 1); ensureCollegeGrow(); }
         else plan[hit.area][hit.ix] = emptyCard();
         savePlan(); renderCards();
