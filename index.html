@@ -39,10 +39,11 @@ body{margin:0;background:var(--ground);color:var(--ink);
 .hidden{display:none!important}
 .grow{flex:1}
 .tag{font-size:11.5px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
-.hint{color:var(--ink-3);font-size:12.5px;margin:6px 0 0;max-width:72ch}
-/* 학생 상세 패널은 폭이 넓어서 72ch 제한이 오히려 어색하게 짧은 줄로 잘려 보인다 —
-   패널 너비에 맞춰 자연스럽게 줄바꿈되게 푼다. */
-#stDetail .hint{max-width:none}
+/* ★ 예전엔 72ch 로 줄 길이를 제한했다 — 넓은 패널에서 짧은 문장이 어색하게
+   한두 단어만 남은 줄로 잘려 보인다는 지적을 여러 화면에서 받아 없앴다.
+   패널 자체가(옆 사이드바는 300px 안팎, 본문은 .wrap 이 1380px 로) 이미
+   너비를 잡아 주므로 .hint 에 따로 제한을 두지 않아도 줄이 너무 길어지진 않는다. */
+.hint{color:var(--ink-3);font-size:12.5px;margin:6px 0 0}
 .pad-h{padding:0 2px}
 
 header.top{position:sticky;top:0;z-index:40;background:var(--ground);border-bottom:1px solid var(--line)}
@@ -617,6 +618,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
   body.pmode-cal #calPrint, body.pmode-cal #calPrint *{visibility:visible}
   body.pmode-cal #calPrint{position:absolute;left:0;top:0;width:100%}
+  /* #calPrintWrap 을 기준 상자로 삼아야 위 #calPrint(position:absolute) 의 크기를
+     여기 안에 가둘 수 있다 — 한 달을 종이 한 장에 맞추려고 줄여 찍을 때 쓴다
+     (printArea 의 fitCalToPage 참고). visibility:hidden 인 채로도 자리 기준
+     역할은 그대로 한다 — 안 보이는 건 상관없다, 위치 기준만 필요하다. */
+  body.pmode-cal #calPrintWrap{position:relative}
 
   body.pmode-plan #stPrint, body.pmode-plan #stPrint *{visibility:visible}
   body.pmode-plan #stPrint{position:absolute;left:0;top:0;width:100%}
@@ -1191,7 +1197,6 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <form class="gform hidden" id="fTeacher" autocomplete="off">
       <label>아이디
         <input type="text" id="inEmail" placeholder="김담임" autocomplete="username">
-        <span class="fh">본인 이름이 곧 아이디입니다 (한글). 예전 아이디(teacher1)나 이메일도 됩니다.</span>
       </label>
       <label>비밀번호
         <input type="password" id="inTpw" autocomplete="current-password">
@@ -1272,8 +1277,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <section class="tview hidden" id="tv-cal">
       <div class="panel pad">
         <h3 class="sec">수시 달력
-          <label class="fh calorient"><input type="checkbox" id="calLandscape"> 가로로 인쇄</label>
-          <button class="btn" id="calPrintBtn">이 달 인쇄</button>
+          <span class="calorient" role="radiogroup" aria-label="인쇄 방향">
+            <button type="button" class="pib" id="calPortrait" data-orient="portrait" aria-pressed="true">세로</button>
+            <button type="button" class="pib" id="calLandscape" data-orient="landscape" aria-pressed="false">가로</button>
+          </span>
+          <button class="btn" id="calPrintBtn">인쇄</button>
         </h3>
         <p class="hint">한 화면에 <b>한 달만</b> 보여 줍니다 — 화살표로 달을 옮기세요.
           담당 학생들의 <b>면접·논술·실기</b> 날짜가 달력 위에 얹히고,
@@ -1300,10 +1308,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           </div>
         </details>
 
-        <div id="calPrint">
-          <div class="printhead" id="calHead"></div>
-          <div id="calOut"></div>
-          <div class="printfoot" id="calFoot"></div>
+        <div id="calPrintWrap">
+          <div id="calPrint">
+            <div class="printhead" id="calHead"></div>
+            <div id="calOut"></div>
+            <div class="printfoot" id="calFoot"></div>
+          </div>
         </div>
         <div id="calDay" class="calday-panel"></div>
       </div>
@@ -3319,6 +3329,7 @@ window.SUSI_CFG = {
      여섯 달을 한꺼번에 늘어놓으면 화면에서도 종이에서도 아무 달도 제대로 안 보인다.
      인쇄하면 '보고 있는 달' 한 장만 나간다(그리는 것이 하나뿐이라 저절로 그렇게 된다). */
   var CALST = { days: {}, months: [], sel: null, cur: 0 };
+  var CAL_ORIENT = 'portrait';   // '세로'/'가로' 인쇄 방향 — printArea('cal') 가 이 값을 본다
 
   /* ───────── D-day ─────────
      학교 일정표에는 늘 「수능 D-79」 같은 줄이 붙어 있다. 수능 날짜는 해마다 정해져 있어
@@ -3628,21 +3639,61 @@ window.SUSI_CFG = {
   /* 인쇄할 것이 두 가지(수시 달력 / 학생 지원계획서)라 무엇을 낼지 알려 줘야 한다.
      인쇄 CSS 는 'body * 를 감추고 대상만 보이게' 하는 방식이라, 대상이 둘이면
      클래스로 갈라 주지 않으면 둘 다 나오거나 둘 다 안 나온다. */
+  /* 한 달 분량이 종이 한 장보다 길면(고사가 많은 달) '전형 찾기' 카드처럼
+     화면 그대로는 두 장, 세 장으로 넘어간다. 그래서 인쇄 직전에 실제 크기를
+     재 보고, 한 장(가로/세로에 맞는 인쇄 가능 영역)을 넘으면 그만큼 줄인다.
+     ★ transform:scale() 은 '보이는 크기'만 줄일 뿐 자리는 그대로 차지한다 —
+       그래서 #calPrintWrap 의 높이도 같이 줄여 줘야(overflow:hidden) 진짜로
+       한 장에 들어간다. #calPrintWrap 이 position:relative 라야 안의
+       #calPrint(position:absolute) 크기가 이 안에 갇힌다. */
+  function fitCalToPage(landscape) {
+    var el = $('calPrint'), wrap = $('calPrintWrap');
+    if (!el || !wrap) return;
+    el.style.transform = ''; el.style.width = '';
+    wrap.style.height = ''; wrap.style.overflow = '';
+    var mmToPx = 96 / 25.4;                       // 인쇄는 mm, 화면 측정은 px
+    var pageW = (landscape ? 297 : 210) - 24;      // A4, 여백 12mm×2
+    var pageH = (landscape ? 210 : 297) - 24;
+    var maxW = pageW * mmToPx, maxH = pageH * mmToPx;
+    var w = el.scrollWidth, h = el.scrollHeight;
+    if (!w || !h) return;
+    var scale = Math.min(1, maxW / w, maxH / h);
+    if (scale < 1) {
+      el.style.transformOrigin = 'top left';
+      el.style.transform = 'scale(' + scale + ')';
+      el.style.width = (100 / scale) + '%';
+      wrap.style.height = (h * scale) + 'px';
+      wrap.style.overflow = 'hidden';
+    }
+  }
+
+  /* 인쇄할 것이 두 가지(수시 달력 / 학생 지원계획서)라 무엇을 낼지 알려 줘야 한다.
+     인쇄 CSS 는 'body * 를 감추고 대상만 보이게' 하는 방식이라, 대상이 둘이면
+     클래스로 갈라 주지 않으면 둘 다 나오거나 둘 다 안 나온다. */
   function printArea(kind) {
     var b = document.body;
     b.classList.add('pmode-' + kind);
+    var landscape = kind === 'cal' && CAL_ORIENT === 'landscape';
     /* ★ @page 는 body 클래스로 못 고른다(CSS 스펙상 @page 는 :first 같은
-       가상클래스만 받는다) — 그래서 '가로로 인쇄'를 체크했을 때만 <style> 을
-       그때그때 넣었다 뺀다. */
-    var lc = $('calLandscape'), pageStyle = null;
-    if (kind === 'cal' && lc && lc.checked) {
+       가상클래스만 받는다) — 그래서 '가로' 를 골랐을 때만 <style> 을 그때그때 넣었다 뺀다. */
+    var pageStyle = null;
+    if (landscape) {
       pageStyle = document.createElement('style');
       pageStyle.textContent = '@page{size:landscape}';
       document.head.appendChild(pageStyle);
     }
+    /* ★ 지금(=window.print() 부르기 전)은 아직 화면용 CSS라서 여기서 재면 글자 크기가
+       실제 인쇄보다 훨씬 크게 잡혀 엉뚱하게 줄어든다. beforeprint 가 뜰 때는 인쇄용
+       CSS(@media print)가 이미 적용된 뒤라, 그때 재야 진짜 크기가 나온다. */
+    var onBeforePrint = kind === 'cal' ? function () { fitCalToPage(landscape); } : null;
+    if (onBeforePrint) window.addEventListener('beforeprint', onBeforePrint);
     var clear = function () {
       b.classList.remove('pmode-cal', 'pmode-plan');
       if (pageStyle) { pageStyle.remove(); pageStyle = null; }
+      if (onBeforePrint) window.removeEventListener('beforeprint', onBeforePrint);
+      var el = $('calPrint'), wrap = $('calPrintWrap');
+      if (el) { el.style.transform = ''; el.style.width = ''; }
+      if (wrap) { wrap.style.height = ''; wrap.style.overflow = ''; }
     };
     // 인쇄창이 닫힌 뒤 되돌린다. onafterprint 를 안 주는 브라우저가 있어 예비도 둔다.
     if (window.onafterprint !== undefined) {
@@ -4466,6 +4517,13 @@ window.SUSI_CFG = {
     });
     // 고사가 없는 달도 그대로 낸다 — 학사 일정표로도 쓰이기 때문이다(빈 칸도 정보다)
     on('calPrintBtn', 'click', function () { printArea('cal'); });
+    on('tv-cal', 'click', function (e) {
+      var b = e.target.closest('.calorient button[data-orient]'); if (!b) return;
+      CAL_ORIENT = b.dataset.orient;
+      b.parentElement.querySelectorAll('button[data-orient]').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+    });
     on('calPrev', 'click', function () { moveMonth(-1); });
     on('calNext', 'click', function () { moveMonth(1); });
     on('calPick', 'change', function (e) {
