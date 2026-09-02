@@ -1171,16 +1171,16 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <form class="gform" id="fStudent" autocomplete="off">
       <label>학번
         <input type="text" id="inNo" inputmode="numeric" placeholder="30101" autocomplete="username">
-        <span class="fh">5자리 — 학년1 + 반2 + 번호2 (30101 = 3학년 1반 1번)</span>
+        <span class="fh">학년 1자리, 반 2자리, 번호 2자리로 이루어진 5자리 숫자입니다. (예: 30101 = 3학년 1반 1번)</span>
       </label>
       <div id="firstTime">
         <label>생년월일
           <input type="text" id="inBirth" inputmode="numeric" placeholder="20080101" autocomplete="off">
-          <span class="fh">숫자 8자리로 붙여서 (2008년 1월 1일 → 20080101)</span>
+          <span class="fh">숫자 8자리로 입력합니다. (예: 2008년 1월 1일 → 20080101)</span>
         </label>
         <label>전화번호
           <input type="tel" id="inPhone" inputmode="tel" placeholder="010-1234-5678">
-          <span class="fh"><b>-</b> 는 넣어도 되고 빼도 됩니다 (01012345678 도 됩니다)</span>
+          <span class="fh">하이픈(-)은 넣지 않아도 됩니다. (예: 01012345678)</span>
         </label>
       </div>
       <!-- 학생은 비밀번호를 바꾸지 않습니다 (susi_20). 늘 생년월일+전화번호로 들어옵니다.
@@ -1283,11 +1283,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           </span>
           <button class="btn" id="calPrintBtn">인쇄</button>
         </h3>
-        <p class="hint">한 화면에 <b>한 달만</b> 보여 줍니다 — 화살표로 달을 옮기세요.
-          담당 학생들의 <b>면접·논술·실기</b> 날짜가 달력 위에 얹히고,
+        <p class="hint">한 화면에는 <b>한 달만</b> 표시됩니다. 화살표를 눌러 다른 달로 이동하세요.
+          담당 학생들의 <b>면접·논술·실기</b> 날짜가 달력에 표시되며,
           <b class="clashk">한 학생이 같은 날 두 곳 이상</b>이면 그 칸이 빨갛게 표시됩니다.
-          <b>날짜를 누르면</b> 그 날 전체가 달력 아래에 펼쳐집니다.
-          인쇄하면 <b>보고 있는 달 한 장</b>이 접힌 것 없이 나옵니다.</p>
+          <b>날짜를 클릭하면</b> 그 날의 일정이 달력 아래에 펼쳐집니다.
+          인쇄하면 <b>현재 보고 있는 달</b>이 한 장에 모두 표시됩니다.</p>
 
         <div class="calnav" id="calNav">
           <button type="button" class="calarrow" id="calPrev" aria-label="이전 달">&#9664;</button>
@@ -1304,7 +1304,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
             <label>학사일정 이름 <input type="text" id="ddName" placeholder="중간고사" autocomplete="off"></label>
             <label>그 날짜 <input type="date" id="ddDate"></label>
             <button type="button" class="btn" id="ddSave">저장</button>
-            <span class="fh">이 브라우저에만 저장됩니다. 비워 두면 그 줄은 안 나옵니다.</span>
+            <span class="fh">이 브라우저에만 저장됩니다. 비워 두면 해당 줄은 표시되지 않습니다.</span>
           </div>
         </details>
 
@@ -1326,7 +1326,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       <div class="panel pad">
         <h3 class="sec">학교 · 반</h3>
         <p class="hint">한 학년에 몇 반까지 있는지 정합니다. 아래 <b>교직원 계정</b>의 반 고르는 칸이 이 수만큼 나옵니다.
-          <b>사이트 제목</b>은 로그인 화면과 브라우저 탭 제목에 씁니다 — 비워 두면 "계획서"로 나갑니다
+          <b>사이트 제목</b>은 로그인 화면과 브라우저 탭 제목에 사용됩니다. 비워 두면 "계획서"로 표시됩니다.
           (예: 부광고등학교 수시 원서 시스템).</p>
         <div class="setrow">
           <label>학교 이름
@@ -1346,11 +1346,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
       <div class="panel pad">
         <h3 class="sec">교직원 계정 만들기</h3>
-        <p class="hint"><b>이름을 넣고 [만들기]</b> 를 누르면 <b>이름이 그대로 아이디</b>가 됩니다 (한글 그대로 로그인).
-          같은 이름이 이미 있으면 이름 칸에 「김담임2」 처럼 구분해 넣어 주세요.
-          초기 비밀번호는 정해진 값이고, 그 선생님이 <b>처음 들어갈 때 바로 바꾸게</b> 됩니다.
-          만든 아이디와 초기 비밀번호는 아래에 한 번 보여 드리니 <b>그때 적어 두고 전해 주세요.</b>
-          담당 반은 여기서 바로 고르거나, 나중에 아래 <b>교직원 계정</b>에서 바꿀 수 있습니다.</p>
+        <p class="hint"><b>이름을 입력하고 [만들기]</b>를 누르면 <b>이름이 그대로 아이디</b>가 됩니다(한글 그대로 로그인).
+          같은 이름이 이미 있으면 이름 칸에 「김담임2」처럼 구분해서 입력하세요.
+          초기 비밀번호는 정해진 값으로 지정되며, 해당 선생님이 <b>처음 로그인할 때 새로 설정</b>하게 됩니다.
+          생성된 아이디와 초기 비밀번호는 아래에 한 번만 표시되니 <b>그때 기록해 두었다가 전달해 주세요.</b>
+          담당 반은 여기서 바로 지정하거나, 나중에 아래 <b>교직원 계정</b>에서 변경할 수 있습니다.</p>
         <div class="setrow">
           <label>이름
             <input type="text" id="ntName" placeholder="김담임" autocomplete="off">
@@ -1367,31 +1367,31 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <h3 class="sec">교직원 계정 <span class="tag" id="stfCount"></span>
           <button class="btn" id="stfToggle">역할/반 설정</button>
         </h3>
-        <p class="hint"><b>일반</b>은 담당 학생이 없고, <b>전체</b>는 학교 모든 학생을 봅니다.
-          <b>반 번호</b>를 고르면 그 반 담임이 되어 <b>그 반 학생만</b> 보입니다. 누르면 바로 저장됩니다.
-          <b>[비밀번호 초기화]</b> 를 누르면 초기 비밀번호로 되돌아가고, 그 선생님은 다음에 들어갈 때 새로 정하게 됩니다.
-          <b>[계정 삭제]</b> 는 그 선생님 계정을 완전히 지웁니다 — 되돌릴 수 없습니다.</p>
+        <p class="hint"><b>일반</b>은 담당 학생이 없으며, <b>전체</b>는 학교 전체 학생을 조회합니다.
+          <b>반 번호</b>를 선택하면 해당 반 담임으로 지정되어 <b>그 반 학생만</b> 조회됩니다. 선택하는 즉시 저장됩니다.
+          <b>[비밀번호 초기화]</b>를 누르면 초기 비밀번호로 되돌아가며, 해당 선생님은 다음 로그인 시 새로 설정하게 됩니다.
+          <b>[계정 삭제]</b>는 해당 선생님 계정을 완전히 삭제합니다. 되돌릴 수 없습니다.</p>
         <div id="stfList"></div>
       </div>
 
 
       <div class="panel pad">
         <h3 class="sec">학생 계정 <span class="tag" id="sacCount"></span></h3>
-        <p class="hint">학생 비밀번호는 <b>생년월일 6자리 + 전화번호 뒤 4자리</b>로 고정입니다.
-          학생이 못 들어온다고 하면 —
-          <b>[비밀번호 초기화]</b> 는 등록해 둔 생년월일·전화번호로 비밀번호를 <b>다시 맞춰</b> 줍니다(연락처는 그대로).
-          <b>[등록 초기화]</b> 는 생년월일·전화번호를 <b>지워서</b> 학생이 다음 로그인 때 다시 넣게 합니다.
-          성적과 지원계획은 어느 쪽도 지우지 않습니다.
-          <b>[계정 삭제]</b> 는 전학 등으로 나간 학생의 계정을 성적·지원계획까지 <b>완전히</b> 지웁니다 — 되돌릴 수 없습니다.</p>
+        <p class="hint">학생 비밀번호는 <b>생년월일 6자리 + 전화번호 뒤 4자리</b>로 고정되어 있습니다.
+          학생이 로그인하지 못할 경우 다음 기능을 이용하세요.
+          <b>[비밀번호 초기화]</b>는 등록된 생년월일·전화번호를 기준으로 비밀번호를 <b>다시 설정</b>합니다(연락처는 유지됩니다).
+          <b>[등록 초기화]</b>는 생년월일·전화번호를 <b>삭제</b>하여 학생이 다음 로그인 시 다시 입력하게 합니다.
+          이때 성적과 지원계획은 삭제되지 않습니다.
+          <b>[계정 삭제]</b>는 전학 등으로 나간 학생의 계정을 성적·지원계획까지 <b>완전히</b> 삭제합니다. 되돌릴 수 없습니다.</p>
         <input type="text" id="sacFilter" placeholder="이름·학번으로 찾기" autocomplete="off">
         <div id="sacList"></div>
       </div>
 
       <div class="panel pad" id="tv-upload">
         <h3 class="sec">학생 자료 올리기 (엑셀) <span class="tag" id="rosterOnly"></span></h3>
-        <p class="hint"><b>학생자료양식.xlsx</b> 를 그대로 올리시면 됩니다.
-          다른 양식도 <b>뜻이 같으면 알아서 읽습니다</b> — 머리글이 한 줄이든 두 줄이든,
-          위에 제목 줄이 몇 개 있든, 열 순서가 달라도 됩니다.</p>
+        <p class="hint"><b>학생자료양식.xlsx</b> 파일을 그대로 업로드하면 됩니다.
+          다른 양식이라도 <b>내용이 같으면 자동으로 인식합니다.</b> 머리글이 한 줄이든 두 줄이든,
+          위에 제목 줄이 몇 개 있든, 열 순서가 달라도 상관없습니다.</p>
         <details class="fmthelp">
           <summary>어떤 이름까지 알아보나요?</summary>
           <table class="gt kv">
@@ -1407,20 +1407,20 @@ td.c-cut70{font-weight:600;color:var(--ink)}
               <tr><th>모의 과목</th><td>국 · 국어 / 수 · 수학 / 영 · 영어 / 탐1 · 사탐1 · 과탐1 / 탐2</td></tr>
             </tbody>
           </table>
-          <p class="hint">올린 뒤 <b>「읽은 열」</b> 줄에 몇 칸을 알아봤는지 나옵니다.
-            빠진 게 있으면 <b>못 알아본 열</b>에 이름이 그대로 찍히니 알려 주세요.</p>
+          <p class="hint">업로드하면 <b>「읽은 열」</b> 항목에 인식된 칸 수가 표시됩니다.
+            누락된 항목이 있으면 <b>못 알아본 열</b>에 원래 이름이 그대로 표시되니 확인하세요.</p>
         </details>
-        <p class="hint">이 한 파일로 <b>계정 만들기 · 내신 · 모의고사</b>가 한 번에 들어갑니다.
-          <b>학번(반·번호)과 이름만 있어도 계정이 만들어집니다</b> —
-          생년월일·전화번호는 <b>학생이 처음 로그인할 때 본인이 넣습니다.</b>
-          넣기 전까지는 학생 목록에 <b>미등록</b>으로 표시됩니다.
-          엑셀에 미리 채워 두셔도 되고, 그때는 그 값이 바로 비밀번호가 됩니다.
-          전화번호는 <b>-를 넣든 빼든</b> 상관없습니다.
-          이미 있는 학생은 이름·성적만 갱신되고 <b>학생이 등록해 둔 연락처와 비밀번호는 그대로</b>입니다.
-          등급 칸의 <b>0</b> 이나 빈칸은 넣지 않고 건너뜁니다.</p>
+        <p class="hint">이 파일 하나로 <b>계정 생성·내신·모의고사</b>가 한 번에 등록됩니다.
+          <b>학번(반·번호)과 이름만 있어도 계정이 생성됩니다.</b>
+          생년월일·전화번호는 <b>학생이 처음 로그인할 때 본인이 직접 입력합니다.</b>
+          입력 전까지는 학생 목록에 <b>미등록</b>으로 표시됩니다.
+          엑셀에 미리 입력해 두어도 되며, 그 경우 해당 값이 바로 비밀번호가 됩니다.
+          전화번호는 하이픈(-)을 넣거나 빼도 상관없습니다.
+          기존에 등록된 학생은 이름·성적만 갱신되고 <b>학생이 등록해 둔 연락처와 비밀번호는 유지</b>됩니다.
+          등급 칸이 <b>0</b>이거나 비어 있으면 반영하지 않고 건너뜁니다.</p>
         <div class="yrrow">
           <button class="btn primary" id="pickRoster">엑셀 고르기</button>
-          <span class="fh">3학년 명부로 읽습니다</span>
+          <span class="fh">3학년 명부로 인식합니다.</span>
           <input type="file" id="rosterFile" accept=".xlsx,.xls,.csv" hidden>
         </div>
         <div id="rosterOut"></div>
@@ -1428,8 +1428,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
       <div class="panel pad danger">
         <h3 class="sec">학생 자료 리셋</h3>
-        <p class="hint">학생 계정과 그 학생들의 <b>내신 · 모의고사 · 지원계획</b>을 모두 지웁니다.
-          선생님 계정과 반 설정은 그대로 둡니다. 새 학년도를 시작할 때 쓰세요.
+        <p class="hint">학생 계정과 해당 학생들의 <b>내신 · 모의고사 · 지원계획</b>을 모두 삭제합니다.
+          선생님 계정과 반 설정은 유지됩니다. 새 학년도를 시작할 때 사용하세요.
           <b class="clashk">되돌릴 수 없습니다.</b></p>
         <div class="setrow">
           <label>확인 문구
@@ -1437,7 +1437,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           </label>
           <button class="btn danger" id="resetBtn" disabled>학생 자료 모두 지우기</button>
           <span class="msg hidden" id="resetMsg"></span>
-          <span class="fh setrow-note">위 다섯 글자를 그대로 입력해야 단추가 눌립니다</span>
+          <span class="fh setrow-note">위 다섯 글자를 정확히 입력해야 버튼이 활성화됩니다.</span>
         </div>
       </div>
 
@@ -1565,7 +1565,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   <div class="cols3even">
     <div class="panel pad">
       <h3 class="sec">내신 등급</h3>
-      <p class="hint">이수단위 가중평균으로 직접 계산한 값을 넣으세요. 학과 계열에 맞는 값이 카드에 자동으로 들어갑니다.</p>
+      <p class="hint">이수단위 가중평균으로 직접 계산한 값을 입력하세요. 학과 계열에 맞는 값이 카드에 자동으로 반영됩니다.</p>
       <div class="grades" id="grades">
         <label>국·수·영·과 <input type="number" step="0.01" min="1" max="9" id="g-nat" placeholder="예: 2.85"></label>
         <label>국·수·영·사 <input type="number" step="0.01" min="1" max="9" id="g-hum" placeholder="예: 3.10"></label>
@@ -1573,12 +1573,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
       </div>
       <div class="thresh">
         <label>판정 기준 <input type="number" step="0.05" min="0.05" max="2" id="g-th" value="0.3"> 등급</label>
-        <span class="hint">본인내신이 70%컷보다 이만큼 나쁘면 상향, 좋으면 하향</span>
+        <span class="hint">본인 내신이 70%컷보다 이 값만큼 나쁘면 상향, 좋으면 하향으로 판정합니다.</span>
       </div>
     </div>
     <div class="panel pad">
       <h3 class="sec">모의고사 등급</h3>
-      <p class="hint">선생님이 올려 둔 모의고사 성적입니다 — 여기서는 고칠 수 없습니다.</p>
+      <p class="hint">선생님이 등록한 모의고사 성적입니다. 이 화면에서는 수정할 수 없습니다.</p>
       <div id="mockGrades"></div>
     </div>
     <div class="panel pad">
@@ -1594,8 +1594,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
   <div class="impbox hidden" id="impBox">
     <h3 class="sec">자료에서 못 찾은 줄 <span class="tag" id="impCnt"></span></h3>
-    <p class="hint">파일에 적힌 이름이 지금 담긴 자료와 달라서 못 찾았습니다(학과명이 바뀌었거나, 다른 학년도 파일일 수 있습니다).
-      아래에서 다시 고르거나 <b>건너뛰기</b>에 표시하세요. 나머지 줄은 이미 다 찾았습니다.</p>
+    <p class="hint">파일에 기록된 이름이 현재 자료와 달라 찾을 수 없습니다(학과명이 변경되었거나, 다른 학년도 파일일 수 있습니다).
+      아래에서 다시 선택하거나 <b>건너뛰기</b>로 표시하세요. 나머지 줄은 모두 찾았습니다.</p>
     <div id="impList"></div>
     <div class="impbtns">
       <button class="btn solid" id="impApply">이대로 담기</button>
@@ -1607,7 +1607,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <span class="pi-label">간단히 보기</span>
     <button type="button" class="pib" data-pi="uni" aria-pressed="false">일반대 <span class="n" id="piUniN"></span></button>
     <button type="button" class="pib" data-pi="college" aria-pressed="false">전문대 <span class="n" id="piColN"></span></button>
-    <span class="fh">누르면 그쪽만 보입니다 · 다시 누르면 전체</span>
+    <span class="fh">선택하면 해당 항목만 표시되며, 다시 누르면 전체가 표시됩니다.</span>
     <span class="grow"></span>
     <button class="btn" id="copyPlan">계획표 복사</button>
     <button class="btn" id="savePlanCsv">파일로 저장(CSV)</button>
@@ -1618,7 +1618,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   </div>
 
   <div class="plansec pi-uni">
-    <h3 class="sec">일반대 수시 지원<span class="tag">6칸 — 전형 찾기에서 <b>담기</b> 한 것이 여기에 들어옵니다</span></h3>
+    <h3 class="sec">일반대 수시 지원<span class="tag">6칸. 전형 찾기에서 <b>담기</b> 한 항목이 여기에 표시됩니다.</span></h3>
     <!-- 대학 목록. 카드마다 넣으면 수천 줄이 되므로 여기 한 번만 둔다.
          수시·후보 칸은 일반대만, 전문대 칸은 전문대만 보여 준다. -->
     <datalist id="dl-uni"></datalist>
@@ -1634,8 +1634,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <div class="cards" id="cardsCollege"></div>
   </div>
 
-  <p class="hint pad-h">입력한 내용은 이 브라우저에 자동 저장됩니다. <b>모든 기기에 저장</b>을 누르면 이 앱 자체에 저장되어 다른 기기·다른 브라우저에서도 그대로 열립니다.
-    카드의 <b>⇄</b> 단추로 다른 칸과 자리를 바꿀 수 있습니다(수시↔후보 포함).</p>
+  <p class="hint pad-h">입력한 내용은 이 브라우저에 자동으로 저장됩니다. <b>모든 기기에 저장</b>을 누르면 서버에 저장되어 다른 기기·다른 브라우저에서도 동일하게 확인할 수 있습니다.
+    카드의 <b>⇄</b> 버튼으로 다른 칸과 위치를 바꿀 수 있습니다(수시↔후보 포함).</p>
 </section>
 
 <!-- ══ 데이터 ══ -->
@@ -1645,7 +1645,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <div class="stats flat" id="dataStats"></div>
     <ul class="notes-ul">
       <li><b>모집인원은 해당 학년도</b>, <b>경쟁률·50%컷·70%컷은 그 전 학년도</b> 결과입니다.</li>
-      <li><b>컷은 대학마다 기준이 다릅니다.</b> 강원대는 70%가 아닌 75%컷을, 인천대는 70%만 공개하고, 한경국립대·한국교통대는 컷 자체를 공개하지 않습니다(최고·평균·최저만). 어디가가 대교협 공개표준안으로 환산해 한 칸에 담기 때문에 <b>대학 자체 발표값과 어긋날 수 있습니다</b> — 충북대 컴퓨터공학과에서 어디가 2.80, 대학 발표 2.63으로 달랐습니다.</li>
+      <li><b>컷은 대학마다 기준이 다릅니다.</b> 강원대는 70%가 아닌 75%컷을, 인천대는 70%만 공개하고, 한경국립대·한국교통대는 컷 자체를 공개하지 않습니다(최고·평균·최저만). 어디가가 대교협 공개표준안으로 환산해 한 칸에 담기 때문에 <b>대학 자체 발표값과 어긋날 수 있습니다.</b> (예: 충북대 컴퓨터공학과의 경우 어디가 2.80, 대학 발표 2.63으로 차이가 있었습니다.)</li>
       <li><b>수능최저 빈칸은 "최저가 없다"는 뜻이 아닙니다.</b> 어디가에 정보가 입력되지 않은 경우이며, 그때는 모집요강을 확인해야 합니다.</li>
       <li>재외국민·외국인·군위탁·해외이수자 전형과 정시는 빠져 있습니다. <b>수시 전형만</b> 담겨 있습니다.</li>
       <li><b>전문대학은 어디가에 경쟁률·50%컷·70%컷·수능최저 항목 자체가 없습니다.</b> 그래서 전문대 행은 그 칸이 모두 비어 있습니다. 전문대 지원 조건은 각 대학 모집요강을 봐야 합니다.</li>
@@ -1656,7 +1656,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
   <div class="panel pad">
     <h3 class="sec">새 학년도로 갈아끼우기</h3>
-    <p class="hint">웹 페이지는 보안 정책상 외부 사이트에 접속할 수 없어, 어디가에서 직접 받아오지는 못합니다. <b>전형데이터 받기</b> 프로그램으로 그 해 자료를 받은 뒤 <b>파일만 끌어다 놓으면</b> 앱이 그 학년도로 바뀝니다. 16열(키·대학명·전형유형·전형명·학과명·전형방법·모집인원·수능최저·실기고사일·50%컷·70%컷·면접고사일·경쟁률·최초합격자평균·평균·논술고사일)을 엑셀에서 <b>복사해 아래에 붙여넣으세요.</b> 머리글 줄은 있어도 없어도 됩니다.</p>
+    <p class="hint">웹 페이지는 보안 정책상 외부 사이트에 접속할 수 없어 어디가에서 직접 자료를 받아올 수 없습니다. <b>전형데이터 받기</b> 프로그램으로 해당 연도 자료를 내려받은 뒤 <b>파일을 끌어다 놓으면</b> 앱의 학년도가 자동으로 변경됩니다. 16개 열(키·대학명·전형유형·전형명·학과명·전형방법·모집인원·수능최저·실기고사일·50%컷·70%컷·면접고사일·경쟁률·최초합격자평균·평균·논술고사일)을 엑셀에서 <b>복사하여 아래에 붙여넣어도 됩니다.</b> 머리글 줄은 있어도 없어도 됩니다.</p>
     <div class="drop" id="drop">
       <div class="dropin">
         <b>파일을 여기에 끌어다 놓으세요</b>
@@ -1935,7 +1935,7 @@ window.SUSI_CFG = {
   /* 명부에는 학번·이름만 올라와 있고, 생년월일·전화번호는 학생이 처음 들어올 때 넣는다.
      그 값이 그대로 그 학생 정보가 되고, 그때부터 그것이 비밀번호가 된다. */
   function claimThenLogin(no, birth, phone, password) {
-    say('loginMsg', '처음 들어오시는군요 — 등록하는 중…');
+    say('loginMsg', '첫 로그인입니다. 등록하는 중…');
     return sb.rpc('claim_student', {
       p_student_no: Number(no),
       p_birth: birthYmd(birth),
@@ -1985,7 +1985,7 @@ window.SUSI_CFG = {
       try { host = String(CFG.url || '').replace(/^https?:\/\//, '').replace(/\/.*$/, ''); } catch (e2) { }
       sayHtml('loginMsg',
         '자료 서버에 연결하지 못했습니다. <b>비밀번호 문제가 아닙니다.</b><br>' +
-        '학교 인터넷(와이파이)이 이 주소를 막고 있을 수 있습니다 — <b>' +
+        '학교 인터넷(와이파이)이 다음 주소를 차단하고 있을 수 있습니다: <b>' +
         escHtml(host || 'supabase.co') + '</b><br>' +
         '휴대전화 데이터로 바꿔서 된다면 학교망 차단이 맞습니다. ' +
         '그때는 정보부(전산실)에 이 주소를 열어 달라고 요청해 주세요.<br>' +
@@ -2124,8 +2124,8 @@ window.SUSI_CFG = {
       })
       .catch(function (err) {
         $('pwSave').disabled = false;
-        say('pwMsg', '바꾸지 못했습니다: ' + (err && err.message || '') +
-            ' — 기존 비밀번호는 그대로입니다.', true);
+        say('pwMsg', '변경하지 못했습니다: ' + (err && err.message || '') +
+            ' 기존 비밀번호가 유지됩니다.', true);
       });
   }
 
@@ -2255,7 +2255,7 @@ window.SUSI_CFG = {
       sync('저장됨', 'ok');
     }).catch(function (e) {
       flushing = false; flushAgain = false;
-      dirty = true; sync('저장 실패 — 다시 시도합니다', 'bad'); console.error(e);
+      dirty = true; sync('저장 실패. 다시 시도합니다', 'bad'); console.error(e);
     });
   }
   function scheduleSave() {
@@ -2341,8 +2341,8 @@ window.SUSI_CFG = {
       STUDENTS = []; STUDENTS_OK = false;
       renderStudentList();
       renderStudentAccounts();
-      $('notActivated').innerHTML = '<b class="clashk">학생 목록을 읽지 못했습니다</b> — ' +
-        esc(e && e.message || '') + '<br>새로고침해 보시고, 계속 이러면 알려 주세요.';
+      $('notActivated').innerHTML = '<b class="clashk">학생 목록을 불러오지 못했습니다.</b> ' +
+        esc(e && e.message || '') + '<br>새로고침 후 다시 시도해 보시고, 문제가 계속되면 알려 주세요.';
     });
   }
 
@@ -2574,7 +2574,7 @@ window.SUSI_CFG = {
       showPlanBar(st);
       sync('저장됨', 'ok');
     }).catch(function (e) {
-      if (box) box.innerHTML = '<p class="hint"><b class="clashk">지원계획을 열지 못했습니다</b> — ' +
+      if (box) box.innerHTML = '<p class="hint"><b class="clashk">지원계획을 불러오지 못했습니다.</b> ' +
         esc(e && e.message || '') + '</p>';
     });
   }
@@ -2638,8 +2638,8 @@ window.SUSI_CFG = {
       ? list.length + ' / ' + STUDENTS.length + '명' : STUDENTS.length + '명';
     var na = Object.keys(NOTACT).length;
     $('notActivated').innerHTML = na
-      ? '아직 <b class="clashk">' + na + '명</b>이 생년월일·전화번호를 넣지 않았습니다 — 목록에 <b>미등록</b>으로 표시됩니다. '
-        + '학생이 처음 로그인하며 직접 넣으면 사라집니다.'
+      ? '아직 <b class="clashk">' + na + '명</b>이 생년월일·전화번호를 입력하지 않았습니다. 목록에 <b>미등록</b>으로 표시됩니다. '
+        + '학생이 첫 로그인 시 직접 입력하면 사라집니다.'
       : (STUDENTS.length ? '모든 학생이 등록을 마쳤습니다.' : '');
     /* [초기화]는 이미 등록한 학생에게만 보인다 — 미등록 학생은 되돌릴 것이 없다.
        총관리자만 보인다(담임이 눌러도 서버가 막지만, 애초에 안 보이는 편이 낫다). */
@@ -2687,8 +2687,8 @@ window.SUSI_CFG = {
       if (openGrades) { var ge = $('gEdit'); if (ge) ge.click(); }
     }).catch(function (e) {
       if (seq !== pickSeq) return;
-      $('stDetail').innerHTML = '<p class="hint"><b class="clashk">불러오지 못했습니다</b> — ' +
-        esc(e && e.message || '') + '<br>잠시 뒤 다시 눌러 주세요.</p>';
+      $('stDetail').innerHTML = '<p class="hint"><b class="clashk">불러오지 못했습니다.</b> ' +
+        esc(e && e.message || '') + '<br>잠시 후 다시 시도해 주세요.</p>';
     });
   }
 
@@ -2701,7 +2701,7 @@ window.SUSI_CFG = {
       '<button class="btn" id="stPrintBtn">인쇄</button></h3>';
     // 여기서부터 인쇄에 나가는 부분. 종이에만 보이는 머리글을 맨 앞에 둔다.
     h += '<div id="stPrint"><div class="printhead">' +
-      '<div class="pt">' + CFG.year + '학년도 수시 지원계획서 — ' + esc(st.name) + '</div>' +
+      '<div class="pt">' + CFG.year + '학년도 수시 지원계획서 · ' + esc(st.name) + '</div>' +
       '<div class="ps">' + st.student_no + ' · ' + st.grade + '학년 ' + st.class_no + '반 ' +
         st.number_no + '번' + (SCHOOL.name ? ' · ' + esc(SCHOOL.name) : '') +
         ' · 출력 ' + now.getFullYear() + '.' + pad(now.getMonth() + 1) + '.' + pad(now.getDate()) +
@@ -2739,8 +2739,8 @@ window.SUSI_CFG = {
       if (qb) qb.addEventListener('click', function () { openPlanFor(st); });
     };
     if (!apps.length) {
-      h += '<p class="hint">아직 담은 전형이 없습니다 — 위의 <b>지원계획 설정</b>을 누르면 ' +
-           '학생 화면 그대로 열려서 대신 담아 줄 수 있습니다.</p></div>';
+      h += '<p class="hint">아직 담은 전형이 없습니다. 위의 <b>지원계획 설정</b>을 누르면 ' +
+           '학생 화면과 동일한 화면이 열려 대신 입력할 수 있습니다.</p></div>';
       $('stDetail').innerHTML = h; wire(); return;
     }
     var order = { main: 0, cand: 1, college: 2 };
@@ -2810,7 +2810,7 @@ window.SUSI_CFG = {
   function editGrades(st, gr, mock) {
     var byExam = {}; (mock || []).forEach(function (m) { byExam[m.exam] = m; });
     var h = '<h3 class="sec">' + esc(st.name) + ' 성적 입력 <span class="tag">' + st.student_no + '</span></h3>' +
-      '<p class="hint">칸 배치는 <b>학생자료양식.xlsx</b> 와 같습니다 — ' +
+      '<p class="hint">칸 배치는 <b>학생자료양식.xlsx</b> 와 동일합니다. ' +
         '내신은 <b>국·수·영·과 / 국·수·영·사 / 전과목</b> 을 <b>1학년·2학년·3학년·평균</b> 으로, ' +
         '모의고사는 <b>3월·5월·6월·7월·9월·수능</b> 을 <b>국·수·영·탐1·탐2</b> 로 넣습니다. ' +
         '비워 두면 「없음」으로 저장되고, 등급은 <b>1~9</b> 만 받습니다.</p>' +
@@ -2930,7 +2930,7 @@ window.SUSI_CFG = {
           $('gSave').disabled = false;
           msg.className = 'msg bad';
           msg.textContent = missingFn(err)
-            ? '성적은 저장됐지만 생년월일·전화번호는 못 바꿨습니다 — Supabase SQL Editor 에서 «추가기능.sql» 을 한 번 실행해 주세요.'
+            ? '성적은 저장되었지만 생년월일·전화번호는 변경하지 못했습니다. Supabase SQL Editor에서 «추가기능.sql» 을 실행해 주세요.'
             : '저장하지 못했습니다: ' + (err && err.message || '');
         });
     });
@@ -3054,8 +3054,8 @@ window.SUSI_CFG = {
           '<tr><th>아이디</th><td><b class="pickme">' + esc(d.login || '') + '</b></td></tr>' +
           '<tr><th>초기 비밀번호</th><td><b class="pickme">' + esc(d.password || '') + '</b></td></tr>' +
           '</tbody></table>' +
-          '<p class="hint">이 두 줄을 <b>지금 적어 두고</b> 전해 주세요 — 화면을 옮기면 다시 볼 수 없습니다. ' +
-          '그 선생님이 처음 들어가면 <b>비밀번호를 새로 정하는 화면</b>이 먼저 뜹니다.</p></div>';
+          '<p class="hint">이 두 줄을 <b>지금 기록해 두었다가</b> 전달해 주세요. 화면을 벗어나면 다시 확인할 수 없습니다. ' +
+          '해당 선생님이 처음 로그인하면 <b>비밀번호를 새로 설정하는 화면</b>이 먼저 표시됩니다.</p></div>';
         $('ntName').value = '';
         return loadStaff();
       })
@@ -3186,7 +3186,7 @@ window.SUSI_CFG = {
       });
       renderStaff();
     }).catch(function (e) {
-      $('stfList').innerHTML = '<p class="hint"><b class="clashk">교직원 목록을 읽지 못했습니다</b> — ' +
+      $('stfList').innerHTML = '<p class="hint"><b class="clashk">교직원 목록을 불러오지 못했습니다.</b> ' +
         esc(e && e.message || '') + '</p>';
     });
   }
@@ -3470,8 +3470,8 @@ window.SUSI_CFG = {
         $('calHead').innerHTML = '';
         $('calOut').innerHTML = '';
         $('calNav').classList.add('hidden');
-        $('calDay').innerHTML = '<p class="hint"><b class="clashk">고사일을 읽지 못했습니다</b> — ' +
-          esc(e && e.message || '') + '<br>「고사일이 없음」이 아니라 <b>읽기에 실패한 것</b>입니다. ' +
+        $('calDay').innerHTML = '<p class="hint"><b class="clashk">고사일을 불러오지 못했습니다.</b> ' +
+          esc(e && e.message || '') + '<br>「고사일이 없음」이 아니라 <b>불러오기에 실패한 것</b>입니다. ' +
           '탭을 다시 눌러 주세요.</p>';
       });
   }
@@ -4121,7 +4121,7 @@ window.SUSI_CFG = {
     };
     if (dup.length) {
       warn.push('· 같은 반·번호가 겹치는 줄 ' + dup.length + '개는 건너뛰었습니다 (' +
-        dup.slice(0, 3).join(', ') + (dup.length > 3 ? ' 외' : '') + ') — 명부가 두 번 들어 있는 파일입니다');
+        dup.slice(0, 3).join(', ') + (dup.length > 3 ? ' 외' : '') + '). 명부가 두 번 들어 있는 파일입니다.');
     }
     return { rows: out, warn: warn, found: found };
   }
@@ -4291,11 +4291,11 @@ window.SUSI_CFG = {
     var h = '<div class="upres"><span class="okline">' + rows.length + '줄을 읽었습니다.</span><br>' +
       (canMakeAccounts
         ? '계정 <b>' + made + '명</b>'
-        : '<span class="hint">계정 만들기는 총관리자만 됩니다 — 성적만 넣었습니다</span>') +
+        : '<span class="hint">계정 만들기는 총관리자만 가능합니다. 성적만 반영했습니다.</span>') +
       ' · 내신 <b>' + nG + '명</b> · 모의고사 <b>' + nM + '건</b>';
     if (noContact) {
-      h += '<br><span class="hint">그중 <b>' + noContact + '명</b>은 생년월일·전화번호가 비어 있습니다 — ' +
-           '그 학생들은 <b>처음 로그인할 때 본인이 넣습니다.</b> ' +
+      h += '<br><span class="hint">그중 <b>' + noContact + '명</b>은 생년월일·전화번호가 비어 있습니다. ' +
+           '해당 학생들은 <b>처음 로그인할 때 본인이 직접 입력합니다.</b> ' +
            '학생 목록에 <b>미등록</b>으로 표시되고, 넣고 나면 사라집니다.</span>';
     }
     /* 무엇을 어떻게 읽었는지 보여 준다.
@@ -4310,9 +4310,9 @@ window.SUSI_CFG = {
       if (found.sheet) bits.push('시트 <b>' + esc(found.sheet) + '</b>');
       h += '<p class="hint" style="margin-top:8px">읽은 열: ' + bits.join(' · ') + '</p>';
       if (found.unknown.length) {
-        h += '<p class="hint">못 알아본 열: ' +
+        h += '<p class="hint">인식하지 못한 열: ' +
           found.unknown.map(function (u) { return '<code>' + esc(u) + '</code>'; }).join(' ') +
-          ' — 성적 열인데 빠졌다면 이름을 알려 주세요.</p>';
+          '. 성적 열인데 누락되었다면 이름을 알려 주세요.</p>';
       }
       /* ★ 뭔가 어긋났을 때는 '파서가 본 것' 을 그대로 펼쳐 둔다.
          「0칸 · 없음」 만 보여 주면 파일이 문제인지 읽는 쪽이 문제인지 알 수 없다.
@@ -4349,7 +4349,7 @@ window.SUSI_CFG = {
           ' · 전체 <b>' + found.rows + '</b>줄 · 칸 너비 <b>' + found.width + '</b>' +
           ' · 묶음줄 길이 ' + found.topLen + ' · 머리글줄 길이 ' + found.subLen +
           ' · 묶음이 아래에 있다고 봄: ' + (found.looksSub ? '예' : '아니오') + '</p>' +
-          '<p class="hint">찾은 칸 번호 — 반 ' + found.colAt.cls + ' · 번호 ' + found.colAt.num +
+          '<p class="hint">찾은 칸 번호: 반 ' + found.colAt.cls + ' · 번호 ' + found.colAt.num +
           ' · 학번 ' + found.colAt.sno + ' · 이름 ' + found.colAt.name +
           ' · 생년월일 ' + found.colAt.birth + ' · 전화번호 ' + found.colAt.phone +
           ' <span class="or">(-1 은 못 찾았다는 뜻)</span></p>' +
@@ -4357,8 +4357,8 @@ window.SUSI_CFG = {
           '<tr><th>묶음줄</th>' + found.top.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>' +
           '<tr><th>머리글줄</th>' + found.sub.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>' +
           '</tbody></table><p class="hint">앞 20칸만 보여 줍니다.</p></details>')
-          : '<p class="hint">그래도 원인을 모르겠으면 주소 뒤에 <code>?진단</code> 을 붙여 다시 열고 ' +
-            '한 번 더 올려 보세요 — 파일을 어떻게 읽었는지 표로 보여 줍니다.</p>');
+          : '<p class="hint">그래도 원인을 알 수 없다면 주소 뒤에 <code>?진단</code> 을 붙여 다시 열고 ' +
+            '한 번 더 올려 보세요. 파일을 어떻게 읽었는지 표로 확인할 수 있습니다.</p>');
       }
     }
     if (warn.length) {
@@ -4596,8 +4596,8 @@ window.SUSI_CFG = {
         afterLogin().catch(function (err) {
           busy('loginBtn', false); busy('tLoginBtn', false);
           $('gate').classList.remove('hidden');
-          say('loginMsg', '이전 로그인을 잇지 못했습니다: ' + (err && err.message || '') +
-              ' — 다시 로그인해 주세요.', true);
+          say('loginMsg', '이전 로그인을 이어가지 못했습니다: ' + (err && err.message || '') +
+              ' 다시 로그인해 주세요.', true);
         });
       }
     });
@@ -4837,7 +4837,7 @@ window.SUSI_CFG = {
     if (!el) return;
     if (!cs.length) {
       el.innerHTML = '<span class="sb-label">정렬 순서</span>' +
-        '<span class="sb-empty">기본(대학·전형·학과순) — <b>머리글을 누르면</b> 정렬 순서에 차례로 쌓입니다</span>';
+        '<span class="sb-empty">기본(대학·전형·학과순). <b>머리글을 클릭하면</b> 정렬 순서가 차례로 추가됩니다.</span>';
       return;
     }
     /* ★ 안내 문구를 칩 옆에 계속 둔다.
@@ -5248,20 +5248,20 @@ window.SUSI_CFG = {
     nc.u = r[C.U]; nc.t = r[C.T]; nc.j = r[C.J]; nc.d = r[C.D];
     if (isCol(r)) {
       plan.college.push(nc); ensureCollegeGrow(); savePlan();
-      toast('전문대 칸에 담았습니다 — ' + U[r[C.U]] + ' ' + DP[r[C.D]]);
+      toast('전문대 칸에 담았습니다: ' + U[r[C.U]] + ' ' + DP[r[C.D]]);
       return;
     }
     var slot = plan.main.findIndex(function (c) { return c.u === null; });
-    if (slot >= 0) { plan.main[slot] = nc; savePlan(); toast('수시 ' + (slot + 1) + '번 칸에 담았습니다 — ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
+    if (slot >= 0) { plan.main[slot] = nc; savePlan(); toast('수시 ' + (slot + 1) + '번 칸에 담았습니다: ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
     slot = plan.cand.findIndex(function (c) { return c.u === null; });
-    if (slot >= 0) { plan.cand[slot] = nc; savePlan(); toast('예비 ' + (slot + 1) + '번 칸에 담았습니다 — ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
+    if (slot >= 0) { plan.cand[slot] = nc; savePlan(); toast('예비 ' + (slot + 1) + '번 칸에 담았습니다: ' + U[r[C.U]] + ' ' + DP[r[C.D]]); return; }
     toast('칸이 가득 찼습니다');
   });
 
   function copyText(t, btn, n) {
     var done = function () {
       if (btn) { btn.classList.add('ok'); var o = btn.textContent; btn.textContent = '복사됨'; setTimeout(function () { btn.classList.remove('ok'); btn.textContent = o; }, 1500); }
-      toast(n.toLocaleString() + '행 복사됨 — 엑셀 전형데이터 시트 A2 칸에 붙여넣기 하세요');
+      toast(n.toLocaleString() + '행이 복사되었습니다. 엑셀 전형데이터 시트 A2 칸에 붙여넣으세요.');
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(t).then(done, function () { fallback(t, done); });
@@ -5313,12 +5313,12 @@ window.SUSI_CFG = {
         });
       }).then(function () { toast(okMsg || '저장했습니다'); }, function (err) {
         if (err && err.name === 'AbortError') return;
-        if (anchorDownload(name, text, mime)) toast(okMsg || '저장했습니다 — 다운로드 폴더를 확인하세요');
+        if (anchorDownload(name, text, mime)) toast(okMsg || '저장했습니다. 다운로드 폴더를 확인하세요.');
         else toast('파일 저장에 실패했습니다. 복사 버튼을 이용하세요.');
       });
       return true;
     }
-    if (anchorDownload(name, text, mime)) { toast(okMsg || '저장했습니다 — 다운로드 폴더를 확인하세요'); return true; }
+    if (anchorDownload(name, text, mime)) { toast(okMsg || '저장했습니다. 다운로드 폴더를 확인하세요.'); return true; }
     return false;
   }
   function saveFile(base, csv) {
@@ -5332,7 +5332,7 @@ window.SUSI_CFG = {
       var c = err && err.code;
       if (c === 'declined') return;
       if (c === 'extension_not_enabled') {
-        DL.save({ filename: base + '.txt', data: csv }).then(function () { toast('txt로 저장했습니다 — 엑셀에서 열면 됩니다'); },
+        DL.save({ filename: base + '.txt', data: csv }).then(function () { toast('txt로 저장했습니다. 엑셀에서 열면 됩니다.'); },
           function () { toast('파일 저장이 거절되었습니다. 복사 버튼을 이용하세요.'); });
         return;
       }
@@ -5363,12 +5363,12 @@ window.SUSI_CFG = {
         return h.createWritable().then(function (w) { return w.write(blob).then(function () { return w.close(); }); });
       }).then(function () { toast(okMsg || '저장했습니다'); }, function (err) {
         if (err && err.name === 'AbortError') return;
-        if (anchorBlobDownload(name, blob)) toast(okMsg || '저장했습니다 — 다운로드 폴더를 확인하세요');
-        else toast('xlsx 저장을 이 화면에서는 쓸 수 없습니다 — 더블클릭용 앱 파일을 열어 보세요.');
+        if (anchorBlobDownload(name, blob)) toast(okMsg || '저장했습니다. 다운로드 폴더를 확인하세요.');
+        else toast('xlsx 저장을 이 화면에서는 사용할 수 없습니다. 더블클릭용 앱 파일을 열어 보세요.');
       });
       return true;
     }
-    if (anchorBlobDownload(name, blob)) { toast(okMsg || '저장했습니다 — 다운로드 폴더를 확인하세요'); return true; }
+    if (anchorBlobDownload(name, blob)) { toast(okMsg || '저장했습니다. 다운로드 폴더를 확인하세요.'); return true; }
     return false;
   }
   /* ───────── 칸 너비를 글자에 맞춘다 ─────────
@@ -5430,7 +5430,7 @@ window.SUSI_CFG = {
       var buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
       var blob = new Blob([buf], { type: XLSX_MIME });
       if (!localDownloadBlob(base + '.xlsx', blob, XLSX_MIME, '저장했습니다')) {
-        toast('이 화면에서는 xlsx 저장을 쓸 수 없습니다 — 더블클릭용 앱 파일(수시전형찾기_' + YEAR + '.html)을 열어 보세요.');
+        toast('이 화면에서는 xlsx 저장을 사용할 수 없습니다. 더블클릭용 앱 파일(수시전형찾기_' + YEAR + '.html)을 열어 보세요.');
       }
     } catch (e) { toast('xlsx 만들기에 실패했습니다: ' + (e && e.message || '')); }
   }
@@ -5516,7 +5516,7 @@ window.SUSI_CFG = {
     var s = similarStats(DP[r[C.D]], r[C.R]);
     var region = r[C.R] >= 0 ? R[r[C.R]] : '';
     if (!s) return '<div class="frow"><span class="fk">유사군 참고</span><span class="fv dash">' +
-      (region ? esc(region + ' ' + TRACKNAME[track(DP[r[C.D]])]) + ' 표본 부족 — ' : '') + '자료 없음</span></div>';
+      (region ? esc(region + ' ' + TRACKNAME[track(DP[r[C.D]])]) + ' 표본 부족: ' : '') + '자료 없음</span></div>';
     return '<div class="frow"><span class="fk">유사군 참고</span><span class="fv">' +
       esc(region) + ' ' + TRACKNAME[track(DP[r[C.D]])] + ' 70%컷 중앙값 <b>' + nf(s.med) + '</b>' +
       ' (사분위 ' + nf(s.q1) + '~' + nf(s.q3) + ', 표본 ' + s.n.toLocaleString() + '건)</span></div>';
@@ -5800,7 +5800,7 @@ window.SUSI_CFG = {
     var el = $('clash');
     if (clash.length) {
       el.classList.remove('hidden');
-      el.innerHTML = '고사일이 겹칩니다 — ' + clash.map(function (k) { return esc(k) + ': ' + esc(dates[k].join(', ')); }).join(' / ');
+      el.innerHTML = '고사일이 겹칩니다: ' + clash.map(function (k) { return esc(k) + ': ' + esc(dates[k].join(', ')); }).join(' / ');
     } else el.classList.add('hidden');
   }
   function cardHit(e) {
@@ -5830,15 +5830,15 @@ window.SUSI_CFG = {
           var other = idByName(uniOpts(hit.area === 'college' ? 'main' : 'college'), e.target.value);
           if (other !== undefined && other !== null) {
             toast(hit.area === 'college'
-              ? '여기는 전문대 칸입니다 — 일반대는 위의 지원·예비 칸에 담아 주세요'
-              : '전문대입니다 — 아래 전문대 칸에 담아 주세요');
+              ? '여기는 전문대 칸입니다. 일반대는 위의 지원·예비 칸에 입력해 주세요.'
+              : '전문대입니다. 아래 전문대 칸에 입력해 주세요.');
             e.target.value = (c.u !== null && c.u !== undefined ? U[c.u] : '');
             return;
           }
         }
         if (got === undefined) {
-          toast(f === 'u' ? '그런 대학이 없습니다 — 몇 글자만 쳐 보세요'
-                          : '그런 학과가 없습니다 — 몇 글자만 쳐 보세요');
+          toast(f === 'u' ? '해당 대학이 없습니다. 일부 글자만 입력해 보세요.'
+                          : '해당 학과가 없습니다. 일부 글자만 입력해 보세요.');
           e.target.value = (f === 'u')
             ? (c.u !== null && c.u !== undefined ? U[c.u] : '')
             : (c.d !== null && c.d !== undefined ? DP[c.d] : '');
@@ -6480,7 +6480,7 @@ window.SUSI_CFG = {
     PENDING_IMP = { ok: ok, bad: bad, kind: kind };
     if (!bad.length) { applyImport(); return; }
     renderImpPanel();
-    toast(kind + ' — ' + list.length + '줄 중 ' + bad.length + '줄을 자료에서 못 찾았습니다');
+    toast(kind + ': ' + list.length + '줄 중 ' + bad.length + '줄을 자료에서 찾지 못했습니다.');
   }
   function renderImpPanel() {
     if (!PENDING_IMP) return;
@@ -6532,7 +6532,7 @@ window.SUSI_CFG = {
     PENDING_IMP = null;
     $('impBox').classList.add('hidden');
     renderCards();
-    toast(n + '줄을 불러왔습니다' + (over ? ' — 칸이 넘쳐 ' + over + '줄은 빠졌습니다' : ''));
+    toast(n + '줄을 불러왔습니다.' + (over ? ' 칸이 초과되어 ' + over + '줄은 제외되었습니다.' : ''));
   }
   $('impList').addEventListener('change', function (e) {
     if (!PENDING_IMP) return;
@@ -6570,7 +6570,7 @@ window.SUSI_CFG = {
       try { res = parseWorkbook(wb); }
       catch (err2) { toast('파일 내용을 읽는 중 문제가 생겼습니다: ' + (err2 && err2.message || '')); return; }
       if (!res) {
-        toast('알아볼 수 있는 양식이 아닙니다 — 이 앱의 「xlsx로 저장」 파일이나 지원계획서의 「개인별」 시트가 필요합니다');
+        toast('인식할 수 없는 양식입니다. 이 앱의 「xlsx로 저장」 파일이나 지원계획서의 「개인별」 시트가 필요합니다.');
         return;
       }
       startImport(res.list, res.kind);
@@ -6651,7 +6651,7 @@ window.SUSI_CFG = {
     $('pasteBox').value = txt;
     var m = name && name.match(/(20\d\d)/);
     if (m) $('newYear').value = m[1];
-    toast((name ? name + ' — ' : '') + Math.max(0, txt.split('\n').length - 1).toLocaleString() + '줄 읽었습니다. [내용 확인]을 누르세요.');
+    toast((name ? name + ': ' : '') + Math.max(0, txt.split('\n').length - 1).toLocaleString() + '줄 읽었습니다. [내용 확인]을 누르세요.');
     $('previewData').click();
   }
   function readFile(file) {
@@ -6694,7 +6694,7 @@ window.SUSI_CFG = {
     $('applyData').disabled = false;
     out.innerHTML = '<div class="pv">읽은 행 <b>' + nd.rows.length.toLocaleString() + '</b>건 · 대학 <b>' + nd.u.length + '</b>개' +
       (res.bad ? ' · 건너뛴 줄 <b class="bad">' + res.bad + '</b>' : '') +
-      '<br>지금 데이터와 비교 — 신설·추가 <b>' + added.toLocaleString() + '</b>건, 없어짐 <b>' + gone.toLocaleString() + '</b>건' +
+      '<br>현재 데이터와 비교: 신설·추가 <b>' + added.toLocaleString() + '</b>건, 삭제됨 <b>' + gone.toLocaleString() + '</b>건' +
       '<br><span style="color:var(--ink-3)">적용하면 이 앱의 데이터가 ' + nd.year + '학년도로 바뀌고, 모든 기기에서 그렇게 열립니다. 지원계획은 그대로 유지됩니다.</span></div>';
   });
   $('applyData').addEventListener('click', function () { if (pending) publish(pending, '데이터를 ' + pending.year + '학년도로 갈아끼웠습니다'); });
@@ -6782,9 +6782,9 @@ window.SUSI_CFG = {
     if (!ART) {
       var lost = dataObj ? swapData(dataObj) : 0;
       var html = buildDoc(D, plan);
-      if (lost) toast(lost + '개 칸은 새 자료에 없어 비웠습니다');
+      if (lost) toast(lost + '개 칸은 새 자료에 없어 비워졌습니다.');
       if (!localDownload('수시전형찾기_' + ((dataObj || D).year || YEAR) + '.html', html, 'text/html',
-                         '앱 파일을 새로 저장했습니다 — 그 파일을 열면 지금 내용 그대로입니다')) {
+                         '앱 파일을 새로 저장했습니다. 해당 파일을 열면 현재 내용이 그대로 표시됩니다.')) {
         toast('이 화면에서는 앱 저장을 쓸 수 없습니다. 브라우저에는 이미 저장돼 있습니다.');
       }
       return;
@@ -6796,7 +6796,7 @@ window.SUSI_CFG = {
       planOut = { g: plan.g, th: plan.th, main: rm.main, cand: rm.cand, college: rm.college };
     }
     var doc = buildDoc(dataObj || D, planOut);
-    ART.publish(doc).then(function () { toast(okMsg || '저장했습니다 — 다른 기기에서도 그대로 열립니다'); },
+    ART.publish(doc).then(function () { toast(okMsg || '저장했습니다. 다른 기기에서도 동일하게 확인할 수 있습니다.'); },
       function (err) {
         var c = err && err.code;
         if (c === 'conflict') return;
