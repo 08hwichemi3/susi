@@ -661,6 +661,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 /* 고사 종류 배지 — 옅은 파스텔이라 눈에 안 띈다는 지적을 받아 진한 바탕에 흰 글씨로 바꿨다 */
 .kd{font-size:10px;font-weight:700;border-radius:3px;padding:1px 4.5px;vertical-align:1px;
   color:var(--kd-ink)}
+/* 전문대 표시 — (전) 이라고 괄호로 적었더니 눈에 안 들어온다고 해서 색 딱지로 바꿨다.
+   면접·논술·실기 딱지와 색이 겹치지 않게 남색을 쓴다. */
+.colmk{display:inline-block;font-size:10px;font-weight:700;line-height:1.45;
+  background:var(--blue);color:var(--kd-ink);border-radius:3px;padding:0 4.5px;
+  margin-right:3px;vertical-align:1px}
 .kd.k-면접{background:var(--kd-int)}
 .kd.k-논술{background:var(--kd-ess)}
 .kd.k-실기{background:var(--kd-prac)}
@@ -802,6 +807,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .kd.k-면접{background:#12795F !important}
   .kd.k-논술{background:#A4650B !important}
   .kd.k-실기{background:#5B47B0 !important}
+  .colmk{background:#25506E !important;color:#fff !important;font-size:8px;
+    padding:0 3px !important;border-radius:3px;margin-right:2px}
 
   .calday-panel{display:none !important}       /* 옆 패널은 종이에 안 낸다 */
 
@@ -3715,22 +3722,24 @@ window.SUSI_DATES = function (text) {
        한 글자짜리 줄임말은 학교마다 부르는 말이 달라 오히려 못 알아본다는
        지적을 받았다. 「○○대」 형태를 그대로 둔다.
      「대학교」를 「대」로만 줄인다 — 성균관대학교 → 성균관대.
-     전문대는 앞에 (전) 을 붙여 4년제와 바로 구분되게 한다.
 
      다만 이름이 유난히 길어 한 칸을 통째로 먹는 몇 곳은 학교에서 실제로 쓰는
-     줄임말로 바꾼다. 아래 표에 「원래 이름: 줄인 이름」 을 한 줄 더하면 된다.
-     이 이름들은 그 자체로 전문대임이 드러나므로 (전) 은 붙이지 않는다. */
+     줄임말로 바꾼다. 아래 표에 「원래 이름: 줄인 이름」 을 한 줄 더하면 된다. */
   var UNI_SHORT = { '인하공업전문대학': '인하공전' };
   function calUni(name) {
-    var v = String(name || '').trim();
-    var col = /\(전문대\)/.test(v);
-    v = v.replace(/\s*\(전문대\)\s*/g, '');
+    var v = String(name || '').trim().replace(/\s*\(전문대\)\s*/g, '');
     if (UNI_SHORT[v]) return UNI_SHORT[v];
-    v = v.replace(/여자대학교/g, '여대').replace(/대학교/g, '대');
-    return (col ? '(전)' : '') + v;
+    return v.replace(/여자대학교/g, '여대').replace(/대학교/g, '대');
+  }
+  /* 전문대는 «전» 딱지를 반드시 앞에 붙인다 — 이름을 줄여 적은 곳도 예외 없다.
+     예전에는 (전) 이라고 괄호로 적었는데 눈에 안 들어온다는 지적을 받아,
+     고사 종류 딱지와 같은 모양의 색 딱지로 바꿨다(색은 셋과 겹치지 않게 남색). */
+  function calUniHtml(name) {
+    return (/\(전문대\)/.test(String(name || '')) ? '<span class="colmk">전</span>' : '') +
+      esc(calUni(name));
   }
   function itLine(it) {
-    return '<div class="it"><b>' + esc(calUni(it.uni)) + '</b> ' +
+    return '<div class="it"><b>' + calUniHtml(it.uni) + '</b> ' +
       '<span class="who">' + esc(it.who) + '</span> ' +
       '<span class="kd k-' + it.kind + '">' + it.kind + '</span></div>';
   }
@@ -3884,7 +3893,7 @@ window.SUSI_DATES = function (text) {
           '<b>' + esc(g[0].who) + '</b>' +
           '<div>' + g.map(function (i) {
             return '<div class="cdit"><span class="kd k-' + i.kind + '">' + i.kind + '</span> ' +
-              esc(calUni(i.uni)) + ' <span class="who">' + esc(i.dept || '') + '</span></div>';
+              calUniHtml(i.uni) + ' <span class="who">' + esc(i.dept || '') + '</span></div>';
           }).join('') + '</div></div>';
       }).join('') + '</div>';
   }
@@ -4657,7 +4666,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-03.1';
+  var BUILD_ID = '2026-09-03.2';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
