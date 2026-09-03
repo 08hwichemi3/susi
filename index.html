@@ -4644,7 +4644,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-02.8';
+  var BUILD_ID = '2026-09-02.9';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -5344,6 +5344,34 @@ window.SUSI_DATES = function (text) {
     // 나중에 날짜를 다시 읽을 때 걸린다).
     return v.replace(/(\d{4}\/\d{1,2}\/\d{1,2})\/(?=\s*(;|$))/g, '$1').trim();
   }
+  /* ★ 실기 고사일은 그 줄에 적혀 있어도 그 전형의 것이 아닐 때가 훨씬 많다.
+     원자료를 보면 «그 대학 실기전형 일정» 이 그 대학의 다른 줄에도 통째로 복사되어 있다.
+       · 세종대 논술우수자 반도체시스템공학과 → 실기 9/29 ; 10/3 ; 10/16 ; 10/17 …(여덟 날)
+       · 성결대 교과성적우수자 컴퓨터공학과 → 실기 "2026/10/09 /실기우수자 10/9~10/10"
+     («실기우수자» 라고 적혀 있는 것에서 남의 전형 일정임이 드러난다.)
+     그대로 두면 논술만 보는 학생이 달력에 실기로 여러 날 찍힌다 — 실제로 그렇게 보였다.
+
+     그래서 «이 전형에 실기가 있다» 는 근거가 하나라도 있을 때만 쓴다.
+       유형이 실기·실기실습 / 전형명에 실기·실적·예체능·특기자·체육·예능 /
+       전형방법에 실기·실적·체력·적성 / 학과명에 실기·군사·경호
+     («군사·경호» 는 전형방법에 «학생부 100» 이라고만 적혀 있어도 체력검정을 보는
+       학과라서 따로 살려 둔다 — 119개 전형이 여기에 해당한다.)
+     이 규칙으로 실기 날짜가 든 15,318줄 가운데 13,098줄(85%)이 걸러진다.
+     면접·논술 칸은 이런 일이 거의 없어(각각 3% 미만) 손대지 않는다 —
+     거기까지 걸렀다가는 멀쩡한 고사일을 잃는다. */
+  var PRAC_J = /실기|실적|예체능|특기자|체육|예능/;
+  var PRAC_W = /실기|실적|체력|적성/;
+  function hasPractical(r) {
+    if (!r || r[C.K] < 0) return false;
+    var t = T[r[C.T]] || '';
+    if (t === '실기' || t === '실기실습') return true;
+    if (PRAC_J.test(J[r[C.J]] || '')) return true;
+    if (r[C.W] >= 0 && PRAC_W.test(W[r[C.W]] || '')) return true;
+    return /실기|군사|경호/.test(DP[r[C.D]] || '');
+  }
+  /* 위 판별을 거친 실기 고사일. 줄이 있어야 하므로 색인이 아니라 줄을 받는다. */
+  function practicalText(r) { return hasPractical(r) ? examText(r[C.K]) : ''; }
+
   var HASDATE = /\d{4}\/\d{1,2}\/\d{1,2}/;
   /* "종목 ; 날짜" 처럼 날짜 없는 조각과 있는 조각이 섞여 있을 때만 날짜 조각을 앞으로.
      조각이 전부 날짜거나 전부 날짜가 아니면 원래 순서 그대로 둔다(자료 순서를 임의로 바꾸지 않음). */
@@ -5365,18 +5393,17 @@ window.SUSI_DATES = function (text) {
      들어 있는 것만 이름표를 달아 보여 준다. */
   function dayMerged(r) {
     var parts = [];
-    [[C.F, '면접'], [C.L, '논술'], [C.K, '실기']].forEach(function (x) {
-      var v = examText(r[x[0]]);
-      if (v) parts.push('<b class="dk">' + x[1] + '</b> ' + reorderExam(v).map(esc).join('<br>'));
-    });
+    [['면접', examText(r[C.F])], ['논술', examText(r[C.L])], ['실기', practicalText(r)]]
+      .forEach(function (x) {
+        var v = x[1];
+        if (v) parts.push('<b class="dk">' + x[0] + '</b> ' + reorderExam(v).map(esc).join('<br>'));
+      });
     if (!parts.length) return '<span class="dash">—</span>';
     return lc(parts.join('<br>'), 'day');
   }
-  /* 고사일에 걸린 날을 모두 돌려준다 — 기간으로 적힌 고사일(2026/10/14~10/15)은
+  /* 직접 입력 카드는 면접·논술 값이 학생이 그대로 적은 텍스트다(자료 색인이 아니다).
+     고사일에 걸린 날을 모두 돌려준다 — 기간으로 적힌 고사일(2026/10/14~10/15)은
      그 사이 날까지 다 나온다. 「같은 날 둘 이상」 겹침 안내가 이 값을 쓴다. */
-  function examDays(i) { return window.SUSI_DATES(examText(i)); }
-  /* examDays() 는 자료 문자열 색인(정수)을 받는다 — 직접 입력 카드는 면접·논술 값이
-     학생이 그대로 적은 텍스트라서(색인이 아니다) 문자열을 바로 받는 판이 따로 필요하다. */
   function examDaysText(v) { return window.SUSI_DATES(v); }
   function isNoMin(t) { return /^(미반영|없음|미적용|해당없음|-)$/.test(String(t).trim()) || /최저학력기준\s*없음/.test(t); }
   function minCell(mi) {
@@ -6031,7 +6058,7 @@ window.SUSI_DATES = function (text) {
       var dates = [];
       if (examText(r[C.F])) dates.push('면접 ' + examText(r[C.F]));
       if (examText(r[C.L])) dates.push('논술 ' + examText(r[C.L]));
-      if (examText(r[C.K])) dates.push('실기 ' + examText(r[C.K]));
+      if (practicalText(r)) dates.push('실기 ' + practicalText(r));
       facts = '<div class="facts">' +
         '<div class="frow"><span class="fk">모집인원</span><span class="fv">' + (r[C.N] || '—') + '명 · 작년 경쟁률 ' + (nf(r[C.C]) || '—') + '</span></div>' +
         '<div class="frow"><span class="fk">50 / 70%컷</span><span class="fv">' + (nf(r[C.A]) || '—') + ' / ' + (nf(r[C.B]) || '—') +
@@ -6178,11 +6205,12 @@ window.SUSI_DATES = function (text) {
         var ev = effVerdict(c, verdict(r, c)); cnt[ev ? ev.v : 'none']++;
         var uniName = r ? U[r[C.U]] : c.uName;
         if (r) {
-          [[C.F, '면접'], [C.L, '논술'], [C.K, '실기']].forEach(function (p) {
-            examDays(r[p[0]]).forEach(function (k) {
-              (dates[k] = dates[k] || []).push(uniName + ' ' + p[1]);
+          [['면접', examText(r[C.F])], ['논술', examText(r[C.L])], ['실기', practicalText(r)]]
+            .forEach(function (p) {
+              window.SUSI_DATES(p[1]).forEach(function (k) {
+                (dates[k] = dates[k] || []).push(uniName + ' ' + p[0]);
+              });
             });
-          });
         } else {
           // 직접 입력 카드는 학생이 적은 면접·논술 날짜를 그대로 훑는다 (자료 색인이 아니라 문자열이다)
           [[c.interview, '면접'], [c.essay, '논술']].forEach(function (p) {
@@ -6407,7 +6435,7 @@ window.SUSI_DATES = function (text) {
           c.step1 || '',
           (c.interview !== null && c.interview !== undefined) ? c.interview : (r ? examText(r[C.F]) : ''),
           (c.essay !== null && c.essay !== undefined) ? c.essay : (r ? examText(r[C.L]) : ''),
-          (r && r[C.K] >= 0) ? DP[r[C.K]] : '',
+          r ? practicalText(r) : '',
           c.final || '', c.passFail ? PF_LABEL[c.passFail] : '', c.fillNo || '',
           c.memo || ''].map(clean));
       });
@@ -7425,7 +7453,7 @@ window.SUSI_DATES = function (text) {
         return { n: r[C.N] || null, rate: r[C.C] || null, cut50: r[C.A] || null, cut70: r[C.B] || null,
                  min: r[C.M] >= 0 ? M[r[C.M]] : '', region: r[C.R] >= 0 ? R[r[C.R]] : '',
                  isCol: r[C.S] === 1,
-                 interview: examText(r[C.F]), essay: examText(r[C.L]), practical: examText(r[C.K]) };
+                 interview: examText(r[C.F]), essay: examText(r[C.L]), practical: practicalText(r) };
       }
     }
     return null;
