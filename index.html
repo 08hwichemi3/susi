@@ -272,7 +272,7 @@ td.jh{color:var(--ink-2)}
 #v-plan[data-only="tech"] .plansec.pi-tech,
 #v-plan[data-only="cand"] .plansec.pi-cand,
 #v-plan[data-only="college"] .plansec.pi-college{display:block}
-/* 결과 칸(합불·1단계·면접·논술·최종…) 접기 — 대학을 고르는 동안에는 안 쓰는 칸이라
+/* 결과 칸(합불·1단계·면접·논술·최초 발표…) 접기 — 대학을 고르는 동안에는 안 쓰는 칸이라
    접어 두면 카드 키가 절반쯤 줄어 한 화면에 훨씬 많이 들어온다 */
 #v-plan.foldres .card .results{display:none}
 .pib.fold[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#fff}
@@ -2662,10 +2662,10 @@ window.SUSI_DATES = function (text) {
   function planAoa(apps) {
     var byId = {};
     STUDENTS.forEach(function (st) { byId[st.id] = st; });
-    /* 칸 차례는 화면(교사용 표)과 같게 둔다 — 1단계 → 면접·실기·논술 → 최종 → 합불 → 충원.
+    /* 칸 차례는 화면(교사용 표)과 같게 둔다 — 1단계 → 면접·실기·논술 → 최초 발표 → 합불 → 충원.
        다시 올릴 때는 머리글 '이름'으로 찾으므로 차례가 바뀌어도 읽는 데는 문제가 없다. */
     var aoa = [['학번', '반', '번호', '이름', '구분', '칸', '대학', '전형유형', '전형명', '학과',
-                '대학별내신', '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '최종', '합불', '충원합격', '메모']];
+                '대학별내신', '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '최초 발표', '합불', '충원합격', '메모']];
     (apps || []).slice().sort(function (a, b) {
       var sa = byId[a.student_id], sb2 = byId[b.student_id];
       return ((sa && sa.student_no) || 0) - ((sb2 && sb2.student_no) || 0)
@@ -2944,11 +2944,11 @@ window.SUSI_DATES = function (text) {
     var order = { main: 0, tech: 1, cand: 2, college: 3 };
     apps.sort(function (a, b) { return (order[a.area] - order[b.area]) || (a.slot - b.slot); });
     h += '<p class="hint">회색 칸은 <b>자료에서 자동으로</b> 옵니다. 흰 칸은 <b>직접 넣는 곳</b>이고, 고치면 바로 저장됩니다. ' +
-      '<b>면접 · 논술</b>과 <b>최종</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
+      '<b>면접 · 논술</b>과 <b>최초 발표</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
       '칸을 떠날 때 <b>2026/11/27</b> 형식으로 자동으로 맞춰집니다. 달력에는 면접 · 논술 · 실기 날짜가 표시됩니다.</p>';
     h += '<div class="tblwrap"><table class="plantbl edit"><thead><tr>' +
       '<th>구분</th><th>대학 · 전형 · 학과</th><th>70%컷</th><th>내신</th><th>판정</th>' +
-      '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>최종</th><th>합불</th><th>충원</th>' +
+      '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>최초 발표</th><th>합불</th><th>충원</th>' +
       '</tr></thead><tbody>';
     apps.forEach(function (a) {
       var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name);
@@ -2988,8 +2988,8 @@ window.SUSI_DATES = function (text) {
           '<input type="text" data-f="essay" value="' + esc(a.essay != null ? a.essay : eAuto) +
             '" placeholder="논술' + (eAuto ? '' : ' 없음') + '">' +
         '</td>' +
-        '<td data-label="최종"><input type="text" data-f="final_date" value="' +
-          esc(a.final_date || '') + '" placeholder="최종 발표일"></td>' +
+        '<td data-label="최초 발표"><input type="text" data-f="final_date" value="' +
+          esc(a.final_date || '') + '" placeholder="최초 발표일"></td>' +
         // 합불을 먼저 정하고, 그 결과가 불합격·대기일 때 충원 번호를 적는 순서다.
         '<td data-label="합불"><select data-f="result">' +
             '<option value="">미정</option>' +
@@ -4666,7 +4666,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-03.2';
+  var BUILD_ID = '2026-09-03.3';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -6132,8 +6132,9 @@ window.SUSI_DATES = function (text) {
         '<div class="rrow"><label>논술<input type="text" data-f="essay" value="' + esc(eVal) + '" placeholder="예: 1204 → 2026/12/04"></label>' +
         ((c.essay !== null && c.essay !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="essay" title="자동값으로 되돌리기">⟲</button>' : '') +
         '</div>' +
-        // 전형 단계의 마지막 칸. 자료에 없는 값이라 늘 직접 적는다(1단계 → 면접·논술 → 최종).
-        '<div class="rrow"><label>최종 발표<input type="text" data-f="final" value="' + esc(c.final || '') +
+        /* 합격자 «최초» 발표일. 「최종 발표」 라고 적었더니 충원(추가합격) 마지막 발표로
+           오해하는 학생이 많아 이름을 바꿨다 — 담기는 값은 그대로다(final). */
+        '<div class="rrow"><label>최초 발표<input type="text" data-f="final" value="' + esc(c.final || '') +
         '" placeholder="예: 1215 → 2026/12/15"></label></div>' +
         '</div>';
     }
@@ -6439,7 +6440,7 @@ window.SUSI_DATES = function (text) {
   function planRows() {
     var head = ['구분', '번호', '대학', '전형유형', '전형명', '학과', '본인내신', '대학별내신', '50%컷', '70%컷',
       '판정(자동)', '판정(수동)', '모집인원', '작년경쟁률', '수능최저', '1단계', '면접', '논술', '실기',
-      '최종', '합불', '충원합격', '메모'];
+      '최초 발표', '합불', '충원합격', '메모'];
     var out = [head];
     ['main', 'tech', 'cand', 'college'].forEach(function (area) {
       plan[area].forEach(function (c, ix) {
@@ -6524,6 +6525,60 @@ window.SUSI_DATES = function (text) {
       .replace(new RegExp('(\\$?[A-Z]{1,2})' + from + '\\b', 'g'), '$1' + to);
     var end = m.index + m[0].length;
     return xml.slice(0, end) + blk + xml.slice(end);
+  }
+
+  /* ★ 셀 안에서 글씨가 저절로 작아지는 것을 막는다.
+     양식의 학과 칸(E열)은 shrinkToFit="1" 로 잡혀 있어서, 「미술학전공(한국화,서양화,
+     입체조형)」 처럼 이름이 길면 엑셀이 글씨를 칸에 맞춰 줄여 버렸다 — 읽을 수 없을
+     만큼 작아진다는 지적을 받았다. 모든 칸을 «자동 줄바꿈 켜기 + 글씨 줄이기 끄기» 로
+     바꾼다. 글씨 크기는 그대로 두고 줄이 늘어나는 쪽을 택한다. */
+  function wrapAllStyles(xml) {
+    return xml.replace(/(<cellXfs\b[^>]*>)([\s\S]*?)(<\/cellXfs>)/,
+      function (all, open, body, close) {
+        return open + body.replace(/<xf\b([^>]*?)(?:\/>|>([\s\S]*?)<\/xf>)/g,
+          function (whole, attrs, inner) {
+            var a = attrs.replace(/\s+applyAlignment="[^"]*"/g, '') + ' applyAlignment="1"';
+            var kids = inner || '';
+            var al = /<alignment\b([^>]*?)\/>/.exec(kids);
+            var aa = (al ? al[1] : '').replace(/\s+(wrapText|shrinkToFit)="[^"]*"/g, '') +
+              ' wrapText="1" shrinkToFit="0"';
+            var newAl = '<alignment' + aa + '/>';
+            kids = al ? kids.replace(al[0], newAl) : (kids + newAl);
+            return '<xf' + a + '>' + kids + '</xf>';
+          }) + close;
+      });
+  }
+
+  /* 자동 줄바꿈을 켜면 줄이 늘어나는데, 양식의 지원 줄은 높이가 90pt 로 못박혀 있어
+     (customHeight="1") 넘치는 줄이 잘려 보인다. 그래서 실제로 적어 넣은 글자로
+     «몇 줄이 되는지» 를 어림잡아 그 줄의 높이를 키운다. 90pt 보다 줄이지는 않는다 —
+     양식의 칸 크기가 들쭉날쭉해 보이지 않게. */
+  var TPL_W = { A: 3.71, B: 5.43, C: 14.71, D: 19.29, E: 18.71, F: 15.71, G: 15.71, H: 15.71,
+    I: 8, J: 19.14, K: 22.71, L: 33.57, M: 16.57, N: 16.57, O: 16.57, P: 16.57, Q: 16.57,
+    R: 16.57, S: 9, T: 9, U: 9, V: 9 };
+  // 엑셀의 칸 너비는 '0' 글자 수로 센다 — 한글은 그 두 배로 잡는다
+  function textUnits(v) {
+    var t = String(v == null ? '' : v), n = 0;
+    for (var i = 0; i < t.length; i++) n += t.charCodeAt(i) > 0x2000 ? 2 : 1;
+    return n;
+  }
+  function rowHeightFor(vals) {
+    var lines = 1;
+    for (var col in vals) {
+      if (!Object.prototype.hasOwnProperty.call(vals, col)) continue;
+      var w = TPL_W[col]; if (!w) continue;
+      var u = textUnits(vals[col]); if (!u) continue;
+      // 낱말 사이에서 접히느라 한 줄을 다 못 채우는 몫을 조금 더 본다
+      var n = Math.ceil(u / Math.max(w - 1, 4) * 1.12);
+      if (n > lines) lines = n;
+    }
+    return Math.min(409, Math.max(90, lines * 15 + 6));   // 409pt 는 엑셀의 한 줄 최대 높이
+  }
+  function setRowHeight(xml, r, h) {
+    return xml.replace(new RegExp('(<row r="' + r + '")([^>]*?)>'), function (all, head, attrs) {
+      var a = attrs.replace(/\s+ht="[^"]*"/g, '').replace(/\s+customHeight="[^"]*"/g, '');
+      return head + a + ' ht="' + h + '" customHeight="1">';
+    });
   }
 
   /* ── 아주 작은 zip 쓰기 (압축 안 함) ── */
@@ -6626,31 +6681,42 @@ window.SUSI_DATES = function (text) {
     picks.forEach(function (p, i) {
       var r = 13 + i, c = p.card || {}, row = p.r;
       var vd = verdict(row, c), ev = effVerdict(c, vd);
+      var tn = row ? T[row[C.T]] : null;
       // row 가 없으면(목록에 없는 대학을 직접 입력한 카드) 자료에서만 나오는 컷·모집인원
       // 같은 칸은 비우고, 학생이 적어 넣은 이름만 채운다.
-      x1 = putCell(x1, 'B' + r, i + 1);
-      x1 = putCell(x1, 'C' + r, row ? U[row[C.U]] : (c.uName || ''));
-      x1 = putCell(x1, 'D' + r, row ? J[row[C.J]] : (c.jName || ''));
-      x1 = putCell(x1, 'E' + r, row ? DP[row[C.D]] : (c.dName || ''));
-      x1 = setCell(x1, 'F' + r, vd ? vd.mine : '');
-      x1 = setCell(x1, 'G' + r, row ? nf(row[C.A]) : '');
-      x1 = setCell(x1, 'H' + r, row ? nf(row[C.B]) : '');
-      var tn = row ? T[row[C.T]] : null;
-      x1 = putCell(x1, 'I' + r, row ? (TYPE_SHORT[TYPEFULL[tn] || tn] || TYPE_SHORT[tn] || '') : (c.tName || ''));
-      x1 = putCell(x1, 'J' + r, c.examNo || '');
-      x1 = setCell(x1, 'K' + r, (row && row[C.M] >= 0) ? (isNoMin(M[row[C.M]]) ? '[X] ' : '[O] ') + M[row[C.M]] : '');
-      x1 = setCell(x1, 'L' + r, (row && row[C.W] >= 0) ? W[row[C.W]] : '');
-      x1 = putCell(x1, 'M' + r, c.step1 || '');
-      x1 = setCell(x1, 'N' + r, (c.interview !== null && c.interview !== undefined) ? c.interview : (row ? examText(row[C.F]) : ''));
-      x1 = setCell(x1, 'O' + r, c.final || '');            // O 최종(발표일)
-      x1 = setCell(x1, 'P' + r, ev ? VN[ev.v] : '');
-      x1 = setCell(x1, 'Q' + r, row ? (row[C.N] || '') : '');
-      x1 = setCell(x1, 'R' + r, row ? nf(row[C.C]) : '');
-      x1 = setCell(x1, 'S' + r, AREA_LABEL[p.area]);
-      x1 = putCell(x1, 'T' + r, c.fillNo || '');
-      x1 = putCell(x1, 'U' + r, c.passFail ? PF_LABEL[c.passFail] : '');
-      x1 = setCell(x1, 'V' + r, c.verdictOverride ? VN[c.verdictOverride] : '');
+      var vals = {
+        B: i + 1,
+        C: row ? U[row[C.U]] : (c.uName || ''),
+        D: row ? J[row[C.J]] : (c.jName || ''),
+        E: row ? DP[row[C.D]] : (c.dName || ''),
+        F: vd ? vd.mine : '',
+        G: row ? nf(row[C.A]) : '',
+        H: row ? nf(row[C.B]) : '',
+        I: row ? (TYPE_SHORT[TYPEFULL[tn] || tn] || TYPE_SHORT[tn] || '') : (c.tName || ''),
+        J: c.examNo || '',
+        K: (row && row[C.M] >= 0) ? (isNoMin(M[row[C.M]]) ? '[X] ' : '[O] ') + M[row[C.M]] : '',
+        L: (row && row[C.W] >= 0) ? W[row[C.W]] : '',
+        M: c.step1 || '',
+        N: (c.interview !== null && c.interview !== undefined) ? c.interview : (row ? examText(row[C.F]) : ''),
+        O: c.final || '',                                  // O 최초 발표일
+        P: ev ? VN[ev.v] : '',
+        Q: row ? (row[C.N] || '') : '',
+        R: row ? nf(row[C.C]) : '',
+        S: AREA_LABEL[p.area],
+        T: c.fillNo || '',
+        U: c.passFail ? PF_LABEL[c.passFail] : '',
+        V: c.verdictOverride ? VN[c.verdictOverride] : ''
+      };
+      // 값이 늘 있는 칸은 putCell(원래 서식 유지), 비어 있을 수 있는 칸은 setCell(비우기)
+      ['B', 'C', 'D', 'E', 'I', 'J', 'M', 'T', 'U'].forEach(function (col) {
+        x1 = putCell(x1, col + r, vals[col]);
+      });
+      ['F', 'G', 'H', 'K', 'L', 'N', 'O', 'P', 'Q', 'R', 'S', 'V'].forEach(function (col) {
+        x1 = setCell(x1, col + r, vals[col]);
+      });
       x1 = clearCell(x1, 'W' + r);        // 숨은 '전형데이터' 시트를 찾던 계산용 칸 — 사람에겐 필요 없다
+      // 자동 줄바꿈으로 늘어난 글이 잘리지 않게 이 줄의 높이를 맞춰 준다
+      x1 = setRowHeight(x1, r, rowHeightFor(vals));
     });
     // 다 못 채운 나머지 줄도 F~W 를 통째로 비운다 (공유 수식 원본이 없어져 깨져 보이는 것 방지)
     for (var un = 13 + picks.length; un <= last; un++) {
@@ -6686,6 +6752,7 @@ window.SUSI_DATES = function (text) {
       else if (k === 'xl/workbook.xml') v = utf8(wb);
       else if (k === 'xl/_rels/workbook.xml.rels') v = utf8(wbrels);
       else if (k === '[Content_Types].xml') v = utf8(ct);
+      else if (k === 'xl/styles.xml') v = utf8(wrapAllStyles(tpl[k][1]));
       else v = (tpl[k][0] === 't' ? utf8(tpl[k][1]) : b64bytes(tpl[k][1]));
       files.push({ name: k, data: v });
     }
@@ -6698,7 +6765,7 @@ window.SUSI_DATES = function (text) {
        그 양식인지 판단하고, 13번째 줄부터 읽는다. 한 줄만 밀려도 못 읽는다.
        (그래서 12번째 줄은 원본의 '예시' 자리라 비워 둔다) */
   var FORM_HEAD = ['대학', '전형명', '학과', '본인내신', '최초합격컷', '70%컷', '전형유형', '수험번호',
-    '수능최저', '전형요소(단계전형 등)', '1단계', '면접, 실기, 논술', '최종', '상향/적정/하향',
+    '수능최저', '전형요소(단계전형 등)', '1단계', '면접, 실기, 논술', '최초 발표', '상향/적정/하향',
     '현인원(+/-)', '작년경쟁률', '구분', '충원합격', '합불', '판정(직접지정)'];
   var FORM_COLS = [4, 6, 15, 20, 19, 9, 11, 9, 7, 12, 24, 30, 16, 18, 12, 15, 12, 11, 8, 10, 8, 12]
     .map(function (w) { return { wch: w }; });
@@ -6777,7 +6844,7 @@ window.SUSI_DATES = function (text) {
     put(row, 11, (r && r[C.W] >= 0) ? W[r[C.W]] : '');                     // L 전형요소
     put(row, 12, c.step1 || '');                                          // M 1단계
     put(row, 13, (c.interview !== null && c.interview !== undefined) ? c.interview : (r ? examText(r[C.F]) : '')); // N 면접·실기·논술
-    put(row, 14, c.final || '');                                          // O 최종(발표일)
+    put(row, 14, c.final || '');                                          // O 최초 발표일
     put(row, 15, vd ? VN[vd.v] : '');                                     // P 상향/적정/하향(자동)
     put(row, 16, r ? (r[C.N] || '') : '');                                // Q 현인원(모집인원)
     put(row, 17, r ? nf(r[C.C]) : '');                                    // R 작년경쟁률
@@ -7009,7 +7076,8 @@ window.SUSI_DATES = function (text) {
         area: areaOf(g('구분')), uName: g('대학'), tName: g('전형유형'), jName: g('전형명'), dName: g('학과'),
         verdictOverride: verdictKeyOf(g('판정(수동)')), step1: g('1단계'),
         manualGrade: g('대학별내신'),
-        interview: g('면접'), essay: g('논술'), final: g('최종'),
+        // 머리글을 「최종」 에서 「최초 발표」 로 바꿨다 — 예전에 내려받은 파일도 계속 읽는다
+        interview: g('면접'), essay: g('논술'), final: g('최초 발표') || g('최종'),
         fillNo: g('충원합격'), passFail: pfOf(g('합불')), memo: g('메모')
       });
     }
@@ -7029,7 +7097,7 @@ window.SUSI_DATES = function (text) {
         jName: cellStr(ws, 'D' + n), dName: dName,
         verdictOverride: verdictKeyOf(cellStr(ws, 'V' + n)), step1: cellStr(ws, 'M' + n),
         interview: cellStr(ws, 'N' + n), essay: '', // 계획서는 면접·실기·논술이 한 칸이라 면접으로 받는다
-        final: cellStr(ws, 'O' + n),                // O 최종(발표일) — 예전에는 메모로 흘려보냈다
+        final: cellStr(ws, 'O' + n),                // O 최초 발표일 — 예전에는 메모로 흘려보냈다
         fillNo: cellStr(ws, 'T' + n), passFail: pfOf(cellStr(ws, 'U' + n)), memo: memo.join(' · ')
       });
     }
