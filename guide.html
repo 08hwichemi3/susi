@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>수시 지원 계획서 — 학생 사용 안내</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+<style>
+/* 본체(index.html)와 같은 색·글꼴을 씁니다. 이 파일만 열어도 되도록 따로 담았습니다. */
+:root{
+  --ground:#FBFAF7; --surface:#FFFFFF; --surface-2:#F4F2EC;
+  --line:#E4E1D8; --line-2:#D3CFC3;
+  --ink:#17201C; --ink-2:#4A544E; --ink-3:#7C857E;
+  --accent:#1F5D4C; --accent-ink:#FFFFFF; --accent-soft:#DFEAE4; --accent-line:#A9C7BB;
+  --amber:#8A5A0E; --amber-soft:#F6EBD6; --amber-line:#E0C48A;
+  --rose:#8C2F39; --rose-soft:#F6E2E3; --rose-line:#E0AFB4;
+  --blue:#25506E; --blue-soft:#DEE8F0; --blue-line:#A9C3D6;
+  --serif:"Gowun Batang",serif;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#12160F; --surface:#191E19; --surface-2:#212822;
+  --line:#2C332D; --line-2:#3A423B;
+  --ink:#E9EAE3; --ink-2:#AEB5AC; --ink-3:#7E867E;
+  --accent:#68B79B; --accent-ink:#0E1512; --accent-soft:#1D2A25; --accent-line:#2F4A40;
+  --amber:#D9A441; --amber-soft:#2A2318; --amber-line:#4A3C1E;
+  --rose:#D98189; --rose-soft:#2C1B1D; --rose-line:#4C2B2F;
+  --blue:#8FB8D6; --blue-soft:#1B2630; --blue-line:#2C3F4E;
+}}
+:root[data-theme="dark"]{
+  --ground:#12160F; --surface:#191E19; --surface-2:#212822;
+  --line:#2C332D; --line-2:#3A423B;
+  --ink:#E9EAE3; --ink-2:#AEB5AC; --ink-3:#7E867E;
+  --accent:#68B79B; --accent-ink:#0E1512; --accent-soft:#1D2A25; --accent-line:#2F4A40;
+  --amber:#D9A441; --amber-soft:#2A2318; --amber-line:#4A3C1E;
+  --rose:#D98189; --rose-soft:#2C1B1D; --rose-line:#4C2B2F;
+  --blue:#8FB8D6; --blue-soft:#1B2630; --blue-line:#2C3F4E;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+  font-size:15px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+
+.page{max-width:900px;margin:0 auto;padding:0 20px 80px}
+
+/* ── 머리 ── */
+.head{padding:44px 0 26px;border-bottom:1px solid var(--line)}
+.kicker{font-size:12px;letter-spacing:.08em;color:var(--accent);font-weight:600;margin:0 0 10px}
+h1{font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.3;margin:0 0 12px;letter-spacing:-.01em}
+.lede{margin:0;color:var(--ink-2);font-size:16px;max-width:60ch}
+.headbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+
+a.btn,button.btn{display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border:1px solid var(--accent-line);border-radius:8px;
+  background:var(--accent-soft);color:var(--accent);
+  font-family:inherit;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer}
+a.btn:hover,button.btn:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+a.btn.solid{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* ── 목차 ── */
+.toc{margin:26px 0 0;padding:18px 20px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r)}
+.toc h2{margin:0 0 10px;font-size:12px;letter-spacing:.06em;color:var(--ink-3);font-weight:600}
+.toc ol{margin:0;padding:0;list-style:none;display:grid;gap:4px 22px;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));counter-reset:toc}
+.toc li{counter-increment:toc;font-size:14px}
+.toc li::before{content:counter(toc) ". ";color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid transparent}
+.toc a:hover{color:var(--accent);border-bottom-color:var(--accent-line)}
+
+/* ── 절 ── */
+section{padding-top:40px;scroll-margin-top:16px}
+h2.sec{font-family:var(--serif);font-weight:700;font-size:23px;margin:0 0 4px;
+  display:flex;align-items:baseline;gap:11px;letter-spacing:-.01em}
+h2.sec .n{flex:0 0 auto;width:28px;height:28px;border-radius:8px;
+  background:var(--accent);color:var(--accent-ink);
+  font-family:"IBM Plex Sans KR",sans-serif;font-size:14px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;transform:translateY(-2px)}
+.sub{margin:0 0 18px 39px;color:var(--ink-3);font-size:13.5px}
+h3{font-size:16px;margin:26px 0 8px;font-weight:600}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:22px}
+li{margin:4px 0}
+b{font-weight:600}
+code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+
+/* 화면 속 단추·글자를 가리킬 때 */
+.ui{display:inline-block;padding:1px 7px;border:1px solid var(--accent-line);border-radius:6px;
+  background:var(--accent-soft);color:var(--accent);font-size:.88em;font-weight:600;
+  white-space:nowrap;line-height:1.6}
+
+/* ── 단계 ── */
+.steps{list-style:none;margin:0 0 14px;padding:0;counter-reset:st}
+.steps>li{counter-increment:st;position:relative;padding:0 0 0 38px;margin:0 0 14px}
+.steps>li::before{content:counter(st);position:absolute;left:0;top:1px;
+  width:25px;height:25px;border-radius:50%;background:var(--surface-2);
+  border:1px solid var(--line-2);color:var(--ink-2);
+  font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps>li>b{display:block}
+.steps>li p{margin:2px 0 0;color:var(--ink-2);font-size:14px}
+
+/* ── 표 ── */
+.tw{overflow-x:auto;margin:0 0 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:460px}
+th,td{padding:10px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{background:var(--surface-2);font-size:12px;letter-spacing:.03em;color:var(--ink-3);font-weight:600;
+  white-space:nowrap}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+tbody th{font-weight:600;white-space:nowrap;color:var(--ink)}
+td{color:var(--ink-2)}
+.nw{white-space:nowrap}
+
+/* ── 알림 상자 ── */
+.note{margin:0 0 14px;padding:13px 16px;border-radius:var(--r);
+  border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink-2)}
+.note>:last-child{margin-bottom:0}
+.note.tip{background:var(--accent-soft);border-color:var(--accent-line)}
+.note.tip b{color:var(--accent)}
+.note.warn{background:var(--amber-soft);border-color:var(--amber-line)}
+.note.warn b{color:var(--amber)}
+.note.stop{background:var(--rose-soft);border-color:var(--rose-line)}
+.note.stop b{color:var(--rose)}
+.note .lbl{display:block;font-size:11.5px;letter-spacing:.06em;font-weight:700;margin-bottom:5px;opacity:.9}
+
+/* ── 판정 세 칸 ── */
+.verd{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:0 0 14px}
+.verd>div{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:13px 15px}
+.verd .t{font-weight:700;font-size:14.5px;margin-bottom:3px}
+.verd .d{font-size:13.5px;color:var(--ink-2)}
+.verd .up .t{color:var(--rose)}
+.verd .fit .t{color:var(--accent)}
+.verd .down .t{color:var(--blue)}
+
+/* ── 문답 ── */
+.qa{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin:0 0 10px}
+.qa summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:14.5px;list-style:none}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::before{content:"＋";color:var(--accent);font-weight:700;margin-right:8px}
+.qa[open] summary::before{content:"−"}
+.qa .body{padding:0 16px 14px 38px;font-size:14px;color:var(--ink-2)}
+.qa .body>:last-child{margin-bottom:0}
+
+/* ── 꼬리 ── */
+.foot{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--ink-3)}
+.foot a{color:var(--accent)}
+
+@media(max-width:640px){
+  body{font-size:14.5px}
+  h1{font-size:27px}
+  h2.sec{font-size:20px}
+  .sub{margin-left:0}
+  .page{padding:0 16px 60px}
+  /* 좁은 화면에서는 표가 옆으로 밀려나지 않고 글자가 접히게 둔다 —
+     손가락으로 표만 따로 밀어야 하는 것보다 그냥 읽히는 편이 낫다. */
+  table{min-width:0;font-size:13.5px}
+  th,td{padding:8px 9px}
+  tbody th{white-space:normal}
+  thead th{white-space:normal}
+}
+
+@media print{
+  @page{size:A4 portrait;margin:15mm}
+  body{background:#fff;color:#000;font-size:10.5pt;line-height:1.55}
+  .page{max-width:none;padding:0}
+  .headbtns,.toc{display:none}
+  .head{padding-top:0}
+  h1{font-size:21pt}
+  section{padding-top:16pt;break-inside:auto}
+  h2.sec,h3{break-after:avoid}
+  .note,.tw,.verd>div,.qa{break-inside:avoid}
+  .qa .body{display:block !important}
+  .qa summary::before{content:"Q. "}
+  a{color:#000;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="head">
+  <p class="kicker">학생용</p>
+  <h1>수시 지원 계획서 사용 안내</h1>
+  <p class="lede">전국의 수시 전형을 찾아보고, 지원할 곳을 담아 계획을 세우는 곳입니다.
+    담아 둔 계획은 담임 선생님도 함께 봅니다. 처음이라면 이 안내를 위에서부터 한 번 읽어 보세요.
+    다 읽는 데 5분이면 충분합니다.</p>
+  <div class="headbtns">
+    <a class="btn solid" href="index.html">계획서 열기</a>
+    <button type="button" class="btn" onclick="window.print()">인쇄하기</button>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>차례</h2>
+  <ol>
+    <li><a href="#login">로그인</a></li>
+    <li><a href="#screens">화면은 두 개입니다</a></li>
+    <li><a href="#find">전형 찾기</a></li>
+    <li><a href="#table">표 읽는 법</a></li>
+    <li><a href="#grade">내신 넣기와 판정</a></li>
+    <li><a href="#slots">네 가지 칸</a></li>
+    <li><a href="#card">카드 다루기</a></li>
+    <li><a href="#save">저장</a></li>
+    <li><a href="#faq">자주 묻는 것</a></li>
+  </ol>
+</nav>
+
+<!-- ════════ 1 ════════ -->
+<section id="login">
+  <h2 class="sec"><span class="n">1</span>로그인</h2>
+  <p class="sub">따로 정한 비밀번호는 없습니다. 늘 아래 세 가지로 들어옵니다.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>넣는 칸</th><th>형식</th><th>보기</th></tr></thead>
+    <tbody>
+      <tr><th>학번</th><td>숫자 5자리 — 학년 1자리, 반 2자리, 번호 2자리</td><td><code>30101</code> = 3학년 1반 1번</td></tr>
+      <tr><th>생년월일</th><td>숫자 8자리</td><td>2008년 1월 1일 → <code>20080101</code></td></tr>
+      <tr><th>전화번호</th><td>본인 휴대전화. 하이픈(-)은 넣어도 되고 빼도 됩니다</td><td><code>01012345678</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note tip">
+    <span class="lbl">처음 들어올 때가 중요합니다</span>
+    <p>선생님은 학번과 이름만 등록해 둡니다. <b>생년월일과 전화번호는 학생이 처음 로그인할 때 직접 넣는 값</b>이고,
+      그때 넣은 값이 그대로 다음부터의 열쇠가 됩니다. 천천히 확인하고 넣으세요.</p>
+  </div>
+
+  <h3>들어가지지 않을 때</h3>
+  <div class="tw"><table>
+    <thead><tr><th>이런 화면이 뜨면</th><th>이렇게 해 보세요</th></tr></thead>
+    <tbody>
+      <tr><th>학번을 못 찾습니다</th>
+        <td>학번 5자리를 다시 확인하세요. 그래도 안 되면 아직 명부에 등록되지 않은 것이니 담임 선생님께 말씀드리세요.</td></tr>
+      <tr><th>생년월일·전화번호가 다릅니다</th>
+        <td>처음 로그인할 때 넣었던 값과 똑같아야 합니다. 전화번호를 바꿨거나 그때 잘못 넣었다면,
+          담임 선생님께 <b>등록 되돌리기</b>를 요청하세요. 처음부터 다시 넣을 수 있습니다.</td></tr>
+      <tr><th>아무 것도 눌리지 않습니다</th>
+        <td>인터넷 연결을 확인하고 새로고침하세요.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ════════ 2 ════════ -->
+<section id="screens">
+  <h2 class="sec"><span class="n">2</span>화면은 두 개입니다</h2>
+  <p class="sub">위쪽 탭으로 오갑니다. 이 둘만 알면 됩니다.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>탭</th><th>하는 일</th></tr></thead>
+    <tbody>
+      <tr><th><span class="ui">전형 찾기</span></th>
+        <td>전국의 수시 전형을 조건으로 좁혀 가며 찾습니다. 마음에 드는 줄을 <span class="ui">담기</span> 로 계획에 넣습니다.</td></tr>
+      <tr><th><span class="ui">전형 관리</span></th>
+        <td>담아 둔 곳을 카드로 늘어놓고 계획을 세웁니다. 내신을 넣으면 상향·적정·하향을 계산해 줍니다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>오른쪽 위 <span class="ui">로그아웃</span> 으로 나갑니다. 학교 컴퓨터나 공용 기기에서 썼다면 반드시 눌러 주세요.</p>
+</section>
+
+<!-- ════════ 3 ════════ -->
+<section id="find">
+  <h2 class="sec"><span class="n">3</span>전형 찾기</h2>
+  <p class="sub">왼쪽 조건을 위에서부터 좁혀 갑니다. 하나를 고를 때마다 아래 목록과 오른쪽 결과가 함께 줄어듭니다.</p>
+
+  <ol class="steps">
+    <li><b>구분</b><p>일반대인지 전문대인지 고릅니다.</p></li>
+    <li><b>지역</b><p>시·도를 고릅니다. 여러 곳을 함께 고를 수 있습니다. 고른 지역의 대학만 아래 <b>대학</b> 목록에 남습니다.</p></li>
+    <li><b>대학</b><p>이름 일부만 쳐도 찾아집니다. <code>고려</code> 라고만 쳐도 됩니다.</p></li>
+    <li><b>전형유형</b><p>교과 · 종합 · 논술 · 실기 같은 큰 갈래입니다.</p></li>
+    <li><b>전형명</b><p>학교추천전형 · 학생부종합(활동우수형)처럼 대학이 붙인 이름입니다.</p></li>
+    <li><b>학과</b><p>학과 이름 일부로 좁힙니다. <code>컴퓨터</code> 처럼 쳐 보세요.</p></li>
+  </ol>
+
+  <div class="note">
+    <p>꼭 6단계를 다 고를 필요는 없습니다. <b>지역만 고르고 바로 결과를 봐도 되고</b>, 대학만 고르고 그 대학의 전형을 전부 훑어봐도 됩니다.
+      처음부터 다시 하려면 왼쪽 아래 <span class="ui">조건 모두 지우기</span> 를 누르세요.</p>
+  </div>
+
+  <h3>결과를 편하게 보는 방법</h3>
+  <ul>
+    <li><span class="ui">조건 접기</span> — 왼쪽 조건 칸을 접어 표를 넓게 봅니다.</li>
+    <li><span class="ui">정렬</span> — <b>70%컷 낮은 순</b>, <b>경쟁률 낮은 순</b>, <b>모집인원 많은 순</b> 등으로 줄 세웁니다.
+      표의 제목(대학·모집·경쟁률…)을 눌러도 그 칸을 기준으로 정렬됩니다.</li>
+    <li><span class="ui">보기</span> — <b>간단히</b> 는 꼭 필요한 칸만, <b>자세히</b> 는 전부 보여 줍니다.
+      <b>촘촘하게</b> 를 켜면 한 화면에 더 많은 줄이 들어옵니다.</li>
+  </ul>
+
+  <h3>담기</h3>
+  <p>줄 맨 오른쪽 <span class="ui">담기</span> 를 누르면 <b>전형 관리</b> 화면의 빈 칸에 자동으로 들어갑니다.</p>
+  <div class="tw"><table>
+    <thead><tr><th>담은 것</th><th>들어가는 곳</th></tr></thead>
+    <tbody>
+      <tr><th>일반대</th><td>일반대 6칸 중 <b>앞에서부터 빈 칸</b>. 6칸이 다 찼으면 <b>예비</b> 칸으로 들어갑니다.</td></tr>
+      <tr><th>전문대</th><td>전문대 칸. 6칸과 상관없이 계속 늘어납니다.</td></tr>
+    </tbody>
+  </table></div>
+  <p>담기면 화면 아래에 <b>어느 칸 몇 번에 담았는지</b> 잠깐 표시됩니다.</p>
+</section>
+
+<!-- ════════ 4 ════════ -->
+<section id="table">
+  <h2 class="sec"><span class="n">4</span>표 읽는 법</h2>
+  <p class="sub">결과 표와 카드에 나오는 숫자들의 뜻입니다.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>칸</th><th>뜻</th></tr></thead>
+    <tbody>
+      <tr><th>모집</th><td>그 학과에서 그 전형으로 뽑는 인원입니다.</td></tr>
+      <tr><th>수능최저</th><td>수능 최저학력기준입니다. <b>미반영</b> 이면 수능 성적을 보지 않습니다.
+        조건이 길면 <b>더 보기</b> 로 펼쳐집니다.</td></tr>
+      <tr><th>경쟁률</th><td>지난해 경쟁률입니다.</td></tr>
+      <tr><th>50%컷 · 70%컷</th>
+        <td>지난해 합격자의 내신 등급입니다. <b>70%컷</b> 은 합격자를 성적순으로 줄 세웠을 때 <b>70% 지점에 있던 사람의 등급</b>이라고 보면 됩니다.
+          등급은 숫자가 <b>작을수록 좋습니다.</b> 이 사이트의 상향·적정·하향 판정은 <b>70%컷</b>을 기준으로 합니다.</td></tr>
+      <tr><th>고사일</th><td>면접 · 논술 · 실기를 보는 날입니다.
+        <code>2026/10/14~10/15</code> 처럼 <b>기간</b>으로 적힌 곳도 있습니다. 그런 곳은 대개 학과별로 날짜가 다르니
+        모집요강에서 본인 학과의 날짜를 확인해야 합니다.</td></tr>
+      <tr><th>전형방법</th><td>학생부 · 서류 · 면접을 몇 %씩 반영하는지입니다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note warn">
+    <span class="lbl">숫자가 &mdash; 로만 나온다면</span>
+    <p>지난해 자료가 공개되지 않은 전형입니다. 자료가 없는 것이지 경쟁률이 낮거나 컷이 좋은 것이 아닙니다.
+      이런 전형은 상향·적정·하향도 계산되지 않고 <b>컷 정보 없음</b> 으로 표시됩니다.</p>
+  </div>
+</section>
+
+<!-- ════════ 5 ════════ -->
+<section id="grade">
+  <h2 class="sec"><span class="n">5</span>내신 넣기와 판정</h2>
+  <p class="sub">전형 관리 화면의 첫 칸입니다. <b>이것을 넣어야 상향·적정·하향이 나옵니다.</b></p>
+
+  <h3>내신 등급</h3>
+  <p>세 칸이 있습니다. <b>이수단위 가중평균</b>으로 직접 계산한 값을 넣으세요.</p>
+  <ul>
+    <li><b>국·수·영·과</b> — 자연계열 학과에 자동으로 쓰입니다.</li>
+    <li><b>국·수·영·사</b> — 인문계열 학과에 자동으로 쓰입니다.</li>
+    <li><b>전과목</b> — 위 둘로 가르기 어려운 학과에 쓰입니다.</li>
+  </ul>
+  <p>카드마다 그 학과 계열에 맞는 값이 자동으로 선택됩니다. 세 칸을 다 넣어 두는 편이 좋습니다.</p>
+
+  <div class="note">
+    <p><b>모의고사 등급</b> 칸은 선생님이 등록한 성적입니다. 이 화면에서는 고칠 수 없습니다.</p>
+  </div>
+
+  <h3>판정 읽기</h3>
+  <p>본인 내신과 그 전형의 <b>70%컷</b>을 견주어 판정합니다. 기본 기준은 <b>0.3등급</b>이고, 판정 기준 칸에서 바꿀 수 있습니다.</p>
+  <div class="verd">
+    <div class="up"><div class="t">상향</div><div class="d">내 내신이 컷보다 0.3등급 넘게 <b>낮습니다.</b> 붙으면 잘 된 경우입니다.</div></div>
+    <div class="fit"><div class="t">적정</div><div class="d">컷과 0.3등급 안쪽으로 비슷합니다.</div></div>
+    <div class="down"><div class="t">하향</div><div class="d">내 내신이 컷보다 0.3등급 넘게 <b>좋습니다.</b> 비교적 안정적입니다.</div></div>
+  </div>
+
+  <h3>이 대학 반영 내신</h3>
+  <p>대학마다 반영하는 과목과 가중치가 다릅니다. 그래서 평균 내신으로 계산한 판정이 실제와 맞지 않을 때가 있습니다.
+    그럴 때는 카드의 <span class="ui">이 대학 반영 내신</span> 칸에 <b>그 대학 기준으로 계산한 등급</b>을 넣으세요.
+    <b>그 카드만</b> 그 값으로 다시 판정합니다. 비워 두면 위의 계열 평균 내신을 씁니다.</p>
+  <p>선생님이 알려 주신 값이 있다면 그 값을 넣으면 됩니다.</p>
+</section>
+
+<!-- ════════ 6 ════════ -->
+<section id="slots">
+  <h2 class="sec"><span class="n">6</span>네 가지 칸</h2>
+  <p class="sub">전형 관리 화면은 성격이 다른 네 묶음으로 나뉘어 있습니다.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>묶음</th><th>칸 수</th><th>설명</th></tr></thead>
+    <tbody>
+      <tr><th>일반대 수시 지원</th><td class="nw">6칸 고정</td>
+        <td>수시는 <b>6회까지</b> 지원할 수 있습니다. 실제로 원서를 넣을 여섯 곳을 여기에 둡니다.</td></tr>
+      <tr><th>기술원 등</th><td class="nw">제한 없음</td>
+        <td>KAIST · GIST · DGIST · UNIST · KENTECH 처럼 <b>수시 6회 제한과 무관하게</b> 따로 지원할 수 있는 대학입니다.
+          6칸을 쓰지 않고 필요한 만큼 늘어납니다.</td></tr>
+      <tr><th>예비</th><td class="nw">최대 3칸</td>
+        <td>고민 중인 곳을 잠깐 두는 자리입니다. 마음이 정해지면 6칸으로 옮깁니다.</td></tr>
+      <tr><th>전문대</th><td class="nw">제한 없음</td>
+        <td>전문대도 수시 6회 제한과 무관합니다. 담은 만큼 늘어납니다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note tip">
+    <span class="lbl">한 묶음만 보기</span>
+    <p>칸이 많아 아래까지 내려가기 번거로우면, 위쪽 <span class="ui">간단히 보기</span> 줄에서
+      <span class="ui">일반대</span> <span class="ui">기술원</span> <span class="ui">예비</span> <span class="ui">전문대</span>
+      중 하나를 누르세요. 그 묶음만 보입니다. <b>다시 누르면 전체로 돌아옵니다.</b>
+      <span class="ui">결과 칸 접기</span> 를 누르면 합격 여부·1단계·면접 같은 아래쪽 칸이 접혀 카드가 짧아집니다.</p>
+  </div>
+</section>
+
+<!-- ════════ 7 ════════ -->
+<section id="card">
+  <h2 class="sec"><span class="n">7</span>카드 다루기</h2>
+  <p class="sub">담은 전형 하나가 카드 하나입니다.</p>
+
+  <h3>순서 바꾸기</h3>
+  <ol class="steps">
+    <li><b>옮기고 싶은 카드의 <span class="ui">⇄</span> 를 누릅니다</b><p>그 카드의 테두리가 굵어집니다.</p></li>
+    <li><b>바꿀 상대 카드의 <span class="ui">⇄</span> 를 누릅니다</b><p>두 카드의 자리가 서로 바뀝니다.</p></li>
+  </ol>
+  <p><b>6칸 안에서 순서를 바꾸는 것도, 예비와 자리를 바꾸는 것도 같은 방법</b>입니다.
+    다만 기술원 칸은 성격이 달라서 기술원끼리만 바뀝니다.</p>
+
+  <h3>지우기</h3>
+  <p>카드 오른쪽 위 <span class="ui">×</span> 입니다. 내용이 들어 있는 카드는 <b>정말 지울지 한 번 물어봅니다.</b></p>
+
+  <h3>목록에 없는 대학</h3>
+  <p><b>기술원 등</b> 칸에 이름을 직접 적으면 됩니다. <code>카이스트</code> 처럼 편하게 적어도
+    칸을 벗어날 때 <b>한국과학기술원(KAIST)</b> 로 정식 명칭이 맞춰집니다.
+    이렇게 직접 적은 카드는 모집인원·컷 같은 자동 정보가 나오지 않으니, 일정과 결과는 직접 챙겨야 합니다.</p>
+
+  <h3>결과 칸</h3>
+  <p>원서를 넣은 뒤 진행 상황을 적어 두는 자리입니다.</p>
+  <div class="tw"><table>
+    <thead><tr><th>칸</th><th>적는 것</th></tr></thead>
+    <tbody>
+      <tr><th>1단계 · 면접 · 논술 · 최종 발표</th>
+        <td>날짜입니다. <code>1120</code> 이나 <code>11/20</code> 처럼 짧게 적어도 <code>2026/11/20</code> 으로 정리됩니다.
+          자동으로 채워진 날짜가 있으면 그대로 두면 됩니다.</td></tr>
+      <tr><th>합격 여부</th><td>미정 · 합격 · 불합격 · 충원 대기 중에서 고릅니다.</td></tr>
+      <tr><th>충원합격 번호</th><td>예비 번호를 받았다면 적어 둡니다.</td></tr>
+      <tr><th>메모</th><td>수험번호, 서류 마감일처럼 잊으면 안 되는 것을 적어 둡니다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note warn">
+    <span class="lbl">고사일이 겹치면</span>
+    <p>같은 날에 두 곳 이상의 고사가 잡히면 요약 칸에 <b>고사일이 겹칩니다</b> 라고 알려 줍니다.
+      원서를 넣기 전에 확인하세요.</p>
+  </div>
+</section>
+
+<!-- ════════ 8 ════════ -->
+<section id="save">
+  <h2 class="sec"><span class="n">8</span>저장</h2>
+  <p class="sub">두 가지 저장이 있습니다. 이 차이만은 꼭 알아 두세요.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th></th><th>자동 저장</th><th><span class="ui">모든 기기에 저장</span></th></tr></thead>
+    <tbody>
+      <tr><th>언제</th><td>적는 즉시, 저절로</td><td>단추를 눌렀을 때</td></tr>
+      <tr><th>어디에</th><td>지금 쓰고 있는 <b>그 브라우저 안에만</b></td><td>서버에</td></tr>
+      <tr><th>다른 기기에서 보이나</th><td>보이지 않습니다</td><td>보입니다</td></tr>
+      <tr><th>선생님께 보이나</th><td>보이지 않습니다</td><td>보입니다</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note stop">
+    <span class="lbl">꼭 기억하세요</span>
+    <p>학교 컴퓨터나 다른 사람 기기에서 작업했다면, 나가기 전에 반드시 <b>모든 기기에 저장</b>을 누르세요.
+      누르지 않으면 그 내용은 <b>그 컴퓨터에만 남고 사라집니다.</b>
+      집에서 이어서 하려면 저장한 뒤에 나가야 합니다.</p>
+  </div>
+</section>
+
+<!-- ════════ 9 ════════ -->
+<section id="faq">
+  <h2 class="sec"><span class="n">9</span>자주 묻는 것</h2>
+  <p class="sub">누르면 답이 펼쳐집니다.</p>
+
+  <details class="qa">
+    <summary>여섯 곳보다 많이 담고 싶어요.</summary>
+    <div class="body"><p>일반대 칸은 6칸까지입니다. 수시 지원이 6회로 제한되어 있기 때문입니다.
+      더 보고 싶은 곳은 <b>예비</b> 칸(3칸)에 두고 비교하세요.
+      다만 <b>기술원 등</b>과 <b>전문대</b>는 6회 제한과 무관해서 칸 수 제한이 없습니다.</p></div>
+  </details>
+
+  <details class="qa">
+    <summary>내신을 넣었는데도 판정이 안 나옵니다.</summary>
+    <div class="body"><p>그 전형에 지난해 컷 자료가 없으면 판정할 수 없습니다. 카드에 <b>컷 정보 없음</b> 이라고 표시됩니다.
+      학과 계열에 맞는 내신 칸이 비어 있어도 나오지 않으니, 국·수·영·과 / 국·수·영·사 / 전과목 세 칸을 모두 넣어 두세요.</p></div>
+  </details>
+
+  <details class="qa">
+    <summary>집에서 열었더니 적어 둔 것이 없습니다.</summary>
+    <div class="body"><p>학교에서 <b>모든 기기에 저장</b>을 누르지 않은 것입니다.
+      자동 저장은 그 브라우저 안에만 남습니다. 그 컴퓨터에서 다시 열어 저장을 누르면 살릴 수 있습니다.</p></div>
+  </details>
+
+  <details class="qa">
+    <summary>위에 「새 버전이 올라왔습니다」 라는 띠가 떴습니다.</summary>
+    <div class="body"><p>화면이 새로 고쳐졌다는 뜻입니다. 옆의 <b>새로고침</b> 을 누르면 최신 화면으로 바뀝니다.
+      적어 둔 내용은 사라지지 않습니다.</p></div>
+  </details>
+
+  <details class="qa">
+    <summary>전화번호가 바뀌었습니다.</summary>
+    <div class="body"><p>담임 선생님께 <b>등록 되돌리기</b>를 요청하세요. 다음에 로그인할 때 생년월일과 전화번호를 다시 넣게 됩니다.
+      지원계획과 성적은 그대로 남습니다.</p></div>
+  </details>
+
+  <details class="qa">
+    <summary>휴대전화로도 되나요?</summary>
+    <div class="body"><p>됩니다. 화면 크기에 맞춰 줄어듭니다. 다만 표를 넓게 보는 일이 많아
+      되도록 컴퓨터나 태블릿에서 쓰는 편이 편합니다.</p></div>
+  </details>
+</section>
+
+<footer class="foot">
+  <p>이 사이트의 모집인원 · 경쟁률 · 50%컷 · 70%컷 · 고사일은 <b>대입정보포털 「어디가」</b>에 공개된
+    <b>지난해 자료</b>입니다. 올해 수치는 달라질 수 있고, 자료가 공개되지 않은 전형도 있습니다.
+    <b>지원을 결정하기 전에는 반드시 해당 대학의 모집요강에서 직접 확인하세요.</b></p>
+  <p><a href="index.html">← 계획서로 돌아가기</a></p>
+</footer>
+
+</div>
+</body>
+</html>

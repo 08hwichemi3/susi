@@ -127,6 +127,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,li:focus-visible,t
 .btn.solid{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.solid:hover{filter:brightness(1.08)}
 .btn[disabled]{opacity:.45;cursor:default}
+/* 「사용 안내」는 새 창으로 여는 링크라 <a> 다 — 단추와 같은 모양으로 맞춘다 */
+a.btn{display:inline-flex;align-items:center;text-decoration:none;line-height:1.7}
 .ghost{padding:6px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface-2);
   color:var(--ink-2);font-family:inherit;font-size:12.5px;cursor:pointer}
 .ghost:hover{border-color:var(--accent-line);color:var(--accent)}
@@ -944,6 +946,11 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
 
 /* 어느 판인지 보여 주는 작은 표시 (로그인 상자 맨 아래) */
+/* 로그인 화면 아래의 「사용 안내」 — 못 들어가는 학생이 가장 먼저 볼 자리다 */
+.gguide{margin:16px 0 0;text-align:center;font-size:12.5px}
+.gguide a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-line);
+  padding-bottom:3px}
+.gguide a:hover{border-bottom-color:var(--accent)}
 .buildtag{margin:14px 0 0;text-align:center;font-size:10.5px;color:var(--ink-3);letter-spacing:.02em}
 .buildtag b{font-weight:600;color:var(--ink-3);font-variant-numeric:tabular-nums}
 
@@ -1308,6 +1315,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     </form>
 
     <p class="msg hidden" id="loginMsg"></p>
+    <p class="gguide"><a href="guide.html" target="_blank" rel="noopener">처음이신가요? 사용 안내 보기</a></p>
     <!-- 어느 판이 올라가 있는지 보여 준다. mk_site.py 가 만들 때 넣는 값이다.
          '새 파일을 올렸는데 사이트가 안 바뀐' 상황을 여기서 바로 알아볼 수 있다. -->
     <p class="buildtag">최종 업데이트 <b id="buildTag">2026-09-02</b></p>
@@ -1342,6 +1350,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   <span class="ub-role" id="whoRole"></span>
   <span class="grow"></span>
   <span class="sync" id="syncState"></span>
+  <a class="btn" href="guide.html" target="_blank" rel="noopener">사용 안내</a>
   <button class="btn" id="myPw">비밀번호</button>
   <button class="btn" id="logout">로그아웃</button>
 </div>
@@ -4635,7 +4644,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-02.7';
+  var BUILD_ID = '2026-09-02.8';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
