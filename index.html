@@ -610,7 +610,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 /* 주말 칸은 늘 옅게 물들어 있다 — 안에 일정이 없어도 토·일요일 열이 한눈에 갈라진다 */
 .calcell.sun{background:var(--cal-sun-bg)}
 .calcell.sat{background:var(--cal-sat-bg)}
-.calcell .dn{font-size:11.5px;font-weight:700;color:var(--ink-3);margin-bottom:3px;flex:0 0 auto}
+/* 날짜 + D-day 한 줄. 날짜는 다른 글씨보다 두 급 크게 둔다 — 며칠인지가 먼저 읽혀야 한다. */
+.calcell .dhead{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:2px;flex:0 0 auto}
+.calcell .dn{font-size:14.5px;font-weight:700;color:var(--ink-3);flex:0 0 auto;
+  line-height:1.15;font-variant-numeric:tabular-nums}
 .calcell.sun .dn{color:var(--cal-sun)}
 .calcell.sat .dn{color:var(--cal-sat)}
 /* 고사가 있는 날은 빈 날과 확실히 갈라 보이게 — 바탕을 옅게 깔고 왼쪽에 굵은 띠를 넣는다
@@ -640,11 +643,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
    그래서 자르지 않고 «자리가 모자라면 다음 줄로 넘긴다» 로 바꿨다.
    대학명·학생 이름·딱지는 각각 통째로만 넘어간다(안에서 쪼개지지 않는다). */
 .calcell .it{display:flex;flex-wrap:wrap;align-items:center;column-gap:4px;
-  font-size:11.5px;line-height:17px;color:var(--ink-2);word-break:keep-all}
-/* 한눈에 봐야 하는 건 '어느 대학인지' 다 — 대학명을 진하게, 학생 이름은 옅게 둔다.
-   (처음엔 반대였는데 대학명이 회색이라 잘 안 보인다는 지적을 받아 바꿨다) */
+  font-size:12.5px;line-height:18px;color:var(--ink-2);word-break:keep-all}
+/* 한눈에 봐야 하는 건 '어느 대학인지' 다 — 대학명을 가장 진하게 둔다.
+   (처음엔 반대였는데 대학명이 회색이라 잘 안 보인다는 지적을 받아 바꿨다)
+   학생 이름도 옅은 회색(--ink-3)으로 뒀더니 잘 안 보인다고 해서 한 단계 진하게 올렸다. */
 .calcell .it b{color:var(--ink);font-weight:600;max-width:100%}
-.calcell .it .who{color:var(--ink-3)}
+.calcell .it .who{color:var(--ink-2);font-weight:500}
 .calcell .it .kd{flex:0 0 auto}
 /* 이름을 .calmore 로 둔 이유: app.css 에 이미 `.more{padding:14px}` (결과표의
    「더 보기」 단추)가 있어서, .more 를 쓰면 그 여백 14px 를 그대로 물려받아
@@ -655,7 +659,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calcell .itrest{display:none}          /* 인쇄할 때만 펼친다 */
 
 /* 고사 종류 배지 — 옅은 파스텔이라 눈에 안 띈다는 지적을 받아 진한 바탕에 흰 글씨로 바꿨다 */
-.kd{font-size:9.5px;font-weight:700;border-radius:3px;padding:1px 4px;vertical-align:1px;
+.kd{font-size:10px;font-weight:700;border-radius:3px;padding:1px 4.5px;vertical-align:1px;
   color:var(--kd-ink)}
 .kd.k-면접{background:var(--kd-int)}
 .kd.k-논술{background:var(--kd-ess)}
@@ -780,7 +784,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .calcell.today{box-shadow:none !important;border-color:#999}
   .calcell.sel{outline:none !important}
   .calcell.clash{border:2.2px solid #8C2F39;background:#F6E2E3 !important}
-  .calcell .dn{font-size:9.5px;font-weight:700;color:#000 !important;margin-bottom:1px;flex:none}
+  .calcell .dhead{gap:2px;margin-bottom:1px}
+  .calcell .dn{font-size:10.5px;font-weight:700;color:#000 !important;flex:none}
   .ddl{font-size:8px;line-height:1.25;font-weight:700;color:#8C2F39 !important;
     background:#F6E2E3 !important;padding:1.5px 4.5px !important;border-radius:999px !important}
   .calcell .its{flex:1;min-height:0;overflow:hidden}
@@ -1101,8 +1106,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calmon{margin:0}
 
 /* D-day 줄 (수능 D-79 …) — 색이 있는 알약 배지로, 지난 일정은 아예 안 그린다. */
-.calcell .dd{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px}
-.ddl{display:inline-flex;align-items:center;font-size:9px;font-weight:700;line-height:1;
+.calcell .dd{display:flex;flex-wrap:wrap;gap:3px}
+.ddl{display:inline-flex;align-items:center;font-size:9.5px;font-weight:700;line-height:1;
   color:var(--rose);background:var(--rose-soft);border-radius:999px;padding:3px 6.5px;
   white-space:nowrap;font-variant-numeric:tabular-nums}
 /* D-day 줄이 붙어도 넉넉하게 — 세로로 긴 칸(고정 높이는 위 base 규칙에서 정한다) */
@@ -3704,18 +3709,23 @@ window.SUSI_DATES = function (text) {
       });
   }
 
-  /* 달력 칸은 좁다 — 대학 이름을 통용 약칭으로 줄이고(홍익대학교→홍대),
-     전문대는 앞에 (전) 을 붙여 4년제와 바로 구분되게 한다. */
   /* 달력 칸에 넣을 대학 이름.
      ★ 줄임말(성대·중대·외대…)을 쓰지 않는다.
        칸을 아끼려고 «성균관대 → 성대», «중앙대 → 중대» 로 줄여 봤는데,
        한 글자짜리 줄임말은 학교마다 부르는 말이 달라 오히려 못 알아본다는
        지적을 받았다. 「○○대」 형태를 그대로 둔다.
-     「대학교」를 「대」로만 줄인다 — 성균관대학교 → 성균관대. */
+     「대학교」를 「대」로만 줄인다 — 성균관대학교 → 성균관대.
+     전문대는 앞에 (전) 을 붙여 4년제와 바로 구분되게 한다.
+
+     다만 이름이 유난히 길어 한 칸을 통째로 먹는 몇 곳은 학교에서 실제로 쓰는
+     줄임말로 바꾼다. 아래 표에 「원래 이름: 줄인 이름」 을 한 줄 더하면 된다.
+     이 이름들은 그 자체로 전문대임이 드러나므로 (전) 은 붙이지 않는다. */
+  var UNI_SHORT = { '인하공업전문대학': '인하공전' };
   function calUni(name) {
     var v = String(name || '').trim();
     var col = /\(전문대\)/.test(v);
     v = v.replace(/\s*\(전문대\)\s*/g, '');
+    if (UNI_SHORT[v]) return UNI_SHORT[v];
     v = v.replace(/여자대학교/g, '여대').replace(/대학교/g, '대');
     return (col ? '(전)' : '') + v;
   }
@@ -3829,8 +3839,11 @@ window.SUSI_DATES = function (text) {
              '몇 건 있는지' 만 점처럼 찍어 주고, 누르면 아래에 펼친다. */
           return '<div class="' + cls + '" data-d="' + key + '"' +
               (items.length ? ' data-n="' + items.length + '" tabindex="0" role="button"' : '') + '>' +
-            '<div class="dn">' + d2 + (items.length && isClash(key) ? ' <b class="wk">⚠</b>' : '') + '</div>' +
-            ddCell(key) +
+            /* 날짜와 D-day 를 한 줄에 둔다 — D-day 가 제 줄을 차지하면
+               학생 이름이 한 줄 아래로 밀려 칸이 그만큼 좁아진다. */
+            '<div class="dhead"><div class="dn">' + d2 +
+              (items.length && isClash(key) ? ' <b class="wk">⚠</b>' : '') + '</div>' +
+              ddCell(key) + '</div>' +
             '<div class="its">' + shown.map(itLine).join('') +
               // 인쇄할 때만 펼쳐지는 나머지 (화면에서는 아래 「+N건」으로 접혀 있다)
               (rest > 0 ? '<div class="itrest">' +
@@ -4644,7 +4657,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-02.9';
+  var BUILD_ID = '2026-09-03.1';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
