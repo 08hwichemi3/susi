@@ -812,15 +812,21 @@ td.c-cut70{font-weight:600;color:var(--ink)}
      '내용이 필요한 만큼'을 최소 크기로 여겨 줄어들지 않으려는 경우가 있어(가로 인쇄처럼
      남는 높이가 적을 때 두드러진다), 마지막 주가 페이지 아래로 밀려 통째로 안 보이는
      일이 있었다. calc() 로 쓰면 내용과 상관없이 남은 높이를 주 수로 나눈 만큼만 준다. */
+  /* --cal-rows 는 drawCalendar 가 정한다 — 고사가 몰린 주는 조금 키우고 한산한 주는
+     조금 줄인 «주별 높이»다. 못 정했을 때만 고르게 나눈 값으로 되돌아간다. */
   .calgrid{height:100%;display:grid;grid-template-columns:repeat(7,1fr);
-    grid-template-rows:18px repeat(var(--cal-weeks,5),calc((100% - 18px)/var(--cal-weeks,5)));
+    grid-template-rows:var(--cal-rows,
+      18px repeat(var(--cal-weeks,5),calc((100% - 18px)/var(--cal-weeks,5))));
     column-gap:2px;row-gap:0;min-width:0 !important}
 
   .calhd{font-size:9.5px;font-weight:700;color:#fff !important;padding:2px 0;
     background:#1F5D4C !important;border-radius:3px}
   .calhd.sun{background:#D6293E !important}
   .calhd.sat{background:#1160C4 !important}
-  .calcell{min-height:0;max-height:none;overflow:hidden;
+  /* ★ height:auto 가 꼭 있어야 한다. 화면용 규칙이 칸 높이를 195px 로 못박아 두어서,
+     인쇄에서도 칸이 그 높이를 그대로 들고 있었다 — 위에서 정한 주(週)별 높이가
+     아무 소용이 없었고, 6주짜리 달은 마지막 주가 종이 밖으로 밀려 잘렸다. */
+  .calcell{height:auto !important;min-height:0;max-height:none;overflow:hidden;
     border:1px solid #999;border-radius:0;padding:2px 4px;
     background:#fff !important;display:flex;flex-direction:column}
   /* 주말 칸 옅은 색 — 고사·겹침 표시가 이 뒤에 와서 그 색이 이긴다(화면과 같은 순서) */
@@ -843,8 +849,12 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .calcell .it b, .calcell .it .who{
     overflow:visible !important;text-overflow:clip !important;white-space:normal !important}
   .calcell .it .who{color:#333 !important}
-  .calcell .calmore{flex:none;font-size:8px;color:#1F5D4C !important;background:none !important}
-  .calcell .itrest{display:none !important}   /* 화면과 똑같이 접어 둔다 — 칸 높이를 흔들지 않는다 */
+  /* ★ 인쇄물에서는 「+N건」으로 접지 않고 그 날 학생을 다 적는다.
+     화면에서는 날짜를 눌러 펼쳐 볼 수 있지만 종이는 그럴 수가 없어, 접힌 학생이
+     인쇄물에서 통째로 빠졌다. 칸 높이는 위에서 CSS 로 못박아 두었으므로 내용이
+     늘어나도 표가 흔들리지 않는다(넘치는 부분만 잘린다). */
+  .calcell .itrest{display:block !important}
+  .calcell .calmore{display:none !important}
   .kd{color:#fff !important;font-size:8px;padding:1px 4px !important;border-radius:3px}
   .kd.k-면접{background:#12795F !important}
   .kd.k-논술{background:#A4650B !important}
@@ -1457,8 +1467,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <b>머리글과 바닥글</b>을 꺼 주세요. 그래야 날짜·문서 제목·인터넷 주소·쪽수가
           종이에 함께 찍히지 않습니다. 이 항목은 브라우저가 인쇄 화면마다 붙이는
           설정이라, 이 프로그램에서 대신 꺼 드릴 수 없습니다.<br>
-          <b>[인쇄]</b>를 누르면 달력 한 장 뒤에 <b>그 달 고사일 명단</b>이 이어서 나옵니다 —
-          칸이 좁아 「+N건」으로 접힌 학생까지 날짜별로 빠짐없이 적힙니다.</p>
+          <b>[인쇄]</b>를 누르면 달력 칸 안에 그 날 학생을 <b>모두</b> 적습니다(화면의 「+N건」 접기는
+          인쇄에는 쓰지 않습니다). 고사가 몰린 주는 칸을 조금 키우고 한산한 주는 조금 줄여
+          자리를 만듭니다. 그래도 다 못 담을 만큼 몰린 날을 위해, 달력 뒤에 <b>그 달 고사일 명단</b>이
+          한 장 더 나옵니다.</p>
 
         <div class="calnav" id="calNav">
           <button type="button" class="calarrow" id="calPrev" aria-label="이전 달">&#9664;</button>
@@ -3858,7 +3870,28 @@ window.SUSI_DATES = function (text) {
     // 인쇄 CSS 가 이 값으로 칸 한 줄의 키를 정한다(주 수로 페이지 높이를 나눈다) —
     // 4주짜리 달과 6주짜리 달이 같은 칸 높이면 6주짜리 달은 종이 밖으로 넘친다.
     // (화면에 늘 6주를 그리기 전, 그 달에 실제로 필요한 주 수를 먼저 적어 둔다.)
-    $('calOut').style.setProperty('--cal-weeks', cells.length / 7);
+    var realWeeks = cells.length / 7;
+    $('calOut').style.setProperty('--cal-weeks', realWeeks);
+    /* ★ 인쇄할 때 주(週)마다 칸 높이를 조금씩 달리 준다.
+       고사가 없는 주에서 조금 덜어 몰린 주에 보태면, 글씨를 줄이지 않고도 칸 안에
+       더 많은 학생이 담긴다. 다만 한산한 주가 너무 납작해지면 그것도 보기 나쁘므로
+       «주를 고르게 나눴을 때의 0.8배 ~ 1.5배» 안에서만 움직인다.
+       (그 주에서 제일 많은 날을 기준으로 삼는다 — 그 날이 들어가야 그 주가 온전하다.) */
+    var wk = [], wi, wj;
+    for (wi = 0; wi < realWeeks; wi++) {
+      var mx = 0;
+      for (wj = 0; wj < 7; wj++) {
+        var dd = cells[wi * 7 + wj];
+        if (dd === null) continue;
+        var n = (CALST.days[mo + '-' + pad(dd)] || []).length;
+        if (n > mx) mx = n;
+      }
+      wk.push(0.8 + 0.7 * Math.min(mx, 10) / 10);
+    }
+    var wsum = wk.reduce(function (a, b) { return a + b; }, 0) || 1;
+    $('calOut').style.setProperty('--cal-rows', '18px ' + wk.map(function (v) {
+      return 'calc((100% - 18px) * ' + (Math.round(v / wsum * 10000) / 10000) + ')';
+    }).join(' '));
     // 화면은 늘 6주(42칸)로 그린다 — 4주짜리 달과 6주짜리 달의 전체 높이가 달라지면
     // 달을 넘길 때마다 달력이 위아래로 흔들린다는 지적을 받았다. 남는 칸은 빈 칸이다.
     while (cells.length < 42) cells.push(null);
@@ -4777,7 +4810,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-03.4';
+  var BUILD_ID = '2026-09-03.5';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
