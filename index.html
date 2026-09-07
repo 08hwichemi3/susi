@@ -112,6 +112,10 @@ header.top{position:sticky;top:0;z-index:40;background:var(--ground);border-bott
 .step[open]>summary::after{content:"\25B4"}
 .step .num{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:5px;
   background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:700}
+/* 3단계는 대학명·학과명 두 칸이 나란히 쌓인다 — 붙어 보이지 않게 사이를 띄운다 */
+.stepbody input + input{margin-top:6px}
+/* 「조건 모두 지우기」 는 6단계가 없어지면서 단계 밖(맨 아래)으로 나왔다 */
+.railreset{margin:12px 14px 14px}
 
 input[type=text],input[type=number],select,textarea{
   width:100%;padding:7px 10px;border:1px solid var(--line-2);border-radius:7px;
@@ -1688,9 +1692,13 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         </div>
       </details>
       <details class="step" open>
-        <summary><span class="num">3</span>대학</summary>
+        <summary><span class="num">3</span>대학 · 학과</summary>
         <div class="stepbody">
+          <!-- 학과명 칸은 원래 맨 아래(6단계)에 있었는데, 학과를 먼저 정하고 대학을 고르는
+               경우가 많아 너무 아래라 불편하다는 지적을 받아 대학명 칸 바로 밑으로 올렸다.
+               여기서 친 학과명은 아래 대학 목록·전형유형·전형명까지 함께 좁힌다. -->
           <input type="text" id="uq" placeholder="대학명 (예: 고려대)" autocomplete="off">
+          <input type="text" id="dq" placeholder="학과명 (예: 컴퓨터)" autocomplete="off">
           <ul class="list" id="ulist"></ul>
         </div>
       </details>
@@ -1706,13 +1714,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <ul class="list" id="jlist"></ul>
         </div>
       </details>
-      <details class="step" open>
-        <summary><span class="num">6</span>학과</summary>
-        <div class="stepbody">
-          <input type="text" id="dq" placeholder="학과명 (예: 컴퓨터)" autocomplete="off">
-          <button class="ghost wide" id="reset">조건 모두 지우기</button>
-        </div>
-      </details>
+      <button class="ghost wide railreset" id="reset">조건 모두 지우기</button>
     </div>
 
     <div class="panel">
@@ -4826,7 +4828,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-03.7';
+  var BUILD_ID = '2026-09-07.1';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -5205,15 +5207,22 @@ window.SUSI_DATES = function (text) {
 
   /* ───────── 전형 찾기 ───────── */
   function byKind(ids) { return find.kind < 0 ? ids : ids.filter(function (i) { return (ROWS[i][C.S] || 0) === find.kind; }); }
+  /* 학과명 칸은 3단계(대학·학과)에 있다 — 그 아래에 오는 대학 목록·전형유형·전형명과
+     결과 표를 모두 이 값으로 좁힌다. 「컴퓨터」를 치면 컴퓨터 관련 학과가 있는 대학만 남고,
+     옆 숫자도 그 학과 건수로 바뀐다. */
+  function dqKey() { return find.dq.trim().replace(/\s+/g, '').toLowerCase(); }
+  function byDept(ids) {
+    var q = dqKey();
+    if (!q) return ids;
+    return ids.filter(function (i) { return DP[ROWS[i][C.D]].replace(/\s+/g, '').toLowerCase().indexOf(q) >= 0; });
+  }
   function pool() { return byKind(find.uni === null ? ROWS.map(function (_, i) { return i; }) : (byUni.get(find.uni) || [])); }
   function filtered() {
-    var dq = find.dq.trim().replace(/\s+/g, '').toLowerCase();
     var ids = pool();
     if (find.regions.size) ids = ids.filter(function (i) { return find.regions.has(ROWS[i][C.R]); });
     if (find.types.size) ids = ids.filter(function (i) { return find.types.has(ROWS[i][C.T]); });
     if (find.jh !== null) ids = ids.filter(function (i) { return ROWS[i][C.J] === find.jh; });
-    if (dq) ids = ids.filter(function (i) { return DP[ROWS[i][C.D]].replace(/\s+/g, '').toLowerCase().indexOf(dq) >= 0; });
-    return ids;
+    return byDept(ids);
   }
   /* '농어촌' 같은 대상 제한(특별) 전형은 아래로 — 대부분의 학생이 먼저 찾는
      일반 전형을 위에 둔다. 이름으로 판별한다(자료에 구분 열이 따로 없다). */
@@ -5432,7 +5441,7 @@ window.SUSI_DATES = function (text) {
       if (q && name.replace(/\s+/g, '').toLowerCase().indexOf(q) < 0) return;
       // 1.구분(일반대/전문대) · 2.지역은 3.대학보다 앞 단계라, 여기서 고른 값이 이 목록도 좁혀야 한다
       // — 안 그러면 지역을 눌러도 대학 목록은 늘 전체로 보인다.
-      var ids = byKind(byUni.get(i) || []);
+      var ids = byDept(byKind(byUni.get(i) || []));
       if (find.regions.size) ids = ids.filter(function (j) { return find.regions.has(ROWS[j][C.R]); });
       var n = ids.length;
       if (!n) return;
@@ -5462,7 +5471,7 @@ window.SUSI_DATES = function (text) {
     '제주': [1, 8]
   };
   function renderRegions() {
-    var ids = byKind(find.uni === null ? ROWS.map(function (_, i) { return i; }) : (byUni.get(find.uni) || []));
+    var ids = byDept(byKind(find.uni === null ? ROWS.map(function (_, i) { return i; }) : (byUni.get(find.uni) || [])));
     var cnt = R.map(function () { return 0; });
     ids.forEach(function (i) { var ri = ROWS[i][C.R]; if (ri >= 0) cnt[ri]++; });
 
@@ -5490,7 +5499,7 @@ window.SUSI_DATES = function (text) {
     $('rchips').innerHTML = chips || '<span class="tag">이 자료에는 지역 정보가 없습니다</span>';
   }
   function renderTypes() {
-    var ids = byKind(find.uni === null ? ROWS.map(function (_, i) { return i; }) : (byUni.get(find.uni) || []));
+    var ids = byDept(byKind(find.uni === null ? ROWS.map(function (_, i) { return i; }) : (byUni.get(find.uni) || [])));
     var cnt = T.map(function () { return 0; });
     ids.forEach(function (i) { cnt[ROWS[i][C.T]]++; });
     $('tchips').innerHTML = T.map(function (t, i) {
@@ -5501,7 +5510,7 @@ window.SUSI_DATES = function (text) {
   function renderJh() {
     var el = $('jlist');
     if (find.uni === null) { el.innerHTML = '<li class="empty">대학을 먼저 고르세요</li>'; return; }
-    var ids = byKind(byUni.get(find.uni) || []);
+    var ids = byDept(byKind(byUni.get(find.uni) || []));
     if (find.types.size) ids = ids.filter(function (i) { return find.types.has(ROWS[i][C.T]); });
     var m = new Map();
     ids.forEach(function (i) { var j = ROWS[i][C.J]; m.set(j, (m.get(j) || 0) + 1); });
@@ -5666,7 +5675,9 @@ window.SUSI_DATES = function (text) {
   try { if (localStorage.getItem(RAILKEY) === '1') setRail(true); } catch (e) { }
 
   $('uq').addEventListener('input', function (e) { find.uq = e.target.value; renderUnis(); });
-  $('dq').addEventListener('input', function (e) { find.dq = e.target.value; find.limit = 200; renderTable(); });
+  /* 학과명은 이제 아래 목록들까지 좁히므로 표만 다시 그리면 안 된다.
+     (입력칸 자체는 다시 그리지 않으므로 글자를 치는 동안 초점이 끊기지 않는다.) */
+  $('dq').addEventListener('input', function (e) { find.dq = e.target.value; find.limit = 200; renderFind(); });
   // 위의 '빠른 정렬' 목록도 결국 같은 정렬 순서를 세운다.
   // 정렬 방식이 두 갈래로 나뉘면 화면에 보이는 순서와 실제 순서가 어긋나기 쉽다.
   var PRESET = {
