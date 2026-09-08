@@ -2744,7 +2744,7 @@ window.SUSI_DATES = function (text) {
     /* 칸 차례는 화면(교사용 표)과 같게 둔다 — 1단계 → 면접·실기·논술 → 최초 발표 → 합불 → 충원.
        다시 올릴 때는 머리글 '이름'으로 찾으므로 차례가 바뀌어도 읽는 데는 문제가 없다. */
     var aoa = [['학번', '반', '번호', '이름', '구분', '칸', '대학', '전형유형', '전형명', '학과',
-                '대학별내신', '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '최초 발표', '합불', '충원합격', '메모']];
+                '대학별내신', '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '최초 발표', '합불', '충원합격']];
     (apps || []).slice().sort(function (a, b) {
       var sa = byId[a.student_id], sb2 = byId[b.student_id];
       return ((sa && sa.student_no) || 0) - ((sb2 && sb2.student_no) || 0)
@@ -2756,14 +2756,15 @@ window.SUSI_DATES = function (text) {
         PLAN_AREA[a.area] || a.area, a.slot,
         a.uni_name || '', a.type_name || '', a.admission_name || '', a.dept_name || '',
         a.manual_grade == null ? '' : a.manual_grade,
-        PLAN_VERDICT[a.verdict_override] || '', a.exam_no || '', a.step1 || '',
+        /* 수험번호는 예전 exam_no 칸이 늘 비어 있었다 — 학생이 적는 자리는 memo 다 */
+        PLAN_VERDICT[a.verdict_override] || '', a.exam_no || a.memo || '', a.step1 || '',
         a.interview === null || a.interview === undefined ? '' : a.interview,
-        a.final_date || '', PLAN_RESULT[a.result] || '', a.fill_no || '', a.memo || '']);
+        a.final_date || '', PLAN_RESULT[a.result] || '', a.fill_no || '']);
     });
     return aoa;
   }
 
-  var LIST_COLS_PLAN = [8, 5, 6, 10, 9, 5, 15, 12, 20, 19, 11, 13, 12, 14, 16, 13, 8, 10, 26]
+  var LIST_COLS_PLAN = [8, 5, 6, 10, 9, 5, 15, 12, 20, 19, 11, 13, 12, 14, 16, 13, 8, 10]
     .map(function (w) { return { wch: w }; });
 
   function downloadAllXlsx() {
@@ -4944,7 +4945,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-08.1';
+  var BUILD_ID = '2026-09-08.2';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -6483,7 +6484,7 @@ window.SUSI_DATES = function (text) {
               ' placeholder="' + (ready ? '학과 이름을 치거나 ▾ 에서 고르세요' : '전형을 먼저 고르세요') + '">' +
               '<datalist id="' + dlid + '">' + dlOptions(items) + '</datalist>';
           })()) +
-      '<input type="text" data-f="memo" placeholder="메모 (수험번호, 서류 마감 등)" value="' + esc(c.memo || '') + '">' +
+      '<input type="text" data-f="memo" placeholder="수험번호 (원서 접수 뒤 적어 두세요)" value="' + esc(c.memo || '') + '">' +
       facts + results + '</div>';
   }
   function renderCards() {
@@ -6738,7 +6739,7 @@ window.SUSI_DATES = function (text) {
   function planRows() {
     var head = ['구분', '번호', '대학', '전형유형', '전형명', '학과', '본인내신', '대학별내신', '50%컷', '70%컷',
       '판정(자동)', '판정(수동)', '모집인원', '작년경쟁률', '수능최저', '1단계', '면접', '논술', '실기',
-      '최초 발표', '합불', '충원합격', '메모'];
+      '최초 발표', '합불', '충원합격', '수험번호'];
     var out = [head];
     ['main', 'tech', 'cand', 'college'].forEach(function (area) {
       plan[area].forEach(function (c, ix) {
@@ -6991,7 +6992,7 @@ window.SUSI_DATES = function (text) {
         G: row ? nf(row[C.A]) : '',
         H: row ? nf(row[C.B]) : '',
         I: row ? (TYPE_SHORT[TYPEFULL[tn] || tn] || TYPE_SHORT[tn] || '') : (c.tName || ''),
-        J: c.examNo || '',
+        J: c.memo || '',
         K: (row && row[C.M] >= 0) ? (isNoMin(M[row[C.M]]) ? '[X] ' : '[O] ') + M[row[C.M]] : '',
         L: (row && row[C.W] >= 0) ? W[row[C.W]] : '',
         M: c.step1 || '',
@@ -7137,7 +7138,7 @@ window.SUSI_DATES = function (text) {
     put(row, 6, r ? nf(r[C.A]) : '');                                      // G 최초합격컷(50%)
     put(row, 7, r ? nf(r[C.B]) : '');                                      // H 70%컷
     put(row, 8, r ? (TYPEFULL[T[r[C.T]]] || T[r[C.T]]) : (c.tName || '')); // I 전형유형
-    put(row, 9, '');                                                       // J 수험번호 (사람이 적는 칸)
+    put(row, 9, c.memo || '');                                             // J 수험번호
     put(row, 10, (r && r[C.M] >= 0) ? M[r[C.M]] : '');                     // K 수능최저
     put(row, 11, (r && r[C.W] >= 0) ? W[r[C.W]] : '');                     // L 전형요소
     put(row, 12, c.step1 || '');                                          // M 1단계
@@ -7376,7 +7377,7 @@ window.SUSI_DATES = function (text) {
         manualGrade: g('대학별내신'),
         // 머리글을 「최종」 에서 「최초 발표」 로 바꿨다 — 예전에 내려받은 파일도 계속 읽는다
         interview: g('면접'), essay: g('논술'), final: g('최초 발표') || g('최종'),
-        fillNo: g('충원합격'), passFail: pfOf(g('합불')), memo: g('메모')
+        fillNo: g('충원합격'), passFail: pfOf(g('합불')), memo: g('수험번호') || g('메모')
       });
     }
     return out.length ? out : null;
@@ -7388,15 +7389,13 @@ window.SUSI_DATES = function (text) {
     for (var n = 13; n <= 60; n++) { // 칸을 늘린 양식도 읽히도록 넉넉히 훑는다
       var uName = cellStr(ws, 'C' + n), dName = cellStr(ws, 'E' + n);
       if (!uName && !dName) continue;
-      var memo = [];
-      if (cellStr(ws, 'J' + n)) memo.push('수험번호 ' + cellStr(ws, 'J' + n));
       out.push({
         area: areaOf(cellStr(ws, 'S' + n)), uName: uName, tName: cellStr(ws, 'I' + n),
         jName: cellStr(ws, 'D' + n), dName: dName,
         verdictOverride: verdictKeyOf(cellStr(ws, 'V' + n)), step1: cellStr(ws, 'M' + n),
         interview: cellStr(ws, 'N' + n), essay: '', // 계획서는 면접·실기·논술이 한 칸이라 면접으로 받는다
         final: cellStr(ws, 'O' + n),                // O 최초 발표일 — 예전에는 메모로 흘려보냈다
-        fillNo: cellStr(ws, 'T' + n), passFail: pfOf(cellStr(ws, 'U' + n)), memo: memo.join(' · ')
+        fillNo: cellStr(ws, 'T' + n), passFail: pfOf(cellStr(ws, 'U' + n)), memo: cellStr(ws, 'J' + n)
       });
     }
     return out.length ? out : null;
