@@ -1616,19 +1616,25 @@ td.c-cut70{font-weight:600;color:var(--ink)}
           <p class="hint">업로드하면 <b>「읽은 열」</b> 항목에 인식된 칸 수가 표시됩니다.
             누락된 항목이 있으면 <b>못 알아본 열</b>에 원래 이름이 그대로 표시되니 확인하세요.</p>
         </details>
-        <p class="hint">이 파일 하나로 <b>계정 생성·내신·모의고사</b>가 한 번에 등록됩니다.
-          <b>학번(반·번호)과 이름만 있어도 계정이 생성됩니다.</b>
-          생년월일·전화번호는 <b>학생이 처음 로그인할 때 본인이 직접 입력합니다.</b>
-          입력 전까지는 학생 목록에 <b>미등록</b>으로 표시됩니다.
-          엑셀에 미리 입력해 두어도 되며, 그 경우 해당 값이 바로 비밀번호가 됩니다.
-          전화번호는 하이픈(-)을 넣거나 빼도 상관없습니다.
-          기존에 등록된 학생은 이름·성적만 갱신되고 <b>학생이 등록해 둔 연락처와 비밀번호는 유지</b>됩니다.
-          등급 칸이 <b>0</b>이거나 비어 있으면 반영하지 않고 건너뜁니다.</p>
+        <p class="hint"><b>어느 쪽을 고르든 파일을 열어 «무엇이 바뀌는지» 를 먼저 보여 드립니다.
+          [이대로 반영] 을 누르셔야 실제로 들어갑니다.</b>
+          <b>지원계획(학생이 담아 둔 대학)은 어느 쪽으로도 건드리지 않습니다.</b>
+          내신·모의고사는 <b>파일에 값이 있는 칸만</b> 바뀌고, <b>빈칸은 지금 값이 그대로 남습니다.</b></p>
+        <table class="gt kv"><tbody>
+          <tr><th>명부 올리기</th><td>계정을 만들고 이름·연락처·성적을 함께 넣습니다. 학년 초에 한 번 쓰세요.
+            <b>학번(반·번호)과 이름만 있어도 계정이 생성됩니다.</b>
+            생년월일·전화번호는 비워 두면 <b>학생이 처음 로그인할 때 본인이 직접 입력합니다</b>(그전까지 <b>미등록</b>으로 표시).
+            엑셀에 미리 적어 두면 그 값이 바로 비밀번호가 됩니다. 하이픈(-)은 넣어도 빼도 됩니다.</td></tr>
+          <tr><th>성적만 갱신</th><td>계정·생년월일·전화번호를 <b>전혀 건드리지 않고</b> 내신·모의고사만 넣습니다.
+            학기 중에 성적을 여러 번 올릴 때 이쪽을 쓰세요.</td></tr>
+        </tbody></table>
         <div class="yrrow">
-          <button class="btn primary" id="pickRoster">엑셀 고르기</button>
-          <span class="fh">3학년 명부로 인식합니다.</span>
+          <button class="btn primary" id="pickRoster">명부 올리기 (계정 + 성적)</button>
+          <button class="btn" id="pickGrade">성적만 갱신</button>
           <input type="file" id="rosterFile" accept=".xlsx,.xls,.csv" hidden>
+          <input type="file" id="gradeFile" accept=".xlsx,.xls,.csv" hidden>
         </div>
+        <p class="fh">3학년 명부로 인식합니다.</p>
         <div id="rosterOut"></div>
       </div>
 
@@ -4524,7 +4530,203 @@ window.SUSI_DATES = function (text) {
   // (1·2학년까지 쓰게 되면 이 상수와 shell.html 의 안내 문구를 같이 되살리면 됩니다.)
   var ROSTER_GRADE = 3;
 
-  function uploadStudentData(file) {
+  /* ───────── 올리기 전 미리보기 ─────────
+     예전에는 파일을 고르는 순간 바로 반영됐다. 성적만 갱신하려던 파일에 옛 전화번호가
+     남아 있으면 그대로 덮어써져 학생이 못 들어오게 되는 식의 사고가 날 수 있다.
+     그래서 «무엇이 바뀌는지» 를 먼저 보여 주고, [이대로 반영] 을 눌러야 들어간다. */
+  var PENDING_UP = null;
+
+  function digitsOf(v) { return String(v == null ? '' : v).replace(/[^0-9]/g, ''); }
+  function stKeyOf(st) { return st.grade + '-' + st.class_no + '-' + st.number_no; }
+
+  function planUpload(rows, warn, found, mode, canMakeAccounts, grade1) {
+    var byKey = {};
+    STUDENTS.forEach(function (st) { byKey[stKeyOf(st)] = st; });
+
+    var plan = { mode: mode, rows: rows, warn: warn, found: found, grade1: grade1,
+      canMakeAccounts: canMakeAccounts, forAcct: [], noContact: 0,
+      newAcct: [], known: 0, gradeRows: 0, mockCnt: 0, contactChg: [], missing: [] };
+
+    rows.forEach(function (x) {
+      var st = byKey[grade1 + '-' + x.cls + '-' + x.num];
+      var has = !!(x.birth && digitsOf(x.phone).length >= 4);
+      var label = x.cls + '반 ' + x.num + '번 ' + x.name;
+
+      if (st) plan.known++; else plan.newAcct.push(label);
+      if (!st && mode === 'grades') plan.missing.push(label);
+
+      if (Object.keys(x.grades).some(function (k) { return x.grades[k] !== null; })) plan.gradeRows++;
+      plan.mockCnt += x.mocks.length;
+
+      if (mode === 'roster') {
+        if (!has) plan.noContact++;
+        plan.forAcct.push({ student_no: grade1 * 10000 + x.cls * 100 + x.num,
+                            name: x.name,
+                            birth: has ? x.birth : null,
+                            phone: has ? x.phone : null });
+        /* 이미 등록을 마친 학생의 연락처를 명부가 바꾸면 비밀번호까지 그 값으로 바뀐다.
+           학생이 예전 값으로는 못 들어오게 되므로 이름을 하나하나 보여 준다. */
+        if (st && has) {
+          var bOld = st.birth_date || '', pOld = digitsOf(st.phone);
+          if ((bOld && bOld !== x.birth) || (pOld && pOld !== digitsOf(x.phone))) {
+            plan.contactChg.push({ label: label, bOld: bOld, bNew: x.birth,
+                                   pOld: st.phone || '', pNew: x.phone });
+          }
+        }
+      }
+    });
+    return plan;
+  }
+
+  function previewHtml(plan) {
+    var isRoster = (plan.mode === 'roster');
+    var h = '<div class="upres uppre"><span class="okline">' + plan.rows.length +
+      '줄을 읽었습니다. 아직 아무것도 반영하지 않았습니다.</span>' +
+      '<p class="hint">아래 내용을 확인하고 <b>[이대로 반영]</b> 을 눌러 주세요.</p>' +
+      '<table class="gt kv"><tbody>';
+
+    if (isRoster) {
+      h += '<tr><th>새로 만들 계정</th><td><b>' + plan.newAcct.length + '명</b>' +
+        (plan.newAcct.length ? ' <span class="hint">' +
+          esc(plan.newAcct.slice(0, 12).join(' · ')) +
+          (plan.newAcct.length > 12 ? ' …외 ' + (plan.newAcct.length - 12) + '명' : '') + '</span>' : '') +
+        '</td></tr>';
+      h += '<tr><th>이미 있는 학생</th><td>' + plan.known + '명 <span class="hint">이름만 갱신됩니다</span></td></tr>';
+    } else {
+      h += '<tr><th>계정 · 연락처</th><td><b>건드리지 않습니다</b> ' +
+        '<span class="hint">성적만 갱신하는 모드입니다</span></td></tr>';
+      if (plan.missing.length) {
+        h += '<tr><th>명부에 없는 줄</th><td><b class="clashk">' + plan.missing.length + '줄</b> ' +
+          '<span class="hint">' + esc(plan.missing.slice(0, 10).join(' · ')) +
+          (plan.missing.length > 10 ? ' …외 ' + (plan.missing.length - 10) + '줄' : '') +
+          ' — 이 학생들은 성적이 들어가지 않습니다. 먼저 명부로 계정을 만들어 주세요.</span></td></tr>';
+      }
+    }
+
+    h += '<tr><th>내신</th><td><b>' + plan.gradeRows + '명</b> 갱신 ' +
+      '<span class="hint">파일에 값이 있는 칸만 바뀌고, <b>빈칸은 지금 값이 그대로 남습니다</b></span></td></tr>';
+    h += '<tr><th>모의고사</th><td><b>' + plan.mockCnt + '건</b> 갱신 ' +
+      '<span class="hint">빈 과목은 그대로 남습니다</span></td></tr>';
+    h += '<tr><th>지원계획</th><td>건드리지 않습니다</td></tr>';
+
+    if (isRoster && plan.contactChg.length) {
+      h += '<tr><th class="clashk">연락처가 바뀝니다</th><td><b class="clashk">' +
+        plan.contactChg.length + '명</b> ' +
+        '<span class="hint">이 학생들은 <b>비밀번호도 파일의 값으로 바뀝니다</b>. ' +
+        '예전 값으로는 못 들어옵니다.</span>' +
+        '<div class="pwlist"><table>' + plan.contactChg.slice(0, 100).map(function (c) {
+          return '<tr><td>' + esc(c.label) + '</td><td>' +
+            esc(c.bOld || '—') + ' → <b>' + esc(c.bNew) + '</b></td><td>' +
+            esc(c.pOld || '—') + ' → <b>' + esc(c.pNew) + '</b></td></tr>';
+        }).join('') + '</table></div></td></tr>';
+    }
+    if (isRoster && plan.noContact) {
+      h += '<tr><th>연락처 빈칸</th><td>' + plan.noContact + '명 ' +
+        '<span class="hint">이미 등록한 학생은 그대로 두고, 새 계정은 학생이 처음 로그인할 때 직접 넣습니다</span></td></tr>';
+    }
+    h += '</tbody></table>';
+
+    if (plan.warn.length) {
+      h += '<ul>' + plan.warn.slice(0, 15).map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>';
+      if (plan.warn.length > 15) h += '<span class="hint">…외 ' + (plan.warn.length - 15) + '건</span>';
+    }
+    h += '<div class="yrrow" style="margin-top:12px">' +
+      '<button class="btn solid" id="upApply">이대로 반영</button>' +
+      '<button class="btn" id="upCancel">취소</button></div></div>';
+    return h;
+  }
+
+  /* [이대로 반영] — 여기서 처음으로 서버에 쓴다. */
+  function applyUpload() {
+    var plan = PENDING_UP;
+    if (!plan) return;
+    var box = $('rosterOut'), warn = plan.warn.slice(), made = 0;
+
+    /* ★ 한 번에 다 보내면 서버가 8초에서 끊어 버린다.
+       계정 하나마다 비밀번호를 bcrypt 로 만드는데(실측 ~62ms), 192명이면 약 12초라
+       'canceling statement due to statement timeout' 이 나고 통째로 되돌아갔다.
+       (반쯤 만들어지지는 않는다 — 한 요청이 한 트랜잭션이라 전부 취소된다)
+       그래서 40명씩 나눠 차례로 보낸다. 40명이면 최악이라도 2.5초 정도다.
+       create_student 는 같은 학번을 다시 넣어도 안 늘어나므로, 중간에 끊겨
+       다시 올려도 안전하다. */
+    function sendAccounts() {
+      if (plan.mode !== 'roster' || !plan.canMakeAccounts || !plan.forAcct.length) return Promise.resolve();
+      var CHUNK = 40, i = 0;
+      function next() {
+        if (i >= plan.forAcct.length) return Promise.resolve();
+        var part = plan.forAcct.slice(i, i + CHUNK), from = i + 1;
+        i += CHUNK;
+        box.innerHTML = '<p class="hint">계정 만드는 중… <b>' +
+          Math.min(i, plan.forAcct.length) + ' / ' + plan.forAcct.length + '명</b></p>';
+        return sb.rpc('create_students_bulk', { p_rows: part }).then(function (res) {
+          if (res.error) {
+            /* 어디까지 됐는지 알려 주지 않으면 선생님이 다시 올려야 할지 알 수 없다. */
+            throw new Error((res.error.message || '') +
+              ' (' + from + '~' + Math.min(i, plan.forAcct.length) + '번째에서 멈췄습니다. ' +
+              '앞쪽은 이미 만들어졌고, 같은 파일을 다시 올리면 이어서 만듭니다)');
+          }
+          made += (res.data && res.data.ok) || 0;
+          (res.data && res.data.failed || []).forEach(function (f) {
+            warn.push('· ' + (f.name || f.student_no) + ': ' + f.error);
+          });
+          return next();
+        });
+      }
+      return next();
+    }
+
+    box.innerHTML = '<p class="hint">반영하는 중…</p>';
+    return sendAccounts().then(function () {
+      return loadStudents();                       // 새로 만든 학생을 목록에 반영
+    }).then(function () {
+      // 성적 넣기 — 등록된 학생만
+      var byKey = {};
+      /* ★ 키에 반드시 '학년' 을 넣는다.
+         STUDENTS 에는 학교 전체 학생이 들어 있고(총관리자 기준), 키가 '반-번호' 뿐이면
+         2학년 명부를 올릴 때 '1-1' 이 3학년 1반 1번을 가리켜 그 학생의 내신·모의고사를
+         통째로 덮어써 버린다. 경고도 안 뜬다(키가 '찾아지긴' 하므로). */
+      STUDENTS.forEach(function (st) { byKey[stKeyOf(st)] = st.id; });
+      var gRows = [], mRows = [], notFound = 0;
+      plan.rows.forEach(function (x) {
+        var sid = byKey[plan.grade1 + '-' + x.cls + '-' + x.num];
+        if (!sid) { notFound++; return; }
+        if (Object.keys(x.grades).some(function (k) { return x.grades[k] !== null; })) {
+          var g = { student_id: sid };
+          Object.keys(x.grades).forEach(function (k) { g[k] = x.grades[k]; });
+          gRows.push(g);
+        }
+        x.mocks.forEach(function (m) {
+          var rec = { student_id: sid, exam: m.exam };
+          SUBJ.forEach(function (sj) { if (m[sj[0]] !== undefined) rec[sj[0]] = m[sj[0]]; });
+          mRows.push(rec);
+        });
+      });
+      if (notFound) warn.push('· ' + notFound + '줄은 등록되지 않은 학생이라 성적을 넣지 못했습니다');
+
+      /* ★ 표에 바로 upsert 하지 않는다.
+         upsert 는 보낸 칸을 그대로 덮어써서, 파일에 없는 계열·학년 칸이 null 로 실려 가
+         저장돼 있던 내신을 지워 버렸다(3학년 칸이 빈 파일을 올리면 3학년 내신이 사라짐).
+         서버 함수가 coalesce(새값, 기존값) 으로 병합한다 — 빈칸은 손대지 않는다. */
+      var p1 = gRows.length
+        ? sb.rpc('upsert_student_grades', { p_rows: gRows })
+        : Promise.resolve({ error: null });
+      return Promise.resolve(p1).then(function (r1) {
+        if (r1 && r1.error) throw r1.error;
+        if (!mRows.length) return { error: null };
+        return sb.rpc('upsert_mock_exams', { p_rows: mRows });
+      }).then(function (r2) {
+        if (r2 && r2.error) throw r2.error;
+        PENDING_UP = null;
+        report(plan.rows, made, gRows.length, mRows.length, plan.noContact, warn,
+               plan.canMakeAccounts && plan.mode === 'roster', plan.forAcct, plan.found);
+      });
+    }).catch(function (e) {
+      box.innerHTML = '<div class="upres"><span class="badline">' + esc(e && e.message || '실패') + '</span></div>';
+    });
+  }
+
+  function uploadStudentData(file, mode) {
+    mode = (mode === 'grades') ? 'grades' : 'roster';
     var grade1 = ROSTER_GRADE;
     var box = $('rosterOut');
     box.innerHTML = '<p class="hint">읽는 중…</p>';
@@ -4557,7 +4759,6 @@ window.SUSI_DATES = function (text) {
       var rows = parsed.rows, warn = parsed.warn.slice();
       var canMakeAccounts = (ME.role === 'super_admin');
 
-      // ① 계정 만들기 — 생년월일·전화번호가 있는 줄만
       /* ★ 반·번호를 먼저 걸러 낸다.
          학번은 학년1 + 반2 + 번호2 다섯 자리로 만들고, 데이터베이스가 그 학번을
          다시 쪼개 학년·반·번호로 쓴다. 그래서 —
@@ -4586,96 +4787,11 @@ window.SUSI_DATES = function (text) {
         return;
       }
 
-      /* ★ 생년월일·전화번호가 없어도 계정을 만든다.
-         명부에는 학번·이름만 있어도 되고, 연락처는 학생이 처음 로그인할 때 스스로 넣는다.
-         (예전에는 연락처가 없는 줄을 통째로 건너뛰어서 계정이 아예 안 생겼다) */
-      var forAcct = [], noContact = 0;
-      rows.forEach(function (x) {
-        var has = !!(x.birth && String(x.phone).replace(/[^0-9]/g, '').length >= 4);
-        if (!has) noContact++;
-        forAcct.push({ student_no: grade1 * 10000 + x.cls * 100 + x.num,
-                       name: x.name,
-                       birth: has ? x.birth : null,
-                       phone: has ? x.phone : null });
-      });
-
-      /* ★ 한 번에 다 보내면 서버가 8초에서 끊어 버린다.
-         계정 하나마다 비밀번호를 bcrypt 로 만드는데(실측 ~62ms), 192명이면 약 12초라
-         'canceling statement due to statement timeout' 이 나고 통째로 되돌아갔다.
-         (반쯤 만들어지지는 않는다 — 한 요청이 한 트랜잭션이라 전부 취소된다)
-         그래서 40명씩 나눠 차례로 보낸다. 40명이면 최악이라도 2.5초 정도다.
-         create_student 는 같은 학번을 다시 넣어도 안 늘어나므로, 중간에 끊겨
-         다시 올려도 안전하다. */
-      var made = 0;
-      function sendAccounts() {
-        if (!canMakeAccounts || !forAcct.length) return Promise.resolve();
-        var CHUNK = 40, i = 0;
-        function next() {
-          if (i >= forAcct.length) return Promise.resolve();
-          var part = forAcct.slice(i, i + CHUNK), from = i + 1;
-          i += CHUNK;
-          box.innerHTML = '<p class="hint">계정 만드는 중… <b>' +
-            Math.min(i, forAcct.length) + ' / ' + forAcct.length + '명</b></p>';
-          return sb.rpc('create_students_bulk', { p_rows: part }).then(function (res) {
-            if (res.error) {
-              /* 어디까지 됐는지 알려 주지 않으면 선생님이 다시 올려야 할지 알 수 없다. */
-              throw new Error((res.error.message || '') +
-                ' (' + from + '~' + Math.min(i, forAcct.length) + '번째에서 멈췄습니다. ' +
-                '앞쪽은 이미 만들어졌고, 같은 파일을 다시 올리면 이어서 만듭니다)');
-            }
-            made += (res.data && res.data.ok) || 0;
-            (res.data && res.data.failed || []).forEach(function (f) {
-              warn.push('· ' + (f.name || f.student_no) + ': ' + f.error);
-            });
-            return next();
-          });
-        }
-        return next();
-      }
-
-      return sendAccounts().then(function () {
-        return loadStudents();                       // 새로 만든 학생을 목록에 반영
-      }).then(function () {
-        // ② 성적 넣기 — 등록된 학생만
-        var byKey = {};
-        /* ★ 키에 반드시 '학년' 을 넣는다.
-           STUDENTS 에는 학교 전체 학생이 들어 있고(총관리자 기준), 키가 '반-번호' 뿐이면
-           2학년 명부를 올릴 때 '1-1' 이 3학년 1반 1번을 가리켜 그 학생의 내신·모의고사를
-           통째로 덮어써 버린다. 경고도 안 뜬다(키가 '찾아지긴' 하므로).
-           지금은 학교에 3학년만 있어서 안 터질 뿐이다. */
-        STUDENTS.forEach(function (st) {
-          byKey[st.grade + '-' + st.class_no + '-' + st.number_no] = st.id;
-        });
-        var gRows = [], mRows = [], notFound = 0;
-        rows.forEach(function (x) {
-          var sid = byKey[grade1 + '-' + x.cls + '-' + x.num];
-          if (!sid) { notFound++; return; }
-          var has = Object.keys(x.grades).some(function (k) { return x.grades[k] !== null; });
-          if (has) {
-            var g = { student_id: sid };
-            Object.keys(x.grades).forEach(function (k) { g[k] = x.grades[k]; });
-            gRows.push(g);
-          }
-          x.mocks.forEach(function (m) {
-            var rec = { student_id: sid, exam: m.exam };
-            SUBJ.forEach(function (sj) { if (m[sj[0]] !== undefined) rec[sj[0]] = m[sj[0]]; });
-            mRows.push(rec);
-          });
-        });
-        if (notFound) warn.push('· ' + notFound + '줄은 등록되지 않은 학생이라 성적을 넣지 못했습니다');
-
-        var p1 = gRows.length
-          ? sb.from('student_grades').upsert(gRows, { onConflict: 'student_id' })
-          : Promise.resolve({ error: null });
-        return Promise.resolve(p1).then(function (r1) {
-          if (r1 && r1.error) throw r1.error;
-          if (!mRows.length) return { error: null };
-          return sb.from('mock_exams').upsert(mRows, { onConflict: 'student_id,exam' });
-        }).then(function (r2) {
-          if (r2 && r2.error) throw r2.error;
-            report(rows, made, gRows.length, mRows.length, noContact, warn, canMakeAccounts, forAcct, parsed.found);
-        });
-      });
+      /* ★ 여기서 바로 반영하지 않는다.
+         무엇이 바뀌는지 먼저 보여 주고 [이대로 반영] 을 누를 때 들어간다.
+         성적만 올리려다 연락처가 바뀌어 학생이 못 들어오게 되는 일을 막기 위해서다. */
+      PENDING_UP = planUpload(rows, warn, parsed.found, mode, canMakeAccounts, grade1);
+      box.innerHTML = previewHtml(PENDING_UP);
     }).catch(function (e) {
       box.innerHTML = '<div class="upres"><span class="badline">' + esc(e && e.message || '실패') + '</span></div>';
     });
@@ -4828,7 +4944,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-07.1';
+  var BUILD_ID = '2026-09-08.1';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -5043,7 +5159,18 @@ window.SUSI_DATES = function (text) {
 
     on('pickRoster', 'click', function () { $('rosterFile').click(); });
     on('rosterFile', 'change', function (e) {
-      var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) uploadStudentData(f); });
+      var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) uploadStudentData(f, 'roster'); });
+    on('pickGrade', 'click', function () { $('gradeFile').click(); });
+    on('gradeFile', 'change', function (e) {
+      var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) uploadStudentData(f, 'grades'); });
+    /* 미리보기의 [이대로 반영] · [취소] — 상자를 다시 그리므로 위임으로 받는다 */
+    on('rosterOut', 'click', function (e) {
+      if (e.target.id === 'upApply') { applyUpload(); return; }
+      if (e.target.id === 'upCancel') {
+        PENDING_UP = null;
+        $('rosterOut').innerHTML = '<p class="hint">취소했습니다. 아무것도 반영하지 않았습니다.</p>';
+      }
+    });
 
     // 학번·생년월일 칸은 숫자만 들어가게. 길이 제한은 여기서 건다 —
     // HTML 의 maxlength 를 쓰면 '2008-06-06' 을 붙여넣을 때 하이픈까지 세어

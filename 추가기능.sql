@@ -583,3 +583,125 @@ alter table public.applications add constraint applications_slot_range
     or ((area = 'tech'::plan_area) and (slot >= 1))
   );
 notify pgrst, 'reload schema';
+
+
+-- ═══════════════════════════════════════════════════════════════
+--    ⑮ 성적 올리기 — 빈칸이 기존 값을 지우지 않게
+-- ═══════════════════════════════════════════════════════════════
+-- 예전에는 화면에서 student_grades / mock_exams 에 그대로 upsert 했습니다.
+-- upsert 는 보낸 칸을 그대로 덮어쓰므로, 파일에 없는 계열·학년 칸이 null 로 함께
+-- 실려 가 저장돼 있던 내신을 지워 버렸습니다.
+--   예) 3학년 칸이 아직 빈 파일을 올리면 → 저장돼 있던 3학년 내신이 사라짐
+--       국수영과만 든 파일을 올리면      → 국수영사·전과목이 사라짐
+-- 연락처(create_student)와 똑같이 coalesce(새값, 기존값) 으로 병합합니다.
+-- 이제 «파일에 값이 있는 칸만» 바뀌고 빈칸은 손대지 않습니다.
+
+create or replace function public.upsert_student_grades(p_rows jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+declare
+  v_row  jsonb;
+  v_sid  uuid;
+  v_ok   int := 0;
+  v_skip int := 0;
+begin
+  for v_row in select * from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) loop
+    v_sid := nullif(v_row->>'student_id', '')::uuid;
+    -- 볼 수 있는 학생만 (security definer 라 접근 규칙이 안 걸린다)
+    if v_sid is null or not private.can_see_student(v_sid) then
+      v_skip := v_skip + 1;
+      continue;
+    end if;
+
+    insert into student_grades as g (
+      student_id,
+      nat_y1, nat_y2, nat_y3, nat_avg,
+      hum_y1, hum_y2, hum_y3, hum_avg,
+      all_y1, all_y2, all_y3, all_avg,
+      updated_at)
+    values (
+      v_sid,
+      nullif(v_row->>'nat_y1', '')::numeric, nullif(v_row->>'nat_y2', '')::numeric,
+      nullif(v_row->>'nat_y3', '')::numeric, nullif(v_row->>'nat_avg', '')::numeric,
+      nullif(v_row->>'hum_y1', '')::numeric, nullif(v_row->>'hum_y2', '')::numeric,
+      nullif(v_row->>'hum_y3', '')::numeric, nullif(v_row->>'hum_avg', '')::numeric,
+      nullif(v_row->>'all_y1', '')::numeric, nullif(v_row->>'all_y2', '')::numeric,
+      nullif(v_row->>'all_y3', '')::numeric, nullif(v_row->>'all_avg', '')::numeric,
+      now())
+    on conflict (student_id) do update set
+      nat_y1  = coalesce(excluded.nat_y1,  g.nat_y1),
+      nat_y2  = coalesce(excluded.nat_y2,  g.nat_y2),
+      nat_y3  = coalesce(excluded.nat_y3,  g.nat_y3),
+      nat_avg = coalesce(excluded.nat_avg, g.nat_avg),
+      hum_y1  = coalesce(excluded.hum_y1,  g.hum_y1),
+      hum_y2  = coalesce(excluded.hum_y2,  g.hum_y2),
+      hum_y3  = coalesce(excluded.hum_y3,  g.hum_y3),
+      hum_avg = coalesce(excluded.hum_avg, g.hum_avg),
+      all_y1  = coalesce(excluded.all_y1,  g.all_y1),
+      all_y2  = coalesce(excluded.all_y2,  g.all_y2),
+      all_y3  = coalesce(excluded.all_y3,  g.all_y3),
+      all_avg = coalesce(excluded.all_avg, g.all_avg),
+      updated_at = now();
+
+    v_ok := v_ok + 1;
+  end loop;
+
+  return jsonb_build_object('ok', v_ok, 'skipped', v_skip);
+end $$;
+
+revoke all on function public.upsert_student_grades(jsonb) from public;
+grant execute on function public.upsert_student_grades(jsonb) to authenticated;
+
+
+-- 모의고사도 같은 규칙으로. (빈 과목은 그 과목만 그대로 둔다)
+create or replace function public.upsert_mock_exams(p_rows jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+declare
+  v_row  jsonb;
+  v_sid  uuid;
+  v_exam text;
+  v_ok   int := 0;
+  v_skip int := 0;
+begin
+  for v_row in select * from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) loop
+    v_sid  := nullif(v_row->>'student_id', '')::uuid;
+    v_exam := nullif(btrim(coalesce(v_row->>'exam', '')), '');
+    if v_sid is null or v_exam is null or not private.can_see_student(v_sid) then
+      v_skip := v_skip + 1;
+      continue;
+    end if;
+
+    insert into mock_exams as m (student_id, exam, korean, math, english, sci1, sci2, updated_at)
+    values (
+      v_sid, v_exam,
+      nullif(v_row->>'korean', '')::smallint,
+      nullif(v_row->>'math', '')::smallint,
+      nullif(v_row->>'english', '')::smallint,
+      nullif(v_row->>'sci1', '')::smallint,
+      nullif(v_row->>'sci2', '')::smallint,
+      now())
+    on conflict (student_id, exam) do update set
+      korean  = coalesce(excluded.korean,  m.korean),
+      math    = coalesce(excluded.math,    m.math),
+      english = coalesce(excluded.english, m.english),
+      sci1    = coalesce(excluded.sci1,    m.sci1),
+      sci2    = coalesce(excluded.sci2,    m.sci2),
+      updated_at = now();
+
+    v_ok := v_ok + 1;
+  end loop;
+
+  return jsonb_build_object('ok', v_ok, 'skipped', v_skip);
+end $$;
+
+revoke all on function public.upsert_mock_exams(jsonb) from public;
+grant execute on function public.upsert_mock_exams(jsonb) to authenticated;
+
+notify pgrst, 'reload schema';
