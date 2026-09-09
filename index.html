@@ -2955,6 +2955,10 @@ window.SUSI_DATES = function (text) {
         var auto = (window.SUSI_FORM && window.SUSI_FORM.autoCols)
           ? window.SUSI_FORM.autoCols(aoa, cols) : cols;
         if (auto) ws['!cols'] = auto;          // 너비를 안 주면 글자가 잘려 보인다
+        /* 첫 줄(머리글)에 걸러 보기(필터) 단추를 달아 둔다 — 500줄이 넘는 표라
+           엑셀에서 반·구분·대학으로 바로 추려 볼 수 있어야 한다.
+           ref 는 머리글부터 마지막 줄까지 — aoa_to_sheet 가 잡아 준 범위 그대로다. */
+        if (ws['!ref']) ws['!autofilter'] = { ref: ws['!ref'] };
         XLSX.utils.book_append_sheet(wb, ws, name);
       }
       /* 예전에는 '내신'·'학생별' 시트도 함께 넣었지만, 실제로 쓰는 것은 이 한 장이라
