@@ -2519,6 +2519,8 @@ window.SUSI_DATES = function (text) {
   /* ═══════════ 학생 ═══════════ */
   function enterStudent() {
     PLAN_OWNER = ME;
+    PLAN_READY = false;                        // ★ 서버 계획을 손에 쥐기 전에는 저장 금지
+    sync('불러오는 중…', '');
     setFormWho(ME);
     $('appwrap').classList.remove('hidden');
     window.SUSI.hideTabs(['data']);
@@ -2528,10 +2530,14 @@ window.SUSI_DATES = function (text) {
       sb.from('student_grades').select('*').eq('student_id', ME.id).maybeSingle(),
       sb.from('mock_exams').select('*').eq('student_id', ME.id)
     ]).then(function (r) {
+      /* ★ 못 읽었으면 여기서 멈춘다. 예전에는 오류를 그냥 넘겨서 '빈 계획' 을 화면에
+         올렸고, 0.8초 뒤 저장이 돌면서 서버에 있던 지원계획을 통째로 지웠다. */
+      if (r[0] && r[0].error) throw r[0].error;
       // 내신·모의고사는 양식으로 저장할 때 쓴다 (없으면 그 자리만 빈다)
       setFormWho(ME, (r[1] && r[1].data) || null, (r[2] && r[2].data) || null);
       PLAN = rowsToPlan((r[0] && r[0].data) || [], (r[1] && r[1].data) || null);
       window.SUSI.setPlan(PLAN);
+      PLAN_READY = true;                       // 이제부터 저장해도 안전하다
       sync('저장됨', 'ok');
     });
   }
@@ -2586,9 +2592,15 @@ window.SUSI_DATES = function (text) {
      선생님 계정에 저장되어 학생 것은 하나도 안 바뀌었을 것이다. */
   var PLAN_OWNER = null;
 
-  function planToRows(plan) {
+  /* ★★ 지원계획을 서버에서 '실제로 읽어 온' 뒤에만 참이 된다.
+     저장(flush)은 화면에 있는 계획에 없는 줄을 서버에서 지우는 구조라,
+     아직 안 읽은 빈 계획으로 저장이 돌면 그 학생 지원계획이 통째로 지워진다.
+     실제로 그 일이 있었다 — 회선이 느리거나 읽기가 한 번 실패한 학생들. */
+  var PLAN_READY = false;
+
+  function planToRows(plan, who) {
     var out = [];
-    var owner = PLAN_OWNER || ME;
+    var owner = who || PLAN_OWNER || ME;
     AREAS.forEach(function (area) {
       (plan[area] || []).forEach(function (c, i) {
         var n = window.SUSI_NAMES(c);
@@ -2615,11 +2627,15 @@ window.SUSI_DATES = function (text) {
   var flushing = false, flushAgain = false;
 
   function flush() {
-    if (!dirty || !sb || !ME || !PLAN_OWNER) return Promise.resolve();
+    if (!dirty || !sb || !ME || !PLAN_OWNER || !PLAN_READY) return Promise.resolve();
     if (flushing) { flushAgain = true; return Promise.resolve(); }
     flushing = true;
     dirty = false;
-    var rows = planToRows(window.SUSI.getPlan());
+    /* 누구 것을 저장하는 중인지 여기서 붙잡아 둔다.
+       선생님이 '대신 짜기' 로 다음 학생을 여는 사이에 PLAN_OWNER 가 바뀌면,
+       앞 학생의 계획을 기준으로 뒤 학생의 줄을 지워 버린다. */
+    var owner = PLAN_OWNER;
+    var rows = planToRows(window.SUSI.getPlan(), owner);
     var keep = rows.map(function (r) { return r.area + '#' + r.slot; });
     var step = rows.length
       ? sb.from('applications').upsert(rows, { onConflict: 'student_id,year,area,slot' })
@@ -2627,9 +2643,11 @@ window.SUSI_DATES = function (text) {
     return Promise.resolve(step).then(function (res) {
       if (res && res.error) throw res.error;
       return sb.from('applications').select('id,area,slot')
-        .eq('student_id', (PLAN_OWNER || ME).id).eq('year', CFG.year);
+        .eq('student_id', owner.id).eq('year', CFG.year);
     }).then(function (res) {
       if (!res || res.error) return;
+      // 읽고 오는 사이에 주인이 바뀌었거나 화면이 새로 불러오는 중이면 지우지 않는다
+      if (PLAN_OWNER !== owner || !PLAN_READY) return;
       var dead = (res.data || []).filter(function (r) {
         return keep.indexOf(r.area + '#' + r.slot) < 0; }).map(function (r) { return r.id; });
       if (dead.length) return sb.from('applications').delete().in('id', dead);
@@ -2643,6 +2661,10 @@ window.SUSI_DATES = function (text) {
     });
   }
   function scheduleSave() {
+    /* ★ 아직 서버 계획을 못 받았으면 아무것도 예약하지 않는다.
+       로그인 직후 start() 가 빈 계획을 정리하며 저장을 부르는데,
+       그 저장이 계획보다 먼저 도착하면 지원계획이 전부 지워진다. */
+    if (!PLAN_READY) return;
     dirty = true; sync('저장 중…', '');
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flush, 800);      // 타이핑마다 보내지 않도록 잠깐 모은다
@@ -2835,6 +2857,7 @@ window.SUSI_DATES = function (text) {
   function openPlanFor(st) {
     if (!st) return;
     var box = $('stDetail');
+    PLAN_READY = false;                        // ★ 다 읽기 전에는 저장 금지
     return Promise.resolve(flush()).then(function () {
       return Promise.all([
         sb.from('applications').select('*').eq('student_id', st.id).eq('year', CFG.year),
@@ -2849,6 +2872,7 @@ window.SUSI_DATES = function (text) {
       // 대신 짜는 동안 저장하면 그 학생 이름·내신·모의고사로 나간다
       setFormWho(st, (r[1] && r[1].data) || null, (r[2] && r[2].data) || null);
       window.SUSI.setPlan(PLAN);
+      PLAN_READY = true;                       // 이제부터 저장해도 안전하다
       window.SUSI.showTabs(['plan']);
       window.SUSI.hideTabs(['data']);           // 학생이 보는 화면과 똑같이 (자료 교체는 감춘다)
       window.SUSI.hide(['persist']);            // '모든 기기에 저장' 은 학생 전용
@@ -2888,7 +2912,7 @@ window.SUSI_DATES = function (text) {
       $('appwrap').classList.add('hidden');
       $('teacherView').classList.remove('hidden');
       window.SUSI.hideTabs(['plan']);
-      PLAN_OWNER = null; PLAN = null; setFormWho(null);
+      PLAN_OWNER = null; PLAN = null; PLAN_READY = false; setFormWho(null);
       if (st) pickStudent(st.id);            // 방금 고친 내용이 표에 반영된다
       if (dirty) window.alert('아직 저장되지 않은 변경이 있습니다. 인터넷을 확인하고 다시 열어 주세요.');
     });
@@ -4945,7 +4969,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-08.2';
+  var BUILD_ID = '2026-09-09.1';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
