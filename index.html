@@ -1468,7 +1468,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <div class="panel pad">
           <h3 class="sec">담당 학생 <span class="tag" id="stCount"></span></h3>
           <div class="stxlsxrow">
-            <button class="btn" id="stXlsx" title="담당 학생들의 지원계획을 한 장짜리 엑셀로 받습니다">엑셀로 받기</button>
+            <button class="btn" id="stXlsx" title="담당 학생들의 지원계획을 한 장짜리 엑셀로 받습니다 (예비 칸은 빠집니다)">엑셀로 받기</button>
             <button class="btn hidden" id="stXlsxUp" title="학생자료양식.xlsx 로 내신·모의고사를 한 번에 넣습니다">엑셀로 올리기</button>
           </div>
           <input type="text" id="stFilter" placeholder="이름·학번으로 찾기" autocomplete="off">
@@ -2896,20 +2896,30 @@ window.SUSI_DATES = function (text) {
      '학생별'(학생마다 양식 한 벌) 시트도 함께 넣었지만, 실제로 쓰는 것은
      지원계획 시트뿐이라 그 두 장과 그것을 만들던 코드를 걷어냈다. */
   var PLAN_AREA = { main: '수시지원', cand: '예비', college: '전문대', tech: '기술원' };
+  var AREA_ORDER = { main: 1, tech: 2, college: 3, cand: 4 };   // 학생 화면에 놓인 차례
   var PLAN_RESULT = { pass: '합격', fail: '불합격', wait: '충원대기' };
   var PLAN_VERDICT = { up: '상향', fit: '적정', down: '하향' };
 
+  /* ★ '예비' 는 빼고 만든다.
+     이 파일은 원서를 다 넣은 뒤 면접 지도와 '어디에 지원했는지' 확인에 쓴다.
+     예비는 실제로 넣은 곳이 아니라서 섞여 있으면 지원한 곳과 구별이 안 된다.
+     수시지원·기술원·전문대는 모두 실제로 넣는 곳이라 그대로 둔다. */
   function planAoa(apps) {
     var byId = {};
     STUDENTS.forEach(function (st) { byId[st.id] = st; });
+    apps = (apps || []).filter(function (a) { return a.area !== 'cand'; });
     /* 칸 차례는 화면(교사용 표)과 같게 둔다 — 1단계 → 면접·실기·논술 → 최초 발표 → 합불 → 충원.
        다시 올릴 때는 머리글 '이름'으로 찾으므로 차례가 바뀌어도 읽는 데는 문제가 없다. */
     var aoa = [['학번', '반', '번호', '이름', '구분', '칸', '대학', '전형유형', '전형명', '학과',
                 '대학별내신', '판정(직접지정)', '수험번호', '1단계', '면접·실기·논술', '최초 발표', '합불', '충원합격']];
-    (apps || []).slice().sort(function (a, b) {
+    apps.slice().sort(function (a, b) {
       var sa = byId[a.student_id], sb2 = byId[b.student_id];
+      /* 구분 차례는 학생 화면과 같게 — 수시지원 → 기술원 → 전문대.
+         예전에는 area 글자를 그냥 비교해서 college < main < tech 가 되는 바람에
+         전문대가 수시지원보다 위에 올라왔다. */
       return ((sa && sa.student_no) || 0) - ((sb2 && sb2.student_no) || 0)
-          || String(a.area).localeCompare(String(b.area)) || (a.slot - b.slot);
+          || (AREA_ORDER[a.area] || 9) - (AREA_ORDER[b.area] || 9)
+          || (a.slot - b.slot);
     }).forEach(function (a) {
       var st = byId[a.student_id]; if (!st) return;      // 못 보는 학생은 건너뛴다
       aoa.push([st.student_no, st.class_no, st.number_no, st.name,
@@ -2950,7 +2960,9 @@ window.SUSI_DATES = function (text) {
       /* 예전에는 '내신'·'학생별' 시트도 함께 넣었지만, 실제로 쓰는 것은 이 한 장이라
          지원계획만 남겼다. (내신·모의고사를 한꺼번에 넣을 때는 학생자료양식.xlsx 를
          [엑셀로 올리기] 로 올린다 — 그쪽은 이 파일과 별개다.) */
-      add('지원계획', planAoa((r && r.data) || []), LIST_COLS_PLAN);
+      var got = (r && r.data) || [];
+      var skipped = got.filter(function (a) { return a.area === 'cand'; }).length;
+      add('지원계획', planAoa(got), LIST_COLS_PLAN);
       var buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
       var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       var d = new Date();
@@ -2959,7 +2971,8 @@ window.SUSI_DATES = function (text) {
       a.href = url; a.download = nm; document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-      window.SUSI.toast(STUDENTS.length + '명을 ' + nm + ' 으로 저장했습니다.');
+      window.SUSI.toast(STUDENTS.length + '명을 ' + nm + ' 으로 저장했습니다.' +
+        (skipped ? ' (예비 ' + skipped + '칸은 뺐습니다)' : ''));
     }).catch(function (e) {
       window.alert('엑셀을 만들지 못했습니다: ' + (e && e.message || ''));
     }).then(function () {
@@ -5108,7 +5121,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-09.2';
+  var BUILD_ID = '2026-09-09.3';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
