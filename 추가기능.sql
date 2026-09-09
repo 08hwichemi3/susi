@@ -705,3 +705,71 @@ revoke all on function public.upsert_mock_exams(jsonb) from public;
 grant execute on function public.upsert_mock_exams(jsonb) to authenticated;
 
 notify pgrst, 'reload schema';
+
+
+-- ═══════════ ⑯ 지원계획 삭제 기록 ═══════════
+-- 학생이 적어 둔 대학이 통째로 사라지는 일이 있었다(2026-09).
+-- 원인은 고쳤지만, 다시 그런 일이 생기면 '언제·누가·무엇을' 을 바로 알 수 있어야 한다.
+-- 앱이 지우든 선생님이 지우든 손으로 지우든 전부 여기에 남는다.
+create table if not exists public.application_deletions (
+  id         bigint generated always as identity primary key,
+  deleted_at timestamptz not null default now(),
+  actor_id   uuid,                       -- 지운 사람 (로그인한 계정)
+  student_id uuid not null,
+  year       smallint,
+  area       text,
+  slot       smallint,
+  uni_name   text,
+  dept_name  text,
+  row        jsonb not null              -- 지워진 줄 전체 (되살릴 때 쓴다)
+);
+
+create index if not exists application_deletions_student_idx
+  on public.application_deletions (student_id, deleted_at desc);
+create index if not exists application_deletions_at_idx
+  on public.application_deletions (deleted_at desc);
+
+-- 관리용 기록이다. 정책을 하나도 두지 않아 학생·담임 누구도 읽지 못한다.
+alter table public.application_deletions enable row level security;
+
+create or replace function public.log_application_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+begin
+  insert into public.application_deletions
+    (actor_id, student_id, year, area, slot, uni_name, dept_name, row)
+  values (auth.uid(), old.student_id, old.year, old.area::text, old.slot,
+          old.uni_name, old.dept_name, to_jsonb(old));
+  return old;
+end $$;
+
+drop trigger if exists trg_log_application_delete on public.applications;
+create trigger trg_log_application_delete
+  after delete on public.applications
+  for each row execute function public.log_application_delete();
+
+/* ── 되살리는 법 (관리자가 SQL 편집기에서 직접 실행) ──────────────────
+   ① 누가 언제 무엇을 잃었는지 본다
+        select deleted_at, student_id, uni_name, dept_name
+          from application_deletions
+         where deleted_at > now() - interval '3 days'
+         order by deleted_at desc;
+   ② 한 학생의 특정 시각 삭제분을 그대로 되돌린다
+        insert into applications
+        select (row->>'id')::uuid, (row->>'student_id')::uuid,
+               (row->>'area')::app_area, (row->>'slot')::smallint,
+               (row->>'year')::smallint, row->>'uni_name', row->>'type_name',
+               row->>'admission_name', row->>'dept_name',
+               (row->>'verdict_override')::verdict_kind, row->>'step1',
+               row->>'interview', row->>'essay', row->>'exam_no', row->>'fill_no',
+               (row->>'result')::app_result, row->>'memo',
+               (row->>'created_at')::timestamptz, now(),
+               row->>'final_date', (row->>'manual_grade')::numeric
+          from application_deletions
+         where student_id = '<학생 uuid>' and deleted_at > '<시각>'
+        on conflict (student_id, year, area, slot) do nothing;
+      ★ 칸 차례는 applications 표의 차례와 같아야 한다.
+        바뀌었다면 information_schema.columns 로 먼저 확인할 것.            */

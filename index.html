@@ -5,7 +5,7 @@
   --ink:#17201C; --ink-2:#4A544E; --ink-3:#7C857E;
   --accent:#1F5D4C; --accent-ink:#FFFFFF; --accent-soft:#DFEAE4; --accent-line:#A9C7BB;
   --amber:#8A5A0E; --amber-soft:#F6EBD6;
-  --rose:#8C2F39; --rose-soft:#F6E2E3;
+  --rose:#8C2F39; --rose-soft:#F6E2E3; --rose-ink:#FFFFFF;
   --blue:#25506E; --blue-soft:#DEE8F0;
   /* 달력 전용 색 — 주말과 고사 종류는 한눈에 갈라져야 해서 본문 색보다 진하게 쓴다 */
   --cal-sun:#D6293E; --cal-sat:#1160C4;
@@ -21,7 +21,7 @@
   --ink:#E9EAE3; --ink-2:#AEB5AC; --ink-3:#7E867E;
   --accent:#68B79B; --accent-ink:#0E1512; --accent-soft:#1D2A25; --accent-line:#2F4A40;
   --amber:#D9A441; --amber-soft:#2A2318;
-  --rose:#D98189; --rose-soft:#2C1B1D;
+  --rose:#D98189; --rose-soft:#2C1B1D; --rose-ink:#21100F;
   --blue:#8FB8D6; --blue-soft:#1B2630;
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
   --cal-sun-bg:#33191C; --cal-sat-bg:#161F2C;
@@ -35,7 +35,7 @@
   --ink:#E9EAE3; --ink-2:#AEB5AC; --ink-3:#7E867E;
   --accent:#68B79B; --accent-ink:#0E1512; --accent-soft:#1D2A25; --accent-line:#2F4A40;
   --amber:#D9A441; --amber-soft:#2A2318;
-  --rose:#D98189; --rose-soft:#2C1B1D;
+  --rose:#D98189; --rose-soft:#2C1B1D; --rose-ink:#21100F;
   --blue:#8FB8D6; --blue-soft:#1B2630;
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
   --cal-sun-bg:#33191C; --cal-sat-bg:#161F2C;
@@ -476,6 +476,24 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   background:var(--ground);overflow:auto}
 .gatebox{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);
   border-radius:14px;padding:28px 26px;box-shadow:0 8px 30px rgba(0,0,0,.06)}
+
+/* ───────── 지워질 줄이 있는 저장을 물어보는 창 ─────────
+   담기·고치기는 지금처럼 조용히 저장한다. 줄이 '줄어드는' 저장일 때만 뜬다.
+   아무도 안 눌렀는데 이 창이 뜬다면 그것 자체가 이상 신호다. */
+.delask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;
+  background:rgba(0,0,0,.34);overflow:auto}
+.delask.hidden{display:none}
+.delbox{width:100%;max-width:430px;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:22px 22px 18px;box-shadow:0 10px 34px rgba(0,0,0,.22)}
+.delbox h3{margin:0 0 6px;font-size:18px;font-weight:600;color:var(--ink)}
+.delbox p{margin:0 0 12px;font-size:13px;color:var(--ink-2);line-height:1.65}
+.dellist{margin:0 0 14px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;
+  background:var(--ground);max-height:210px;overflow:auto}
+.dellist ul{margin:0;padding:0}
+.dellist li{list-style:none;font-size:13px;color:var(--ink);padding:3px 0;
+  word-break:keep-all;overflow-wrap:break-word}
+.dellist li em{font-style:normal;color:var(--ink-3);font-size:12px}
+.delbtns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 /* 학교 이름 + 제목이 길어지면 두 줄이 된다. 낱말 가운데가 아니라 낱말 사이에서
    끊기게 하고(keep-all), 줄 길이를 고르게 나눈다 — 「…수시 지원 센 / 터」 방지. */
 .gtitle{font-family:var(--serif);font-size:26px;margin:0 0 2px;font-weight:400;color:var(--ink);
@@ -938,7 +956,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .setrow input[type=number]{width:96px}
 .setrow input[type=text]{min-width:180px}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.btn.danger{background:var(--rose);color:#fff;border-color:var(--rose)}
+.btn.danger{background:var(--rose);color:var(--rose-ink);border-color:var(--rose)}
 .btn.danger:disabled{background:var(--surface-2);color:var(--ink-3);border-color:var(--line);cursor:not-allowed}
 
 /* 교직원 한 줄 */
@@ -2598,6 +2616,26 @@ window.SUSI_DATES = function (text) {
      실제로 그 일이 있었다 — 회선이 느리거나 읽기가 한 번 실패한 학생들. */
   var PLAN_READY = false;
 
+  /* 화면에 '놓여 있는' 카드의 자리들. 학과를 아직 안 골랐어도 대학이 적혀 있으면 센다.
+     ★ 두 가지에 쓴다.
+       ① 고치는 중인 카드를 '빠진 카드' 로 오해하지 않는다.
+       ② 그 자리는 서버에서 지우지 않는다 — 학생이 학과를 고르는 사이에는
+          아직 온전한 줄이 아니라 저장 대상이 아닌데, 예전에는 그때
+          '계획에 없는 줄' 로 보고 지웠다가 다 고른 뒤 다시 만들었다.
+          고치다 창을 닫으면 그대로 사라졌다. */
+  function placedSlots(plan) {
+    var at = {};
+    if (!plan) return at;
+    AREAS.forEach(function (area) {
+      (plan[area] || []).forEach(function (c, i) {
+        if (!c) return;
+        if ((c.u !== null && c.u !== undefined) ||
+            (c.custom && String(c.uName || '').trim())) at[area + '#' + (i + 1)] = 1;
+      });
+    });
+    return at;
+  }
+
   function planToRows(plan, who) {
     var out = [];
     var owner = who || PLAN_OWNER || ME;
@@ -2625,9 +2663,11 @@ window.SUSI_DATES = function (text) {
      화면에는 남아 있고 '저장됨' 까지 떠서, 다음 접속 때에야 사라진 걸 안다.
      → 한 번에 하나만 돌게 하고, 도는 중에 들어온 변경은 끝난 뒤 이어서 처리한다. */
   var flushing = false, flushAgain = false;
+  var DEL_OK = false;        // 확인을 받은 저장 딱 한 번만 통과시킨다
+  var DEL_ASKING = false;    // 확인 창이 떠 있는 동안은 저장을 멈춘다
 
   function flush() {
-    if (!dirty || !sb || !ME || !PLAN_OWNER || !PLAN_READY) return Promise.resolve();
+    if (!dirty || !sb || !ME || !PLAN_OWNER || !PLAN_READY || DEL_ASKING) return Promise.resolve();
     if (flushing) { flushAgain = true; return Promise.resolve(); }
     flushing = true;
     dirty = false;
@@ -2637,28 +2677,127 @@ window.SUSI_DATES = function (text) {
     var owner = PLAN_OWNER;
     var rows = planToRows(window.SUSI.getPlan(), owner);
     var keep = rows.map(function (r) { return r.area + '#' + r.slot; });
-    var step = rows.length
-      ? sb.from('applications').upsert(rows, { onConflict: 'student_id,year,area,slot' })
-      : Promise.resolve({ error: null });
-    return Promise.resolve(step).then(function (res) {
+    /* ★ 순서가 중요하다 — 쓰기 전에 먼저 서버에 무엇이 있는지 본다.
+       '지워질 줄' 이 있으면 아무것도 쓰지 않고 사람에게 먼저 물어본다.
+       올린 다음에 물어보면, 취소해도 이미 밀려 들어간 자리를 되돌릴 수 없다. */
+    return Promise.resolve(
+      sb.from('applications').select('id,area,slot,uni_name,dept_name')
+        .eq('student_id', owner.id).eq('year', CFG.year)
+    ).then(function (res) {
       if (res && res.error) throw res.error;
-      return sb.from('applications').select('id,area,slot')
-        .eq('student_id', owner.id).eq('year', CFG.year);
-    }).then(function (res) {
-      if (!res || res.error) return;
-      // 읽고 오는 사이에 주인이 바뀌었거나 화면이 새로 불러오는 중이면 지우지 않는다
-      if (PLAN_OWNER !== owner || !PLAN_READY) return;
+      // 읽고 오는 사이에 주인이 바뀌었거나 화면을 새로 불러오는 중이면 손대지 않는다
+      if (PLAN_OWNER !== owner || !PLAN_READY) { flushing = false; flushAgain = false; return; }
+      var busy = placedSlots(window.SUSI.getPlan());
       var dead = (res.data || []).filter(function (r) {
-        return keep.indexOf(r.area + '#' + r.slot) < 0; }).map(function (r) { return r.id; });
-      if (dead.length) return sb.from('applications').delete().in('id', dead);
-    }).then(function () {
-      flushing = false;
-      if (flushAgain) { flushAgain = false; dirty = true; return flush(); }
-      sync('저장됨', 'ok');
+        var at = r.area + '#' + r.slot;
+        return keep.indexOf(at) < 0 && !busy[at];    // 고치는 중인 자리는 건드리지 않는다
+      });
+      /* ★ 언제 물어볼 것인가 — 화면에 놓인 카드 수가 서버보다 줄었을 때만.
+           · 학과를 고치는 중이면 카드는 그대로 놓여 있다(내용만 미완성) →
+             묻지 않는다. 안 그러면 고칠 때마다 창이 뜬다.
+           · 자리 바꾸기(⇄)도 수가 그대로다 → 묻지 않는다.
+           · ×(빼기)를 눌렀거나, 아무도 안 눌렀는데 계획이 비었으면 → 묻는다.
+         ★ 무엇이 빠지는지는 자리가 아니라 '이름' 으로 찾는다.
+           카드는 자리로 저장하므로 가운데를 빼면 뒤가 앞으로 밀려
+           늘 맨 끝자리가 지워진다 — 자리로 알리면 뺀 적 없는 대학이 뜬다. */
+      var placed = 0; for (var bk in busy) if (busy.hasOwnProperty(bk)) placed++;
+      var stay = {};
+      rows.forEach(function (r) { stay[(r.uni_name || '') + '|' + (r.dept_name || '')] = 1; });
+      var gone = (res.data || []).filter(function (r) {
+        return !stay[(r.uni_name || '') + '|' + (r.dept_name || '')]; });
+      if (!gone.length) gone = dead;
+      if (placed < (res.data || []).length && !DEL_OK) {
+        flushing = false; flushAgain = false; dirty = true;
+        return askDelete(gone, owner);   // 확인을 받기 전에는 한 글자도 쓰지 않는다
+      }
+      var step = rows.length
+        ? sb.from('applications').upsert(rows, { onConflict: 'student_id,year,area,slot' })
+        : Promise.resolve({ error: null });
+      return Promise.resolve(step).then(function (r2) {
+        if (r2 && r2.error) throw r2.error;
+        if (!dead.length) return;
+        if (PLAN_OWNER !== owner || !PLAN_READY) return;
+        return sb.from('applications').delete()
+          .in('id', dead.map(function (r) { return r.id; }));
+      }).then(function () {
+        DEL_OK = false;
+        flushing = false;
+        if (flushAgain) { flushAgain = false; dirty = true; return flush(); }
+        sync('저장됨', 'ok');
+      });
     }).catch(function (e) {
+      DEL_OK = false;
       flushing = false; flushAgain = false;
       dirty = true; sync('저장 실패. 다시 시도합니다', 'bad'); console.error(e);
     });
+  }
+
+  /* ───────── 지워질 줄이 있는 저장은 물어본다 ─────────
+     담기·고치기는 지금처럼 조용히 저장한다. 줄이 '줄어드는' 저장일 때만 뜬다.
+     [취소] 를 고르면 서버에 있는 것을 다시 읽어 화면을 되돌린다 — 그래야
+     화면과 서버가 어긋난 채로 남지 않는다. */
+  var DEL_BOX = null, DEL_DONE = null;
+  function askDelete(dead, owner) {
+    DEL_ASKING = true;
+    sync('확인이 필요합니다', 'bad');
+    if (!DEL_BOX) {
+      DEL_BOX = document.createElement('div');
+      DEL_BOX.className = 'delask hidden';
+      DEL_BOX.innerHTML =
+        '<div class="delbox" role="dialog" aria-modal="true" aria-labelledby="delTitle">' +
+        '<h3 id="delTitle">지원계획에서 빼도 될까요?</h3>' +
+        '<p id="delWho"></p><div class="dellist"><ul id="delList"></ul></div>' +
+        '<p class="hint">직접 빼신 것이 맞다면 [빼고 저장] 을 누르세요. ' +
+        '뺀 적이 없는데 이 창이 떴다면 <b>반드시 [그대로 두기]</b> 를 누르고 선생님께 알려 주세요.</p>' +
+        '<div class="delbtns">' +
+        '<button type="button" class="btn" id="delNo">그대로 두기</button>' +
+        '<button type="button" class="btn danger" id="delYes">빼고 저장</button>' +
+        '</div></div>';
+      document.body.appendChild(DEL_BOX);
+      DEL_BOX.querySelector('#delNo').addEventListener('click', function () { closeAsk(false); });
+      DEL_BOX.querySelector('#delYes').addEventListener('click', function () { closeAsk(true); });
+    }
+    $('delWho').innerHTML = '아래 <b>' + dead.length + '개</b>가 지원계획에서 빠집니다.' +
+      (owner && owner !== ME ? ' (' + esc(owner.name) + ' 학생)' : '');
+    $('delList').innerHTML = dead.map(function (r) {
+      return '<li>' + esc(r.uni_name || '(대학 없음)') +
+        ' <em>' + esc(r.dept_name || '') + '</em></li>';
+    }).join('');
+    DEL_BOX.classList.remove('hidden');
+    var yes = DEL_BOX.querySelector('#delYes'); if (yes) yes.focus();
+    /* 답을 기다리는 약속을 돌려준다 — 저장을 부른 쪽(로그아웃, '학생 목록으로')이
+       답이 나올 때까지 기다리게 해야, 답하는 사이에 주인이 사라지지 않는다. */
+    return new Promise(function (done) { DEL_DONE = done; });
+  }
+
+  function closeAsk(ok) {
+    if (DEL_BOX) DEL_BOX.classList.add('hidden');
+    DEL_ASKING = false;
+    var done = DEL_DONE; DEL_DONE = null;
+    var fin = function () { if (done) done(); };
+    if (ok) { DEL_OK = true; dirty = true; return flush().then(fin, fin); }
+    // 그대로 두기 — 서버에 있는 것을 다시 읽어 화면을 되돌린다
+    dirty = false; DEL_OK = false;
+    var who = PLAN_OWNER;
+    if (!who) { fin(); return; }
+    sync('되돌리는 중…', '');
+    return Promise.resolve(sb.from('applications').select('*')
+      .eq('student_id', who.id).eq('year', CFG.year)
+    ).then(function (r) {
+      if (r && r.error) throw r.error;
+      if (PLAN_OWNER !== who) return;
+      /* 내신·기준선은 지원계획 줄에서 오는 값이 아니다 — 지금 화면 것을 그대로 둔다.
+         (여기서 새로 만들면 학생 내신 칸이 빈칸이 되어 판정이 통째로 사라진다) */
+      var cur = window.SUSI.getPlan();
+      PLAN = rowsToPlan(r.data || [], null);
+      if (cur && cur.g) PLAN.g = cur.g;
+      if (cur && cur.th !== undefined && cur.th !== null) PLAN.th = cur.th;
+      window.SUSI.setPlan(PLAN);
+      dirty = false;                       // setPlan 이 부른 저장 예약을 되돌린다
+      sync('저장됨', 'ok');
+    }).catch(function (e) {
+      sync('되돌리지 못했습니다. 새로고침해 주세요', 'bad'); console.error(e);
+    }).then(fin, fin);
   }
   function scheduleSave() {
     /* ★ 아직 서버 계획을 못 받았으면 아무것도 예약하지 않는다.
@@ -4969,7 +5108,7 @@ window.SUSI_DATES = function (text) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-09.1';
+  var BUILD_ID = '2026-09-09.2';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
