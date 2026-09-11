@@ -3235,9 +3235,6 @@ window.SUSI_SAMEDAYS = function (a, b) {
       // 판정이 왜 비었는지 보이게 한다 — 그냥 '—' 면 고장인지 자료 문제인지 알 수 없다
       var why = !info ? '자료에 없음' : (!cut ? '컷 없음' : (!mine ? '내신 없음' : ''));
       var iAuto = info ? info.interview : '', eAuto = info ? info.essay : '';
-      // 칸은 그대로 두고 이름만 전형방법에 맞춘다 (실기 전형이면 「실기」)
-      var iKind = (info && info.kind) || '면접';
-      var eKind = (info && info.essayKind) || '논술';
       h += '<tr data-id="' + a.id + '">' +
         '<td class="auto"><span class="areatag at-' + a.area + '">' + AN[a.area] + ' ' + a.slot + '</span></td>' +
         '<td class="auto"><b>' + esc(a.uni_name) + '</b><br><span class="who">' +
@@ -3258,11 +3255,11 @@ window.SUSI_SAMEDAYS = function (a, b) {
         '<td class="auto" data-label="모집">' + (info && info.n ? info.n : '—') + '</td>' +
         '<td class="auto" data-label="경쟁률">' + (info && info.rate ? nf(info.rate) : '—') + '</td>' +
         '<td data-label="1단계"><input type="text" data-f="step1" value="' + esc(a.step1 || '') + '" placeholder="예: 1120"></td>' +
-        '<td class="two" data-label="' + iKind + ' · ' + eKind + '">' +
+        '<td class="two" data-label="면접/실기 · 논술">' +
           '<input type="text" data-f="interview" value="' + esc(a.interview != null ? a.interview : iAuto) +
-            '" placeholder="' + iKind + (iAuto ? '' : ' 없음') + '">' +
+            '" placeholder="면접/실기' + (iAuto ? '' : ' 없음') + '">' +
           '<input type="text" data-f="essay" value="' + esc(a.essay != null ? a.essay : eAuto) +
-            '" placeholder="' + eKind + (eAuto ? '' : ' 없음') + '">' +
+            '" placeholder="논술' + (eAuto ? '' : ' 없음') + '">' +
         '</td>' +
         '<td data-label="최초 발표"><input type="text" data-f="final_date" value="' +
           esc(a.final_date || '') + '" placeholder="최초 발표일"></td>' +
@@ -5158,7 +5155,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-11.1';
+  var BUILD_ID = '2026-09-11.2';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -5932,6 +5929,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
      ★ '적성' 은 넣지 않는다 — 「학생부(교과) 90% + 인적성평가 10%」 가 실기로 잡힌다.
      ★ 학과 이름(군사·경호)도 보지 않는다 — 「동신대 학생부교과 [면접전형] 군사학과」
        처럼 이름만 군사이고 실제로는 면접인 전형이 있다. */
+  /* ★ 이 이름은 '보여 줄 때' 만 쓴다 — 달력·고사일 표시·겹침 세기.
+       적는 칸 이름은 「면접/실기」·「논술」 로 고정한다. 전형마다 칸 이름이
+       바뀌면 학생이 «내 칸이 왜 달라졌지» 하고 더 헷갈린다. */
   var MET_P = /실기|실적|체력/;
   var MET_I = /면접|구술/;
   var MET_E = /논술/;
@@ -6692,10 +6692,10 @@ window.SUSI_SAMEDAYS = function (a, b) {
         '<label>충원합격 번호<input type="text" data-f="fillNo" value="' + esc(c.fillNo || '') + '" placeholder="예: 3"></label>' +
         '</div>' +
         '<div class="rrow"><label>1단계<input type="text" data-f="step1" value="' + esc(c.step1 || '') + '" placeholder="예: 1120 → 2026/11/20"></label></div>' +
-        '<div class="rrow"><label>' + examKind(r, '면접') + '<input type="text" data-f="interview" value="' + esc(iVal) + '" placeholder="예: 1127 → 2026/11/27"></label>' +
+        '<div class="rrow"><label>면접/실기<input type="text" data-f="interview" value="' + esc(iVal) + '" placeholder="예: 1127 → 2026/11/27"></label>' +
         ((c.interview !== null && c.interview !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="interview" title="자동값으로 되돌리기">⟲</button>' : '') +
         '</div>' +
-        '<div class="rrow"><label>' + examKind(r, '논술') + '<input type="text" data-f="essay" value="' + esc(eVal) + '" placeholder="예: 1204 → 2026/12/04"></label>' +
+        '<div class="rrow"><label>논술<input type="text" data-f="essay" value="' + esc(eVal) + '" placeholder="예: 1204 → 2026/12/04"></label>' +
         ((c.essay !== null && c.essay !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="essay" title="자동값으로 되돌리기">⟲</button>' : '') +
         '</div>' +
         /* 합격자 «최초» 발표일. 「최종 발표」 라고 적었더니 충원(추가합격) 마지막 발표로
