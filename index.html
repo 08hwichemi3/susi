@@ -11,7 +11,7 @@
   --cal-sun:#D6293E; --cal-sat:#1160C4;
   --cal-sun-bg:#FBE7E9; --cal-sat-bg:#E1EBFA;   /* 주말 칸 전체에 까는 옅은 바탕 */
   --facts-bg:#F1EFE7;          /* 카드 가운데 '자료에서 오는 정보' 띠 바탕 */
-  --kd-int:#12795F; --kd-ess:#A4650B; --kd-prac:#5B47B0; --kd-ink:#FFFFFF;
+  --kd-int:#12795F; --kd-ess:#A4650B; --kd-prac:#5B47B0; --kd-st1:#4A5568; --kd-ink:#FFFFFF;
   --shadow:0 1px 2px rgba(23,32,28,.06),0 8px 24px -12px rgba(23,32,28,.18);
   --r:10px;
 }
@@ -26,7 +26,7 @@
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
   --cal-sun-bg:#33191C; --cal-sat-bg:#161F2C;
   --facts-bg:#232C26;
-  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-ink:#0E1512;
+  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-st1:#9AA5B4; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }}
 :root[data-theme="dark"]{
@@ -40,7 +40,7 @@
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
   --cal-sun-bg:#33191C; --cal-sat-bg:#161F2C;
   --facts-bg:#232C26;
-  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-ink:#0E1512;
+  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-st1:#9AA5B4; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }
 *{box-sizing:border-box}
@@ -694,6 +694,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .kd.k-면접{background:var(--kd-int)}
 .kd.k-논술{background:var(--kd-ess)}
 .kd.k-실기{background:var(--kd-prac)}
+/* 1단계는 시험이 아니라 발표다 — 색도 시험 셋과 구별되는 차분한 회청색 */
+.kd.k-1단계{background:var(--kd-st1)}
 
 /* 날짜를 눌렀을 때 아래에 펼쳐지는 판. 여기는 길어지면 스크롤 */
 /* 달력을 아래로 스크롤해도 오른쪽 상세가 요일 줄 높이에 붙어 계속 보이도록 sticky 로 띄운다.
@@ -922,6 +924,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .kd.k-면접{background:#12795F !important}
   .kd.k-논술{background:#A4650B !important}
   .kd.k-실기{background:#5B47B0 !important}
+  .kd.k-1단계{background:#4A5568 !important}
   .colmk{background:#25506E !important;color:#fff !important;border-radius:3px;
     padding:0 3px !important;margin-right:2px;line-height:1;
     font-size:calc(var(--cal-fs,8.5px) * 0.92)}
@@ -3979,6 +3982,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
              적어 둔 값은 그대로 두고, 달력에만 실기로 한 번 싣는다. */
           if (ivVal && prac && window.SUSI_SAMEDAYS(ivVal, prac)) ivVal = '';
           var pairs = [
+            /* 1단계 발표는 시험이 아니라 «합격자 발표» 다. 언제 확인해야 하는지
+               알아야 해서 달력에 함께 싣되, 겹침 경고에는 넣지 않는다(아래 EXAM_KIND). */
+            ['1단계', a.step1 || ''],
             [(info && info.kind) || '면접', ivVal],
             [(info && info.essayKind) || '논술',
              a.essay != null ? a.essay : (info ? info.essay : '')],
@@ -4095,9 +4101,15 @@ window.SUSI_SAMEDAYS = function (a, b) {
       '<span class="kd k-' + it.kind + '">' + it.kind + '</span></span></div>';
   }
 
+  /* 같은 날 두 곳 이상이면 경고하는데, 그 «두 곳» 은 시험이어야 한다.
+     1단계 발표는 인터넷으로 확인하는 것이라 다른 고사와 겹쳐도 아무 문제가 없다.
+     넣어 두면 발표만 겹쳐도 빨간 테두리가 떠서 진짜 겹침을 못 알아본다. */
+  var EXAM_KIND = { '면접': 1, '논술': 1, '실기': 1 };
   function isClash(k) {
     var per = {};
-    (CALST.days[k] || []).forEach(function (i) { per[i.sid] = (per[i.sid] || 0) + 1; });
+    (CALST.days[k] || []).forEach(function (i) {
+      if (EXAM_KIND[i.kind]) per[i.sid] = (per[i.sid] || 0) + 1;
+    });
     return Object.keys(per).some(function (x) { return per[x] > 1; });
   }
 
@@ -4200,7 +4212,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
       if (/\(전문대\)/.test(g.uni)) uw += 16;                  // 「전」 딱지
       var head = Math.max(1, Math.ceil(uw / CELL_W));
       if (!flow) return head + g.who.length;
-      var nw = 28;                                            // 「면접」 딱지 자리
+      /* 딱지 너비 — 글자 수에 따라 다르다(「면접」 2자, 「1단계」 3자).
+         딱지 글씨는 본문의 0.92배이고 좌우 여백·테두리로 10px 쯤 더 든다. */
+      var nw = units(g.kind) * fs * 0.92 + 10;
       for (var q = 0; q < g.who.length; q++) nw += units(g.who[q]) * fs + (q ? 4 : 0);
       return head + Math.max(1, Math.ceil(nw / CELL_W));
     }
@@ -4363,15 +4377,22 @@ window.SUSI_SAMEDAYS = function (a, b) {
     var keys = Object.keys(days).filter(function (k) { return k.slice(0, 7) === mo; }).sort();
     if (!keys.length) return '';
     var rows = [], total = 0;
+    var st1 = 0;                       // 달력에만 실린 1단계 발표 건수(아래에서 알려 준다)
     keys.forEach(function (k) {
-      var items = (days[k] || []).slice();
+      (days[k] || []).forEach(function (i) { if (!EXAM_KIND[i.kind]) st1++; });
+    });
+    keys.forEach(function (k) {
+      /* ★ 명단에는 «고사» 만 싣는다 — 1단계 발표는 달력에만 나온다.
+         발표까지 넣으면 한 반이 39줄에서 64줄로 늘어 한 장을 넘어가는데,
+         그러자고 글씨를 본문 절반까지 줄이는 것보다 달력에서 보는 편이 낫다. */
+      var items = (days[k] || []).filter(function (i) { return EXAM_KIND[i.kind]; });
       // 달력 칸과 같은 차례 — 대학으로 묶고, 같은 대학이면 학번순
       items.sort(function (a, b) {
         return a.uni.localeCompare(b.uni) || (a.no - b.no)
             || a.who.localeCompare(b.who) || a.kind.localeCompare(b.kind);
       });
       var per = {};
-      items.forEach(function (i) { per[i.sid] = (per[i.sid] || 0) + 1; });
+      items.forEach(function (i) { if (EXAM_KIND[i.kind]) per[i.sid] = (per[i.sid] || 0) + 1; });
       var dt = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10));
       var label = (+k.slice(5, 7)) + '/' + (+k.slice(8, 10)) + ' (' + WEEK[dt.getDay()] + ')';
       items.forEach(function (it, ix) {
@@ -4398,7 +4419,8 @@ window.SUSI_SAMEDAYS = function (a, b) {
     return '<section class="prlist' + scale + '">' +
       '<h2>' + esc(mo.slice(0, 4)) + '년 ' + (+mo.slice(5, 7)) + '월 고사일 명단' +
         '<span>' + total + '건 · 달력 칸에 다 담기지 않은 학생까지 빠짐없이 적었습니다</span></h2>' +
-      '<p class="pl-note">한 학생이 같은 날 두 곳 이상이면 이름 옆에 ⚠ 가 붙습니다.</p>' +
+      '<p class="pl-note">한 학생이 같은 날 두 곳 이상이면 이름 옆에 ⚠ 가 붙습니다.' +
+      (st1 ? ' · 1단계 발표 ' + st1 + '건은 앞장 달력에 있습니다.' : '') + '</p>' +
       '<table><thead><tr>' +
         '<th style="width:17mm">날짜</th><th style="width:16mm">학번</th>' +
         '<th style="width:20mm">이름</th><th style="width:32mm">대학</th>' +
@@ -5289,7 +5311,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-14.4';
+  var BUILD_ID = '2026-09-14.5';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
