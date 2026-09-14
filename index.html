@@ -672,6 +672,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .calcell .it b{color:var(--ink);font-weight:600;max-width:100%}
 .calcell .it .who{color:var(--ink-2);font-weight:500}
 .calcell .it .kd{flex:0 0 auto}
+/* 인쇄에서만 쓰는 묶음이라 화면에서는 없는 셈 친다 (자식이 그대로 flex 항목이 된다) */
+.calcell .it .itn{display:contents}
 /* 이름을 .calmore 로 둔 이유: app.css 에 이미 `.more{padding:14px}` (결과표의
    「더 보기」 단추)가 있어서, .more 를 쓰면 그 여백 14px 를 그대로 물려받아
    칸 밖으로 삐져나간다. 실제로 그렇게 만들었다가 잘려서 고쳤다. */
@@ -679,6 +681,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   color:var(--accent);margin-top:2px;padding:0;white-space:nowrap}
 .calcell .wk{color:var(--rose)}
 .calcell .itrest{display:none}          /* 인쇄할 때만 펼친다 */
+.calcell .itg{display:none}             /* 같은 대학끼리 묶은 판 — 인쇄 전용 */
 
 /* 고사 종류 배지 — 옅은 파스텔이라 눈에 안 띈다는 지적을 받아 진한 바탕에 흰 글씨로 바꿨다 */
 .kd{font-size:10px;font-weight:700;border-radius:3px;padding:1px 4.5px;vertical-align:1px;
@@ -878,14 +881,28 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .ddl{font-size:8px;line-height:1.25;font-weight:700;color:#8C2F39 !important;
     background:#F6E2E3 !important;padding:1.5px 4.5px !important;border-radius:999px !important}
   .calcell .its{flex:1;min-height:0;overflow:hidden}
-  /* 인쇄는 줄바꿈으로 다 보여 준다 — 화면에서 쓰는 가로 배치·자르기를 되돌린다 */
-  .calcell .it{display:block !important;color:#000 !important;
+  /* ★ 인쇄는 «같은 대학끼리 묶은 판» 을 쓴다.
+     예전에는 「대학 이름 딱지」를 한 줄로 흘려서 짧은 곳은 한 줄, 긴 곳은
+     아무 데서나 접혔다 — 칸마다 줄 수가 제각각이라 눈이 흩어졌다.
+     이제 한 덩어리가 늘 같은 모양이다.
+         한국공학대            [면접]   ← 대학명 (굵게, 딱지는 오른쪽 끝)
+         김태우 박상진 이현서 조동준     ← 그 대학에 가는 학생들
+     같은 대학을 다섯 번 쓰지 않으니 담기는 양도 크게 는다. */
+  .calcell .its{display:none !important}
+  .calcell .itg{display:block !important;flex:1;min-height:0;overflow:hidden;
     font-size:var(--cal-fs,8.5px);line-height:var(--cal-lh,11.2px);
-    white-space:normal !important;overflow:hidden;text-overflow:clip !important;
-    word-break:keep-all !important;overflow-wrap:normal !important}
-  .calcell .it b, .calcell .it .who{
-    overflow:visible !important;text-overflow:clip !important;white-space:normal !important}
-  .calcell .it .who{color:#333 !important}
+    color:#000 !important;word-break:keep-all}
+  .calcell .itgrp{margin-bottom:2px}
+  /* 대학명은 한 줄을 온전히 쓴다 — 딱지를 옆에 두면 이름 자리를 뺏어
+     글씨를 키울 수 없다(딱지 자리 때문에 9.5px 에서 더 못 올라갔다).
+     딱지는 이름 줄 오른쪽 끝으로 내렸다. */
+  .calcell .gu b{display:block;font-weight:700;color:#000 !important}
+  /* 딱지는 이름 «앞» 에 둔다. 뒤에 두면 이름이 줄을 꽉 채웠을 때 딱지만
+     혼자 다음 줄로 떨어져 또 들쭉날쭉해진다. 앞에 두면 대학명 바로 아래
+     같은 자리에 늘 붙어 세로로 줄이 맞는다.
+     (따로 칸을 잡아 오른쪽에 붙이는 것은, 이름이 좁아진 폭에서 접혀
+      한 줄이 더 생기므로 재 보고 되돌렸다) */
+  .calcell .gn{color:#333 !important}
   /* ★ 인쇄물에서는 「+N건」으로 접지 않고 그 날 학생을 다 적는다.
      화면에서는 날짜를 눌러 펼쳐 볼 수 있지만 종이는 그럴 수가 없어, 접힌 학생이
      인쇄물에서 통째로 빠졌다. 칸 높이는 위에서 CSS 로 못박아 두었으므로 내용이
@@ -4040,10 +4057,36 @@ window.SUSI_SAMEDAYS = function (a, b) {
     return (/\(전문대\)/.test(String(name || '')) ? '<span class="colmk">전</span>' : '') +
       esc(calUni(name));
   }
+  /* 같은 날 같은 대학·같은 고사를 한 덩어리로 묶는다.
+     「한국공학대 김태우 / 한국공학대 박상진 / …」 을 다섯 번 쓰는 대신
+     「한국공학대 [면접] / 김태우 박상진 이현서 …」 로 한 번만 쓴다.
+     대학명이 도드라지고, 칸에 담기는 양이 크게 는다(11월 28일: 20줄 → 12줄). */
+  function groupsOf(items) {
+    var out = [], last = null;
+    items.slice().sort(function (a, b) {
+      return a.uni.localeCompare(b.uni) || a.kind.localeCompare(b.kind)
+          || (a.no - b.no) || a.who.localeCompare(b.who);
+    }).forEach(function (it) {
+      if (last && last.uni === it.uni && last.kind === it.kind) last.who.push(it.who);
+      else { last = { uni: it.uni, kind: it.kind, who: [it.who] }; out.push(last); }
+    });
+    return out;
+  }
+  function groupHtml(items) {
+    return groupsOf(items).map(function (g) {
+      return '<div class="itgrp"><div class="gu"><b>' + calUniHtml(g.uni) + '</b></div>' +
+        '<div class="gn"><span class="kd k-' + g.kind + '">' + g.kind + '</span> ' +
+        g.who.map(esc).join(' ') + '</div></div>';
+    }).join('');
+  }
+
+  /* 이름과 고사 딱지를 한 덩어리(.itn)로 묶는다.
+     인쇄에서는 «1줄 대학명 / 2줄 이름+딱지» 로 모양을 고정하는 데 쓰고,
+     화면에서는 display:contents 로 풀어 지금까지와 똑같이 한 줄로 흐르게 둔다. */
   function itLine(it) {
-    return '<div class="it"><b>' + calUniHtml(it.uni) + '</b> ' +
-      '<span class="who">' + esc(it.who) + '</span> ' +
-      '<span class="kd k-' + it.kind + '">' + it.kind + '</span></div>';
+    return '<div class="it"><b>' + calUniHtml(it.uni) + '</b>' +
+      '<span class="itn"><span class="who">' + esc(it.who) + '</span>' +
+      '<span class="kd k-' + it.kind + '">' + it.kind + '</span></span></div>';
   }
 
   function isClash(k) {
@@ -4132,32 +4175,36 @@ window.SUSI_SAMEDAYS = function (a, b) {
        (줄 수 어림은 실측과 정확히 맞았고, 모자랐던 것은 이 여백이었다) */
     var HEAD_H = 22;
 
-    /* 한글은 정사각, 숫자·영문은 그 절반쯤 — 글자 너비를 재지 않고 어림한다.
-       (인쇄 직전에 실제로 재면 브라우저마다 타이밍이 달라 자꾸 어긋났다) */
-    function estWidth(t, fs) {
-      var w = 0;
-      for (var q = 0; q < t.length; q++) w += t.charCodeAt(q) > 0x1100 ? 1 : 0.55;
-      return w * fs;
+    /* 글자 폭 어림 — 한글은 정사각, 괄호·숫자·영문은 그 절반쯤. */
+    function units(t) {
+      var u = 0;
+      for (var q = 0; q < t.length; q++) u += t.charCodeAt(q) > 0x1100 ? 1 : 0.55;
+      return u;
     }
-    function itemLines(it, fs) {
-      var w = estWidth(calUni(it.uni) + ' ' + it.who, fs) + 26;  // 「면접」 배지 자리
-      if (/\(전문대\)/.test(it.uni)) w += 16;                      // 「전」 배지 자리
-      return Math.max(1, Math.ceil(w / CELL_W));
+    /* 한 덩어리는 «대학명 한 줄 + 이름들 몇 줄» 이다.
+       이름 줄은 칸 너비에 몇 명씩 들어가는지로 정해진다. */
+    function groupLines(g, fs) {
+      var uw = units(calUni(g.uni)) * fs;
+      if (/\(전문대\)/.test(g.uni)) uw += 16;                  // 「전」 딱지
+      var nw = 28;                                            // 「면접」 딱지 자리
+      for (var q = 0; q < g.who.length; q++) nw += units(g.who[q]) * fs + (q ? 4 : 0);
+      return Math.max(1, Math.ceil(uw / CELL_W))              // 대학명 줄
+           + Math.max(1, Math.ceil(nw / CELL_W));             // 이름 줄
     }
-    /* 그 주에서 제일 빽빽한 날이 얼마나 필요한지 — 줄 수와 항목 수를 함께 돌려준다.
-       (항목마다 줄 사이 여백이 1px 쯤 붙는데, 여덟 건이 넘으면 그것만으로 한 줄이 밀린다) */
     function weekNeed(wi, fs, lh) {
       var mx = 0;
       for (var wj = 0; wj < 7; wj++) {
         var dd = cells[wi * 7 + wj];
         if (dd === null) continue;
-        var its = CALST.days[mo + '-' + pad(dd)] || [], ln = 0;
-        for (var q = 0; q < its.length; q++) ln += itemLines(its[q], fs);
-        var h = ln * lh + its.length * 0.9;
+        var gs = groupsOf(CALST.days[mo + '-' + pad(dd)] || []), ln = 0;
+        for (var q = 0; q < gs.length; q++) ln += groupLines(gs[q], fs);
+        var h = ln * lh + gs.length * 2;          // 덩어리마다 아래 여백 2px
         if (h > mx) mx = h;
       }
       return mx;
     }
+    /* 긴 대학명은 잘리지 않고 두 줄로 접힌다. groupLines 가 그 줄까지 세므로
+       글씨 크기를 따로 묶어 둘 필요가 없다 — 들어가는 만큼 키운다. */
     var fit = null, wi;
     for (var fs = 13; fs >= 6; fs -= 0.25) {
       var lh = Math.round(fs * 1.32 * 10) / 10, tot = 0, need = [];
@@ -4226,6 +4273,8 @@ window.SUSI_SAMEDAYS = function (a, b) {
               (rest > 0 ? '<div class="itrest">' +
                 items.slice(CAL_MAX).map(itLine).join('') + '</div>' : '') +
             '</div>' +
+            // 인쇄 전용 — 같은 대학끼리 묶은 판 (화면에서는 감춘다)
+            (items.length ? '<div class="itg">' + groupHtml(items) + '</div>' : '') +
             // ★ .its 바깥에 둔다. 안에 두면 칸이 꽉 찼을 때 이 줄까지 같이 잘려서
             //   '더 있다'는 사실 자체가 안 보인다 (실제로 그렇게 만들었다가 고침).
             (rest > 0 ? '<div class="calmore">+' + rest + '건</div>' : '') +
@@ -5214,7 +5263,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-14.2';
+  var BUILD_ID = '2026-09-14.3';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
