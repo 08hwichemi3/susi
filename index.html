@@ -4346,7 +4346,12 @@ window.SUSI_SAMEDAYS = function (a, b) {
         (clash ? ' <b class="clashk">⚠ 한 학생이 같은 날 두 곳 이상</b>' : '') + '</h4>' +
       '<div class="cdlist">' + Object.keys(per).map(function (sid) {
         var g = per[sid];
-        return '<div class="cdrow' + (g.length > 1 ? ' dup' : '') + '">' +
+        /* 빨갛게 칠하는 기준은 «시험» 이 둘 이상일 때다.
+           1단계 발표는 인터넷으로 확인하는 것이라 고사와 같은 날이어도 문제가 없다.
+           (isClash 와 명단은 이미 그렇게 세는데 여기만 빠져 있었다) */
+        var ex = 0;
+        g.forEach(function (i) { if (EXAM_KIND[i.kind]) ex++; });
+        return '<div class="cdrow' + (ex > 1 ? ' dup' : '') + '">' +
           '<b>' + esc(g[0].who) + '</b>' +
           '<div>' + g.map(function (i) {
             return '<div class="cdit"><span class="kd k-' + i.kind + '">' + i.kind + '</span> ' +
@@ -5311,7 +5316,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-14.5';
+  var BUILD_ID = '2026-09-14.6';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
