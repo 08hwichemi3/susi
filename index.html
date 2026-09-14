@@ -897,12 +897,16 @@ td.c-cut70{font-weight:600;color:var(--ink)}
      글씨를 키울 수 없다(딱지 자리 때문에 9.5px 에서 더 못 올라갔다).
      딱지는 이름 줄 오른쪽 끝으로 내렸다. */
   .calcell .gu b{display:block;font-weight:700;color:#000 !important}
-  /* 딱지는 이름 «앞» 에 둔다. 뒤에 두면 이름이 줄을 꽉 채웠을 때 딱지만
-     혼자 다음 줄로 떨어져 또 들쭉날쭉해진다. 앞에 두면 대학명 바로 아래
-     같은 자리에 늘 붙어 세로로 줄이 맞는다.
-     (따로 칸을 잡아 오른쪽에 붙이는 것은, 이름이 좁아진 폭에서 접혀
-      한 줄이 더 생기므로 재 보고 되돌렸다) */
-  .calcell .gn{color:#333 !important}
+  /* 한 사람이 한 줄이다 — 「[면접] 홍길동」.
+     이름을 죽 이어 붙여 흘리면 줄 끝이 제각각이라 눈이 흩어진다.
+     딱지를 사람마다 되풀이하면 딱지도 이름도 세로로 줄이 딱 맞는다. */
+  .calcell .gn{color:#333 !important;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  /* 자리가 모자라는 달만(가로 인쇄·전교생 보기) 이름을 이어 붙인다.
+     되풀이되는 딱지는 첫 사람 것만 남긴다 — 어차피 한 덩어리는 같은 고사다. */
+  #calOut.cal-flow .calcell .gn{display:inline;white-space:normal}
+  #calOut.cal-flow .calcell .gn+.gn{margin-left:3px}
+  #calOut.cal-flow .calcell .gn~.gn .kd{display:none}
   /* ★ 인쇄물에서는 「+N건」으로 접지 않고 그 날 학생을 다 적는다.
      화면에서는 날짜를 눌러 펼쳐 볼 수 있지만 종이는 그럴 수가 없어, 접힌 학생이
      인쇄물에서 통째로 빠졌다. 칸 높이는 위에서 CSS 로 못박아 두었으므로 내용이
@@ -4075,8 +4079,10 @@ window.SUSI_SAMEDAYS = function (a, b) {
   function groupHtml(items) {
     return groupsOf(items).map(function (g) {
       return '<div class="itgrp"><div class="gu"><b>' + calUniHtml(g.uni) + '</b></div>' +
-        '<div class="gn"><span class="kd k-' + g.kind + '">' + g.kind + '</span> ' +
-        g.who.map(esc).join(' ') + '</div></div>';
+        g.who.map(function (w) {
+          return '<div class="gn"><span class="kd k-' + g.kind + '">' + g.kind +
+            '</span> ' + esc(w) + '</div>';
+        }).join('') + '</div>';
     }).join('');
   }
 
@@ -4183,21 +4189,28 @@ window.SUSI_SAMEDAYS = function (a, b) {
     }
     /* 한 덩어리는 «대학명 한 줄 + 이름들 몇 줄» 이다.
        이름 줄은 칸 너비에 몇 명씩 들어가는지로 정해진다. */
-    function groupLines(g, fs) {
+    /* 한 덩어리가 차지하는 줄 수.
+         한 줄씩(flow=false) — 대학명 줄 + 학생 한 명당 한 줄. 딱지와 이름이
+                              세로로 딱 맞아 읽기 좋다. 기본은 이쪽이다.
+         이어 붙이기(flow=true) — 대학명 줄 + 「[면접] 이름 이름 이름…」 이
+                              흘러가는 줄들. 줄 끝이 제각각이지만 훨씬 짧다.
+       이름은 「[면접] 홍길동」 이라 한 줄씩일 때는 늘 한 줄에 들어간다. */
+    function groupLines(g, fs, flow) {
       var uw = units(calUni(g.uni)) * fs;
       if (/\(전문대\)/.test(g.uni)) uw += 16;                  // 「전」 딱지
+      var head = Math.max(1, Math.ceil(uw / CELL_W));
+      if (!flow) return head + g.who.length;
       var nw = 28;                                            // 「면접」 딱지 자리
       for (var q = 0; q < g.who.length; q++) nw += units(g.who[q]) * fs + (q ? 4 : 0);
-      return Math.max(1, Math.ceil(uw / CELL_W))              // 대학명 줄
-           + Math.max(1, Math.ceil(nw / CELL_W));             // 이름 줄
+      return head + Math.max(1, Math.ceil(nw / CELL_W));
     }
-    function weekNeed(wi, fs, lh) {
+    function weekNeed(wi, fs, lh, flow) {
       var mx = 0;
       for (var wj = 0; wj < 7; wj++) {
         var dd = cells[wi * 7 + wj];
         if (dd === null) continue;
         var gs = groupsOf(CALST.days[mo + '-' + pad(dd)] || []), ln = 0;
-        for (var q = 0; q < gs.length; q++) ln += groupLines(gs[q], fs);
+        for (var q = 0; q < gs.length; q++) ln += groupLines(gs[q], fs, flow);
         var h = ln * lh + gs.length * 2;          // 덩어리마다 아래 여백 2px
         if (h > mx) mx = h;
       }
@@ -4205,16 +4218,27 @@ window.SUSI_SAMEDAYS = function (a, b) {
     }
     /* 긴 대학명은 잘리지 않고 두 줄로 접힌다. groupLines 가 그 줄까지 세므로
        글씨 크기를 따로 묶어 둘 필요가 없다 — 들어가는 만큼 키운다. */
-    var fit = null, wi;
-    for (var fs = 13; fs >= 6; fs -= 0.25) {
-      var lh = Math.round(fs * 1.32 * 10) / 10, tot = 0, need = [];
-      for (wi = 0; wi < realWeeks; wi++) {
-        var h2 = weekNeed(wi, fs, lh);
-        need.push(HEAD_H + h2);
-        tot += HEAD_H + h2;
+    function fitWith(flow) {
+      var last = null;
+      for (var fs = 13; fs >= 6; fs -= 0.25) {
+        var lh = Math.round(fs * 1.32 * 10) / 10, tot = 0, need = [];
+        for (var w2 = 0; w2 < realWeeks; w2++) {
+          var h2 = weekNeed(w2, fs, lh, flow);
+          need.push(HEAD_H + h2);
+          tot += HEAD_H + h2;
+        }
+        last = { fs: fs, lh: lh, need: need, flow: flow, fits: tot <= BOX_H };
+        if (last.fits) return last;
       }
-      fit = { fs: fs, lh: lh, need: need };
-      if (tot <= BOX_H) break;            // 들어가면 그 크기로 확정
+      return last;                                  // 제일 작은 글씨로도 안 들어간다
+    }
+    /* ★ 기본은 «한 줄씩». 다만 그렇게 하면 글씨가 8px 밑으로 내려가거나 아예
+       안 들어가는 달이 있다(가로 인쇄, 전교생 보기). 그럴 때만 이름을 이어
+       붙여 자리를 줄이고 글씨를 키운다 — 못 읽는 것보다는 낫다. */
+    var fit = fitWith(false);
+    if (!fit.fits || fit.fs < 8) {
+      var alt = fitWith(true);
+      if (!fit.fits || alt.fs > fit.fs) fit = alt;
     }
     var wk = fit.need;
     var wsum = wk.reduce(function (a, b) { return a + b; }, 0) || 1;
@@ -4224,6 +4248,8 @@ window.SUSI_SAMEDAYS = function (a, b) {
     }).join(' '));
     st.setProperty('--cal-fs', fit.fs + 'px');
     st.setProperty('--cal-lh', fit.lh + 'px');
+    // 이어 붙이기로 간 달은 CSS 가 이름을 한 줄로 흘려 준다
+    $('calOut').classList.toggle('cal-flow', !!fit.flow);
     // 화면은 늘 6주(42칸)로 그린다 — 4주짜리 달과 6주짜리 달의 전체 높이가 달라지면
     // 달을 넘길 때마다 달력이 위아래로 흔들린다는 지적을 받았다. 남는 칸은 빈 칸이다.
     while (cells.length < 42) cells.push(null);
@@ -5263,7 +5289,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-14.3';
+  var BUILD_ID = '2026-09-14.4';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
