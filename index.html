@@ -4141,7 +4141,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     }
     function itemLines(it, fs) {
       var w = estWidth(calUni(it.uni) + ' ' + it.who, fs) + 26;  // 「면접」 배지 자리
-      if (isCol(it.uni)) w += 16;                                // 「전」 배지 자리
+      if (/\(전문대\)/.test(it.uni)) w += 16;                      // 「전」 배지 자리
       return Math.max(1, Math.ceil(w / CELL_W));
     }
     /* 그 주에서 제일 빽빽한 날이 얼마나 필요한지 — 줄 수와 항목 수를 함께 돌려준다.
@@ -5214,7 +5214,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-14.1';
+  var BUILD_ID = '2026-09-14.2';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
