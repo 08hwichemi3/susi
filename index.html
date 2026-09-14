@@ -779,9 +779,13 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     border-bottom:2px solid #1F5D4C;padding-bottom:2mm}
   .prlist h2 span{font-size:9.5pt;font-weight:400;color:#444;margin-left:6px}
   .prlist p.pl-note{margin:0 0 3mm;font-size:8.5pt;color:#444}
-  .prlist table{width:100%;border-collapse:collapse}
+  /* ★ 화면용 table{font-size:14px} 이 표 전체에 걸려 있어, 칸은 .prlist 가 아니라
+     표에서 크기를 물려받는다. 여기서 되돌려야 촘촘하게 하는 것이 먹는다. */
+  .prlist table{width:100%;border-collapse:collapse;font-size:inherit}
+  /* ★ font-size:inherit 가 꼭 있어야 한다 — 화면용 규칙이 td 에 14px 를 박아 두어서
+     .prlist 에 준 크기가 칸에는 먹지 않았고, 촘촘하게 해도 줄 높이가 그대로였다. */
   .prlist th, .prlist td{border:1px solid #9a9a9a;padding:1.6mm 2mm;text-align:left;
-    vertical-align:top;word-break:keep-all}
+    vertical-align:top;word-break:keep-all;font-size:inherit}
   .prlist thead th{background:#DFEAE4 !important;font-size:8.5pt;font-weight:700;
     -webkit-print-color-adjust:exact;print-color-adjust:exact}
   .prlist tbody tr{break-inside:avoid;page-break-inside:avoid}
@@ -793,6 +797,16 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .prlist tr.pl-first td{border-top:1.6px solid #1F5D4C}
   .prlist tr.pl-clash td.pl-who{color:#8C2F39}
   .prlist tr.pl-clash td.pl-who::after{content:" ⚠"}
+  /* 건수가 많을 때 촘촘하게 — printListHtml 이 건수를 보고 붙인다 */
+  .prlist.pl-s2{font-size:8.2pt;line-height:1.35}
+  .prlist.pl-s2 th, .prlist.pl-s2 td{padding:1mm 1.6mm}
+  .prlist.pl-s2 h2{font-size:12.5pt;margin-bottom:2mm;padding-bottom:1.5mm}
+  .prlist.pl-s2 p.pl-note{margin-bottom:2mm;font-size:8pt}
+  .prlist.pl-s3{font-size:7.2pt;line-height:1.3}
+  .prlist.pl-s3 th, .prlist.pl-s3 td{padding:0.7mm 1.3mm}
+  .prlist.pl-s3 h2{font-size:11.5pt;margin-bottom:1.8mm;padding-bottom:1.2mm}
+  .prlist.pl-s3 p.pl-note{margin-bottom:1.8mm;font-size:7.5pt}
+  .prlist.pl-s2 thead th, .prlist.pl-s3 thead th{font-size:7.5pt}
 
   /* 인쇄할 게 지금은 이 달력 하나뿐이라, 어떻게 인쇄를 열어도(단축키를 그냥 눌러도)
      그대로 달력을 낸다. */
@@ -865,7 +879,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     background:#F6E2E3 !important;padding:1.5px 4.5px !important;border-radius:999px !important}
   .calcell .its{flex:1;min-height:0;overflow:hidden}
   /* 인쇄는 줄바꿈으로 다 보여 준다 — 화면에서 쓰는 가로 배치·자르기를 되돌린다 */
-  .calcell .it{display:block !important;font-size:8.5px;line-height:1.3;color:#000 !important;
+  .calcell .it{display:block !important;color:#000 !important;
+    font-size:var(--cal-fs,8.5px);line-height:var(--cal-lh,11.2px);
     white-space:normal !important;overflow:hidden;text-overflow:clip !important;
     word-break:keep-all !important;overflow-wrap:normal !important}
   .calcell .it b, .calcell .it .who{
@@ -878,22 +893,17 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .calcell .itrest{display:block !important}
   .calcell .calmore{display:none !important}
 
-  /* ★ 그래도 다 안 들어가는 날이 있다. 주별 높이를 넓혀도 한 날에 열 명이 넘으면
-     칸 폭(세로 인쇄 기준 26mm)에서 대학 이름이 두 줄로 접히기 때문이다.
-     그런 칸만 글씨를 조금 줄인다 — 여섯 건 이하인 평소 날은 그대로 8.5px 다.
-     실제 자료(11월 40건)와 더 심한 자료(한 날 12·14·16건)로 세로·가로 모두
-     인쇄해 재 보니 이 단계로 잘리는 칸이 하나도 없었다. */
-  .calcell.dn2 .it{font-size:7.8px !important;line-height:1.25 !important}
-  .calcell.dn3 .it{font-size:7px !important;line-height:1.2 !important}
-  .calcell.dn4 .it{font-size:6.2px !important;line-height:1.15 !important}
-  .calcell.dn2 .kd, .calcell.dn3 .kd, .calcell.dn4 .kd{font-size:6.5px !important;padding:0 2px !important}
-  .calcell.dn2 .colmk, .calcell.dn3 .colmk, .calcell.dn4 .colmk{font-size:6px !important;padding:0 2px !important}
-  .kd{color:#fff !important;font-size:8px;padding:1px 4px !important;border-radius:3px}
+  /* 배지는 본문 글씨에 맞춰 같이 커지고 작아진다.
+     ★ line-height:1 이 꼭 있어야 한다 — 없으면 배지가 줄 높이를 밀어 올려
+       위에서 계산한 높이보다 칸이 커지고, 몰린 달에서 마지막 줄이 잘린다. */
+  .kd{color:#fff !important;border-radius:3px;padding:1px 4px !important;
+    font-size:calc(var(--cal-fs,8.5px) * 0.92);line-height:1}
   .kd.k-면접{background:#12795F !important}
   .kd.k-논술{background:#A4650B !important}
   .kd.k-실기{background:#5B47B0 !important}
-  .colmk{background:#25506E !important;color:#fff !important;font-size:8px;
-    padding:0 3px !important;border-radius:3px;margin-right:2px}
+  .colmk{background:#25506E !important;color:#fff !important;border-radius:3px;
+    padding:0 3px !important;margin-right:2px;line-height:1;
+    font-size:calc(var(--cal-fs,8.5px) * 0.92)}
 
   .calday-panel{display:none !important}       /* 옆 패널은 종이에 안 낸다 */
 
@@ -4102,26 +4112,71 @@ window.SUSI_SAMEDAYS = function (a, b) {
     // (화면에 늘 6주를 그리기 전, 그 달에 실제로 필요한 주 수를 먼저 적어 둔다.)
     var realWeeks = cells.length / 7;
     $('calOut').style.setProperty('--cal-weeks', realWeeks);
-    /* ★ 인쇄할 때 주(週)마다 칸 높이를 조금씩 달리 준다.
-       고사가 없는 주에서 조금 덜어 몰린 주에 보태면, 글씨를 줄이지 않고도 칸 안에
-       더 많은 학생이 담긴다. 다만 한산한 주가 너무 납작해지면 그것도 보기 나쁘므로
-       «주를 고르게 나눴을 때의 0.72배 ~ 1.67배» 안에서만 움직인다.
-       (그 주에서 제일 많은 날을 기준으로 삼는다 — 그 날이 들어가야 그 주가 온전하다.) */
-    var wk = [], wi, wj;
-    for (wi = 0; wi < realWeeks; wi++) {
+    /* ★ 인쇄할 때 주(週)마다 칸 높이를 '그 주에 실제로 필요한 줄 수' 로 나눈다.
+       예전에는 건수만 보고 0.72~1.67배 사이에서 완만하게 나눴는데, 그러면
+         · 한산한 달은 칸 절반이 빈다 (11월 한 반: 배정 898px / 필요 420px, 53% 낭비)
+         · 몰린 달은 칸이 모자라 학생이 잘려 나간다 (11월 전체: 3주차가 93px 넘침)
+       둘 다 같은 원인이다 — 필요한 양을 안 보고 나눴다.
+
+       이제는 ① 글자가 칸 너비에서 몇 줄로 접히는지까지 세어 주별로 필요한 줄 수를 구하고,
+              ② 그 합이 종이에 들어가는 가장 큰 글씨 크기를 고른 뒤,
+              ③ 필요한 만큼의 비율로 주 높이를 나눈다.
+       한산한 달에서는 글씨가 커지고, 몰린 달에서는 잘리는 대신 글씨가 작아진다. */
+    /* 아래 세 숫자는 인쇄 화면에서 실제로 재어 맞춘 값이다(브라우저 인쇄 미리보기 기준).
+         세로 A4 — 격자 909px, 요일 띠 18px → 주(週)에 쓸 수 있는 높이 891px
+         칸 안쪽 너비 89px · 날짜 줄 13px
+       조금 모자라게 잡아 두면 넘치는 대신 글씨가 한 단계 작아진다(잘리는 것보다 낫다). */
+    var CELL_W = CAL_ORIENT === 'landscape' ? 136 : 89;   // 칸 안쪽 너비(px)
+    var BOX_H  = CAL_ORIENT === 'landscape' ? 545 : 885;  // 요일 띠를 뺀 격자 높이(px)
+    /* 날짜 줄 13px + 칸 안쪽 여백·테두리 6px + 여유 3px.
+       (줄 수 어림은 실측과 정확히 맞았고, 모자랐던 것은 이 여백이었다) */
+    var HEAD_H = 22;
+
+    /* 한글은 정사각, 숫자·영문은 그 절반쯤 — 글자 너비를 재지 않고 어림한다.
+       (인쇄 직전에 실제로 재면 브라우저마다 타이밍이 달라 자꾸 어긋났다) */
+    function estWidth(t, fs) {
+      var w = 0;
+      for (var q = 0; q < t.length; q++) w += t.charCodeAt(q) > 0x1100 ? 1 : 0.55;
+      return w * fs;
+    }
+    function itemLines(it, fs) {
+      var w = estWidth(calUni(it.uni) + ' ' + it.who, fs) + 26;  // 「면접」 배지 자리
+      if (isCol(it.uni)) w += 16;                                // 「전」 배지 자리
+      return Math.max(1, Math.ceil(w / CELL_W));
+    }
+    /* 그 주에서 제일 빽빽한 날이 얼마나 필요한지 — 줄 수와 항목 수를 함께 돌려준다.
+       (항목마다 줄 사이 여백이 1px 쯤 붙는데, 여덟 건이 넘으면 그것만으로 한 줄이 밀린다) */
+    function weekNeed(wi, fs, lh) {
       var mx = 0;
-      for (wj = 0; wj < 7; wj++) {
+      for (var wj = 0; wj < 7; wj++) {
         var dd = cells[wi * 7 + wj];
         if (dd === null) continue;
-        var n = (CALST.days[mo + '-' + pad(dd)] || []).length;
-        if (n > mx) mx = n;
+        var its = CALST.days[mo + '-' + pad(dd)] || [], ln = 0;
+        for (var q = 0; q < its.length; q++) ln += itemLines(its[q], fs);
+        var h = ln * lh + its.length * 0.9;
+        if (h > mx) mx = h;
       }
-      wk.push(0.72 + 0.95 * Math.min(mx, 12) / 12);
+      return mx;
     }
+    var fit = null, wi;
+    for (var fs = 13; fs >= 6; fs -= 0.25) {
+      var lh = Math.round(fs * 1.32 * 10) / 10, tot = 0, need = [];
+      for (wi = 0; wi < realWeeks; wi++) {
+        var h2 = weekNeed(wi, fs, lh);
+        need.push(HEAD_H + h2);
+        tot += HEAD_H + h2;
+      }
+      fit = { fs: fs, lh: lh, need: need };
+      if (tot <= BOX_H) break;            // 들어가면 그 크기로 확정
+    }
+    var wk = fit.need;
     var wsum = wk.reduce(function (a, b) { return a + b; }, 0) || 1;
-    $('calOut').style.setProperty('--cal-rows', '18px ' + wk.map(function (v) {
+    var st = $('calOut').style;
+    st.setProperty('--cal-rows', '18px ' + wk.map(function (v) {
       return 'calc((100% - 18px) * ' + (Math.round(v / wsum * 10000) / 10000) + ')';
     }).join(' '));
+    st.setProperty('--cal-fs', fit.fs + 'px');
+    st.setProperty('--cal-lh', fit.lh + 'px');
     // 화면은 늘 6주(42칸)로 그린다 — 4주짜리 달과 6주짜리 달의 전체 높이가 달라지면
     // 달을 넘길 때마다 달력이 위아래로 흔들린다는 지적을 받았다. 남는 칸은 빈 칸이다.
     while (cells.length < 42) cells.push(null);
@@ -4156,11 +4211,6 @@ window.SUSI_SAMEDAYS = function (a, b) {
           if (items.length && isClash(key)) cls += ' clash';
           if (key === today) cls += ' today';
           if (key === CALST.sel) cls += ' sel';
-          /* 고사가 몰린 칸에 표시를 해 둔다 — 인쇄할 때만 이 칸의 글씨를 조금 줄여
-             그 날 학생을 다 담는다(화면은 이 표시를 쓰지 않는다). */
-          if (items.length >= 14) cls += ' dn4';
-          else if (items.length >= 10) cls += ' dn3';
-          else if (items.length >= 7) cls += ' dn2';
           var shown = items.slice(0, CAL_MAX), rest = items.length - shown.length;
           /* data-n 은 좁은 화면에서 쓴다 — 칸이 작아 글자를 못 담을 때
              '몇 건 있는지' 만 점처럼 찍어 주고, 누르면 아래에 펼친다. */
@@ -4261,7 +4311,16 @@ window.SUSI_SAMEDAYS = function (a, b) {
           '<td class="pl-kind">' + esc(it.kind) + '</td></tr>');
       });
     });
-    return '<section class="prlist">' +
+    /* ★ 한 장에 담기게 건수에 따라 줄 높이를 줄인다.
+       인쇄 화면에서 실제로 재어 본 한 장 수용량 (A4 세로 273mm 기준)
+         기본  9.5pt → 한 줄 8.32mm · 머리 20.0mm → 30줄
+         촘촘  8.2pt → 한 줄 6.16mm · 머리 15.8mm → 41줄
+         더    7.2pt → 한 줄 4.96mm · 머리 14.0mm → 52줄
+       학과 이름이 긴 달도 있으니 한두 줄씩 여유를 두고 단계를 올린다.
+       52줄을 넘으면(총관리자가 전교생을 낼 때) 더 줄이지 않고 장을 넘긴다 —
+       읽을 수 없게 작아지느니 두 장이 낫다. */
+    var scale = total > 39 ? ' pl-s3' : total > 28 ? ' pl-s2' : '';
+    return '<section class="prlist' + scale + '">' +
       '<h2>' + esc(mo.slice(0, 4)) + '년 ' + (+mo.slice(5, 7)) + '월 고사일 명단' +
         '<span>' + total + '건 · 달력 칸에 다 담기지 않은 학생까지 빠짐없이 적었습니다</span></h2>' +
       '<p class="pl-note">한 학생이 같은 날 두 곳 이상이면 이름 옆에 ⚠ 가 붙습니다.</p>' +
@@ -5155,7 +5214,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-11.2';
+  var BUILD_ID = '2026-09-14.1';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
