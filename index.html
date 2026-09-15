@@ -11,7 +11,7 @@
   --cal-sun:#D6293E; --cal-sat:#1160C4;
   --cal-sun-bg:#FBE7E9; --cal-sat-bg:#E1EBFA;   /* 주말 칸 전체에 까는 옅은 바탕 */
   --facts-bg:#F1EFE7;          /* 카드 가운데 '자료에서 오는 정보' 띠 바탕 */
-  --kd-int:#12795F; --kd-ess:#A4650B; --kd-prac:#5B47B0; --kd-st1:#4A5568; --kd-ink:#FFFFFF;
+  --kd-int:#12795F; --kd-ess:#A4650B; --kd-prac:#5B47B0; --kd-st1:#4A5568; --kd-ann:#1F6F8B; --kd-ink:#FFFFFF;
   --shadow:0 1px 2px rgba(23,32,28,.06),0 8px 24px -12px rgba(23,32,28,.18);
   --r:10px;
 }
@@ -26,7 +26,7 @@
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
   --cal-sun-bg:#33191C; --cal-sat-bg:#161F2C;
   --facts-bg:#232C26;
-  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-st1:#9AA5B4; --kd-ink:#0E1512;
+  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-st1:#9AA5B4; --kd-ann:#6FB6CE; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }}
 :root[data-theme="dark"]{
@@ -40,7 +40,7 @@
   --cal-sun:#FF7C86; --cal-sat:#79B0FF;
   --cal-sun-bg:#33191C; --cal-sat-bg:#161F2C;
   --facts-bg:#232C26;
-  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-st1:#9AA5B4; --kd-ink:#0E1512;
+  --kd-int:#1E9C7B; --kd-ess:#C4830F; --kd-prac:#7E6BE0; --kd-st1:#9AA5B4; --kd-ann:#6FB6CE; --kd-ink:#0E1512;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }
 *{box-sizing:border-box}
@@ -694,8 +694,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .kd.k-면접{background:var(--kd-int)}
 .kd.k-논술{background:var(--kd-ess)}
 .kd.k-실기{background:var(--kd-prac)}
-/* 1단계는 시험이 아니라 발표다 — 색도 시험 셋과 구별되는 차분한 회청색 */
+/* 1단계·최초 발표는 시험이 아니라 발표다 — 색도 시험 셋과 구별해 둔다 */
 .kd.k-1단계{background:var(--kd-st1)}
+.kd.k-발표{background:var(--kd-ann)}
 
 /* 날짜를 눌렀을 때 아래에 펼쳐지는 판. 여기는 길어지면 스크롤 */
 /* 달력을 아래로 스크롤해도 오른쪽 상세가 요일 줄 높이에 붙어 계속 보이도록 sticky 로 띄운다.
@@ -925,6 +926,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .kd.k-논술{background:#A4650B !important}
   .kd.k-실기{background:#5B47B0 !important}
   .kd.k-1단계{background:#4A5568 !important}
+  .kd.k-발표{background:#1F6F8B !important}
   .colmk{background:#25506E !important;color:#fff !important;border-radius:3px;
     padding:0 3px !important;margin-right:2px;line-height:1;
     font-size:calc(var(--cal-fs,8.5px) * 0.92)}
@@ -3973,6 +3975,30 @@ window.SUSI_SAMEDAYS = function (a, b) {
         var apps = ((r && r.data) || []).filter(function (a) { return a.area !== 'cand'; });
         var byName = {};
         STUDENTS.forEach(function (s) { byName[s.id] = s; });
+
+        /* ★ 최초 발표일은 대부분 같은 날이다 — 그 해 수시 합격자 발표 마감일
+           (2027학년도는 2026/12/18, 자료에서 203건 · 전체의 70%).
+           그 날은 모두가 아는 날이라 달력에 200건을 올려 봐야 칸만 덮는다.
+           «미리 나오는 곳» 만 싣는다 — 그래야 언제 확인해야 하는지 알 수 있다.
+           그 날짜는 해마다 바뀌므로 못박지 않고 자료에서 세어 정한다. */
+        var fcnt = {}, ftot = 0, COMMON_FINAL = '';
+        apps.forEach(function (a) {
+          var ds = window.SUSI_DATES(a.final_date || '');
+          if (!ds.length) return;
+          fcnt[ds[0]] = (fcnt[ds[0]] || 0) + 1; ftot++;
+        });
+        Object.keys(fcnt).forEach(function (k) {
+          if (!COMMON_FINAL || fcnt[k] > fcnt[COMMON_FINAL]) COMMON_FINAL = k;
+        });
+        /* «대부분» 이라고 하려면 두 가지가 다 맞아야 한다.
+             ① 적어 둔 발표일이 열 건은 넘을 것
+                — 시즌 초에 서너 건뿐일 때 그 중 둘이 같다고 «대부분» 으로 삼으면
+                  정작 미리 나오는 날이 가려진다.
+             ② 그 날이 전체의 40%는 될 것
+                — 실제 자료는 70%(203/290)다. 한 날에 안 몰린 해라면 다 보여 준다.
+           둘 중 하나라도 어긋나면 발표일을 모두 싣는다(그래도 몇 건 안 된다). */
+        if (!COMMON_FINAL || ftot < 10 || fcnt[COMMON_FINAL] < ftot * 0.4) COMMON_FINAL = '';
+
         var days = {};
         apps.forEach(function (a) {
           var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name);
@@ -3992,12 +4018,16 @@ window.SUSI_SAMEDAYS = function (a, b) {
                알아야 해서 달력에 함께 싣되, 겹침 경고에는 넣지 않는다(아래 EXAM_KIND). */
             ['1단계', a.step1 || ''],
             [(info && info.kind) || '면접', a.interview || ''],
-            [(info && info.essayKind) || '논술', a.essay || '']
+            [(info && info.essayKind) || '논술', a.essay || ''],
+            // 최초 발표일 — 아래에서 «대부분인 날» 은 걸러 낸다
+            ['발표', a.final_date || '']
           ];
           pairs.forEach(function (p) {
             /* 한 칸에 날짜가 여럿 적힌 경우("2026/11/27 ; 2026/12/04")도,
                기간으로 적힌 경우("2026/10/14~10/15")도 SUSI_DATES 가 다 풀어 준다. */
             window.SUSI_DATES(p[1]).forEach(function (key) {
+              // 모두가 아는 그 날(12/18 등)은 빼고, 미리 나오는 곳만 싣는다
+              if (p[0] === '발표' && key === COMMON_FINAL) return;
               var st = byName[a.student_id];
               var list = (days[key] = days[key] || []);
               /* ★ 같은 학생·같은 대학·같은 고사는 그 날에 한 번만 싣는다.
@@ -4120,9 +4150,18 @@ window.SUSI_SAMEDAYS = function (a, b) {
   /* 달 머리글(calmonhead)에 이미 학교·학년도·고사 건수가 나온다 — 인쇄용 머리글까지
      같은 내용을 또 찍으면 "10월" 위에 필요 없는 줄이 겹쳐 보인다는 지적을 받아 뺐다.
      꼬리글(범례 설명)만 남긴다. */
+  /* ★ 가장 작은 글씨로도 다 못 담는 달이 있다(전교생 보기 220건처럼).
+     그때는 칸 아래가 조용히 잘리는데, 종이에서는 잘렸다는 것 자체를 알 수 없다.
+     빠진 것이 있다는 사실을 바닥글에 분명히 적어 둔다. */
+  var CAL_OVERFLOW = false;
   function calFootHtml() {
     var f = $('calFoot');
-    if (f) f.innerHTML = '한 학생이 같은 날 두 곳 이상이면 굵은 테두리와 ⚠ 로 표시됩니다.';
+    if (!f) return;
+    f.innerHTML = '한 학생이 같은 날 두 곳 이상이면 굵은 테두리와 ⚠ 로 표시됩니다.' +
+      (CAL_OVERFLOW
+        ? ' <b class="clashk">이 달은 일정이 너무 많아 칸에 다 담기지 않았습니다 —'
+          + ' 화면에서 날짜를 눌러 그 날 전체를 확인하세요.</b>'
+        : '');
   }
 
   function monthCount(mo) {
@@ -4191,8 +4230,16 @@ window.SUSI_SAMEDAYS = function (a, b) {
          세로 A4 — 격자 909px, 요일 띠 18px → 주(週)에 쓸 수 있는 높이 891px
          칸 안쪽 너비 89px · 날짜 줄 13px
        조금 모자라게 잡아 두면 넘치는 대신 글씨가 한 단계 작아진다(잘리는 것보다 낫다). */
-    var CELL_W = CAL_ORIENT === 'landscape' ? 136 : 89;   // 칸 안쪽 너비(px)
-    var BOX_H  = CAL_ORIENT === 'landscape' ? 545 : 885;  // 요일 띠를 뺀 격자 높이(px)
+    /* 칸 안쪽 너비. 글자 폭을 «한글 한 칸» 으로 어림하는데 실제로는 그보다 조금
+       넓게 깔려서, 재 보면 한 줄이 더 접히는 칸이 나온다(11월 13일 5px 초과).
+       그래서 실제보다 6% 좁은 셈 치고 셈한다 — 넘치는 것보다 한 단계 작은 글씨가 낫다. */
+    var CELL_RAW = CAL_ORIENT === 'landscape' ? 136 : 89;
+    var CELL_W = CELL_RAW * 0.94;
+    /* 요일 띠를 뺀 격자 높이(px). 실제로 재 보면 세로 909px·가로 581px 이고
+       요일 띠가 18px 이므로 891·563 이 쓸 수 있는 높이다. 6px 씩 덜 잡아 둔다.
+       (가로를 545 로 잡아 두었더니 1반 11월이 1% 차이로 «안 들어감» 이 되어
+        글씨가 한 단계 더 작아지고 바닥글에 헛경고까지 붙었다.) */
+    var BOX_H  = CAL_ORIENT === 'landscape' ? 557 : 885;
     /* 날짜 줄 13px + 칸 안쪽 여백·테두리 6px + 여유 3px.
        (줄 수 어림은 실측과 정확히 맞았고, 모자랐던 것은 이 여백이었다) */
     var HEAD_H = 22;
@@ -4238,7 +4285,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        글씨 크기를 따로 묶어 둘 필요가 없다 — 들어가는 만큼 키운다. */
     function fitWith(flow) {
       var last = null;
-      for (var fs = 13; fs >= 6; fs -= 0.25) {
+      for (var fs = 13; fs >= 5; fs -= 0.25) {
         var lh = Math.round(fs * 1.32 * 10) / 10, tot = 0, need = [];
         for (var w2 = 0; w2 < realWeeks; w2++) {
           var h2 = weekNeed(w2, fs, lh, flow);
@@ -4257,6 +4304,18 @@ window.SUSI_SAMEDAYS = function (a, b) {
     if (!fit.fits || fit.fs < 8) {
       var alt = fitWith(true);
       if (!fit.fits || alt.fs > fit.fs) fit = alt;
+    }
+    /* ★ 「다 못 담았다」 알림은 위의 셈만 믿고 띄우지 않는다.
+       위 셈은 일부러 6% 좁게 잡아 둔 값이라(글씨를 한 단계 줄이려고) 실제로는
+       멀쩡히 들어가는 달에도 «안 들어감» 이 나온다. 실제로 재 보면 1반 가로
+       11월이 그랬다 — 잘린 칸이 하나도 없는데 경고만 떴다.
+       경고는 틀리면 안 되는 말이므로, 여유분 없이 실제 너비로 다시 셈해서
+       그래도 안 들어갈 때만 띄운다. */
+    CAL_OVERFLOW = false;
+    if (!fit.fits) {
+      CELL_W = CELL_RAW;
+      CAL_OVERFLOW = !fitWith(fit.flow).fits;
+      CELL_W = CELL_RAW * 0.94;
     }
     var wk = fit.need;
     var wsum = wk.reduce(function (a, b) { return a + b; }, 0) || 1;
@@ -4325,6 +4384,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
             '</div>';
         }).join('') +
       '</div></div></div>';
+    /* 바닥글은 여기서 다시 쓴다 — 「다 못 담았다」는 알림이 이 달을 그려 본 뒤에야
+       정해지고(CAL_OVERFLOW), 달을 넘길 때마다 달라지기 때문이다. */
+    calFootHtml();
   }
 
   /* 날짜 하나를 눌렀을 때 오른쪽 칸에 그 날 전체를 펼친다 (칸 안은 좁으니까) */
@@ -5320,7 +5382,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-15.1';
+  var BUILD_ID = '2026-09-15.2';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
