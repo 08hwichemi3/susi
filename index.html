@@ -3252,7 +3252,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
     apps.sort(function (a, b) { return (order[a.area] - order[b.area]) || (a.slot - b.slot); });
     h += '<p class="hint">회색 칸은 <b>자료에서 자동으로</b> 옵니다. 흰 칸은 <b>직접 넣는 곳</b>이고, 고치면 바로 저장됩니다. ' +
       '<b>면접 · 논술</b>과 <b>최초 발표</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
-      '칸을 떠날 때 <b>2026/11/27</b> 형식으로 자동으로 맞춰집니다. 달력에는 면접 · 논술 · 실기 날짜가 표시됩니다.</p>';
+      '칸을 떠날 때 <b>2026/11/27</b> 형식으로 자동으로 맞춰집니다. ' +
+      '<b>달력에는 여기에 적어 넣은 날짜만 올라갑니다</b> — 자료의 고사일은 참고용입니다. ' +
+      '대학이 실기 일정을 여러 날로 내놓아 학생마다 실제로 가는 날이 다르기 때문입니다.</p>';
     h += '<div class="tblwrap"><table class="plantbl edit"><thead><tr>' +
       '<th>구분</th><th>대학 · 전형 · 학과</th><th>70%컷</th><th>내신</th><th>판정</th>' +
       '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>최초 발표</th><th>합불</th><th>충원</th>' +
@@ -3268,7 +3270,6 @@ window.SUSI_SAMEDAYS = function (a, b) {
       var vd = window.SUSI_VERDICT(cut, mine, 0.3);
       // 판정이 왜 비었는지 보이게 한다 — 그냥 '—' 면 고장인지 자료 문제인지 알 수 없다
       var why = !info ? '자료에 없음' : (!cut ? '컷 없음' : (!mine ? '내신 없음' : ''));
-      var iAuto = info ? info.interview : '', eAuto = info ? info.essay : '';
       h += '<tr data-id="' + a.id + '">' +
         '<td class="auto"><span class="areatag at-' + a.area + '">' + AN[a.area] + ' ' + a.slot + '</span></td>' +
         '<td class="auto"><b>' + esc(a.uni_name) + '</b><br><span class="who">' +
@@ -3290,10 +3291,8 @@ window.SUSI_SAMEDAYS = function (a, b) {
         '<td class="auto" data-label="경쟁률">' + (info && info.rate ? nf(info.rate) : '—') + '</td>' +
         '<td data-label="1단계"><input type="text" data-f="step1" value="' + esc(a.step1 || '') + '" placeholder="예: 1120"></td>' +
         '<td class="two" data-label="면접/실기 · 논술">' +
-          '<input type="text" data-f="interview" value="' + esc(a.interview != null ? a.interview : iAuto) +
-            '" placeholder="면접/실기' + (iAuto ? '' : ' 없음') + '">' +
-          '<input type="text" data-f="essay" value="' + esc(a.essay != null ? a.essay : eAuto) +
-            '" placeholder="논술' + (eAuto ? '' : ' 없음') + '">' +
+          '<input type="text" data-f="interview" value="' + esc(a.interview || '') + '" placeholder="면접/실기">' +
+          '<input type="text" data-f="essay" value="' + esc(a.essay || '') + '" placeholder="논술">' +
         '</td>' +
         '<td data-label="최초 발표"><input type="text" data-f="final_date" value="' +
           esc(a.final_date || '') + '" placeholder="최초 발표일"></td>' +
@@ -3450,7 +3449,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
   function APP_Q(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
   /* 선생님이 표에서 고친 값을 그 줄만 바로 저장한다.
-     면접·논술은 '자료의 자동값과 같으면 비워 둔다' — 그래야 자료가 바뀌면 따라간다. */
+     적은 그대로 담는다 — 달력에는 여기 담긴 날짜만 올라간다. */
   // planTimer 는 위(pickSeq 옆)에서 선언한다 — pickStudent 가 먼저 참조하기 때문
   function wirePlanEdit(st, apps, gr) {
     var byId = {}; apps.forEach(function (a) { byId[a.id] = a; });
@@ -3461,13 +3460,15 @@ window.SUSI_SAMEDAYS = function (a, b) {
       if (!a) return;
       var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name);
       var get = function (f) { var el = tr.querySelector('[data-f="' + f + '"]'); return el ? el.value.trim() : ''; };
-      var iAuto = info ? info.interview : '', eAuto = info ? info.essay : '';
       var iv = get('interview'), ev = get('essay');
       var patch = {
         verdict_override: get('verdict_override') || null,
         step1: get('step1') || null,
-        interview: (iv === '' || iv === iAuto) ? null : iv,
-        essay:     (ev === '' || ev === eAuto) ? null : ev,
+        /* 적은 그대로 담는다. 예전에는 «자료의 자동값과 같으면 비운다» 였는데,
+           자동 채움을 없앤 지금 그대로 두면 자료와 같은 날짜를 적었을 때 저장이
+           안 되고 달력에서도 사라진다. */
+        interview: iv || null,
+        essay:     ev || null,
         final_date: get('final_date') || null,
         // 이 대학 기준으로 다시 계산한 내신. 숫자로 안 읽히면 비운다(평균 내신을 다시 쓴다).
         manual_grade: (function () { var n = parseFloat(get('manual_grade')); return isFinite(n) && n > 0 ? n : null; })(),
@@ -3975,20 +3976,23 @@ window.SUSI_SAMEDAYS = function (a, b) {
         var days = {};
         apps.forEach(function (a) {
           var info = window.SUSI_ROWINFO(a.uni_name, a.type_name, a.admission_name, a.dept_name);
-          var prac = info ? info.practical : '';
-          var ivVal = a.interview != null ? a.interview : (info ? info.interview : '');
-          /* 적을 실기 칸이 따로 없어 실기 날짜를 면접 칸에 적어 둔 경우가 많다.
-             날짜가 실기와 똑같으면 두 일정이 아니라 같은 일정 하나다 —
-             적어 둔 값은 그대로 두고, 달력에만 실기로 한 번 싣는다. */
-          if (ivVal && prac && window.SUSI_SAMEDAYS(ivVal, prac)) ivVal = '';
+          /* ★★ 달력에는 «학생이 적어 둔 날짜» 만 싣는다. 자료(어디가)에서 오는
+             고사일은 쓰지 않는다 — 오류가 너무 많다.
+               · 면접 칸에 실기 일정을 그대로 베껴 둔 줄이 998개
+               · 실기 칸에는 «대학이 내놓은 후보 일정 전체» 가 들어 있다
+                 (인천대 실기우수자 — 10/14 ; 10/15 ; 10/16 ; 10/19 ; 10/20 ; 10/21~22)
+                 학생은 그 중 하루만 가는데 다 실으면 한 사람이 일주일 내내 뜬다
+                 (박성민 학생 한 명이 15일에 걸쳐 떴다)
+             그래서 학생에게 자기 날짜를 적게 하고, 적은 것만 믿는다.
+             카드의 자동 채움도 같은 이유로 없앴다 — 칸에는 보이는데 달력에는
+             없는 상태가 되면 학생이 «적혀 있네» 하고 넘어가기 때문이다.
+             이름표(면접/실기/논술)는 자료의 전형방법을 보고 붙인다. */
           var pairs = [
             /* 1단계 발표는 시험이 아니라 «합격자 발표» 다. 언제 확인해야 하는지
                알아야 해서 달력에 함께 싣되, 겹침 경고에는 넣지 않는다(아래 EXAM_KIND). */
             ['1단계', a.step1 || ''],
-            [(info && info.kind) || '면접', ivVal],
-            [(info && info.essayKind) || '논술',
-             a.essay != null ? a.essay : (info ? info.essay : '')],
-            ['실기', prac]
+            [(info && info.kind) || '면접', a.interview || ''],
+            [(info && info.essayKind) || '논술', a.essay || '']
           ];
           pairs.forEach(function (p) {
             /* 한 칸에 날짜가 여럿 적힌 경우("2026/11/27 ; 2026/12/04")도,
@@ -5316,7 +5320,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-14.6';
+  var BUILD_ID = '2026-09-15.1';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -6099,10 +6103,12 @@ window.SUSI_SAMEDAYS = function (a, b) {
   function examKind(r, slot) {
     if (!r) return slot;
     var w = (r[C.W] >= 0 ? W[r[C.W]] : '') || '';
-    var p = MET_P.test(w), i = MET_I.test(w), e = MET_E.test(w);
-    var n = (p ? 1 : 0) + (i ? 1 : 0) + (e ? 1 : 0);
-    if (n === 1) return p ? '실기' : (i ? '면접' : '논술');
-    if (n > 1) return slot;              // 둘 이상 보는 전형 — 칸마다 제 이름이 있다
+    /* ★ 실기가 적혀 있으면 실기다. 면접이 함께 적혀 있어도 마찬가지다 —
+       「[2단계] 1단계40+실기40+면접20」 처럼 둘 다 보는 전형에서 학생이 그 칸에
+       적는 것은 실기 날짜다. 면접만 보는 전형은 전형방법에 '면접' 만 적힌다. */
+    if (MET_P.test(w)) return '실기';
+    if (MET_E.test(w)) return '논술';
+    if (MET_I.test(w)) return '면접';
     // 전형방법에 단서가 없을 때만 전형유형·전형명을 본다
     var t = T[r[C.T]] || '';
     if (t === '실기' || t === '실기실습') return '실기';
@@ -6824,9 +6830,10 @@ window.SUSI_SAMEDAYS = function (a, b) {
         '아래 결과 칸은 직접 채워 주세요.</span></div></div>';
     }
     if (r || c.custom) {
-      var iAuto = r ? interviewText(r) : '', eAuto = r ? essayText(r) : '';
-      var iVal = (c.interview !== null && c.interview !== undefined) ? c.interview : iAuto;
-      var eVal = (c.essay !== null && c.essay !== undefined) ? c.essay : eAuto;
+      /* ★ 자동 채움을 하지 않는다. 자료의 고사일은 바로 위 「고사일」 줄에 그대로
+         보이므로 보고 옮겨 적으면 된다. 칸을 미리 채워 두면 «적혀 있네» 하고
+         넘어가는데, 달력에는 적어 둔 것만 올라가서 칸과 달력이 어긋난다. */
+      var iVal = c.interview || '', eVal = c.essay || '';
       var autoMine = r ? myGrade(DP[r[C.D]]) : null;   // 이 학과 계열의 평균 내신(안내용)
       results = '<div class="results">' +
         /* 대학마다 내신 반영 방법이 달라 계열 평균으로는 안 맞는 경우가 있다.
@@ -6853,12 +6860,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
         '<label>충원합격 번호<input type="text" data-f="fillNo" value="' + esc(c.fillNo || '') + '" placeholder="예: 3"></label>' +
         '</div>' +
         '<div class="rrow"><label>1단계<input type="text" data-f="step1" value="' + esc(c.step1 || '') + '" placeholder="예: 1120 → 2026/11/20"></label></div>' +
-        '<div class="rrow"><label>면접/실기<input type="text" data-f="interview" value="' + esc(iVal) + '" placeholder="예: 1127 → 2026/11/27"></label>' +
-        ((c.interview !== null && c.interview !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="interview" title="자동값으로 되돌리기">⟲</button>' : '') +
-        '</div>' +
-        '<div class="rrow"><label>논술<input type="text" data-f="essay" value="' + esc(eVal) + '" placeholder="예: 1204 → 2026/12/04"></label>' +
-        ((c.essay !== null && c.essay !== undefined) ? ' <span class="modtag">수정됨</span><button class="reseta" type="button" data-reset="essay" title="자동값으로 되돌리기">⟲</button>' : '') +
-        '</div>' +
+        /* 「수정됨」 딱지와 ⟲(자동값으로 되돌리기)는 자동 채움이 있을 때 쓰던 것이라 뺐다 */
+        '<div class="rrow"><label>면접/실기<input type="text" data-f="interview" value="' + esc(iVal) + '" placeholder="위 고사일을 보고 적으세요 (예: 1127)"></label></div>' +
+        '<div class="rrow"><label>논술<input type="text" data-f="essay" value="' + esc(eVal) + '" placeholder="위 고사일을 보고 적으세요 (예: 1204)"></label></div>' +
         /* 합격자 «최초» 발표일. 「최종 발표」 라고 적었더니 충원(추가합격) 마지막 발표로
            오해하는 학생이 많아 이름을 바꿨다 — 담기는 값은 그대로다(final). */
         '<div class="rrow"><label>최초 발표<input type="text" data-f="final" value="' + esc(c.final || '') +
@@ -6955,9 +6959,10 @@ window.SUSI_SAMEDAYS = function (a, b) {
         var ev = effVerdict(c, verdict(r, c)); cnt[ev ? ev.v : 'none']++;
         var uniName = r ? U[r[C.U]] : c.uName;
         if (r) {
-          [[examKind(r, '면접'), c.interview != null ? c.interview : interviewText(r)],
-           [examKind(r, '논술'), c.essay != null ? c.essay : essayText(r)],
-           ['실기', practicalText(r)]]
+          /* 달력과 같은 잣대 — 적어 둔 날짜만 센다.
+             자료의 고사일을 함께 세면 겹치지도 않는 날이 겹쳤다고 나온다. */
+          [[examKind(r, '면접'), c.interview || ''],
+           [examKind(r, '논술'), c.essay || ''], ['1단계', c.step1 || '']]
             .forEach(function (p) {
               window.SUSI_DATES(p[1]).forEach(function (k) {
                 var tag = uniName + ' ' + p[0];
@@ -7189,7 +7194,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
           vd ? VN[vd.v] : '', c.verdictOverride ? VN[c.verdictOverride] : '',
           r ? (r[C.N] || '') : '', r ? nf(r[C.C]) : '', (r && r[C.M] >= 0) ? M[r[C.M]] : '',
           c.step1 || '',
-          (c.interview !== null && c.interview !== undefined) ? c.interview : (r ? interviewText(r) : ''),
+          c.interview || '',
           (c.essay !== null && c.essay !== undefined) ? c.essay : (r ? examText(r[C.L]) : ''),
           r ? practicalText(r) : '',
           c.final || '', c.passFail ? PF_LABEL[c.passFail] : '', c.fillNo || '',
@@ -7430,7 +7435,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
         K: (row && row[C.M] >= 0) ? (isNoMin(M[row[C.M]]) ? '[X] ' : '[O] ') + M[row[C.M]] : '',
         L: (row && row[C.W] >= 0) ? W[row[C.W]] : '',
         M: c.step1 || '',
-        N: (c.interview !== null && c.interview !== undefined) ? c.interview : (row ? interviewText(row) : ''),
+        N: c.interview || '',
         O: c.final || '',                                  // O 최초 발표일
         P: ev ? VN[ev.v] : '',
         Q: row ? (row[C.N] || '') : '',
@@ -7576,7 +7581,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     put(row, 10, (r && r[C.M] >= 0) ? M[r[C.M]] : '');                     // K 수능최저
     put(row, 11, (r && r[C.W] >= 0) ? W[r[C.W]] : '');                     // L 전형요소
     put(row, 12, c.step1 || '');                                          // M 1단계
-    put(row, 13, (c.interview !== null && c.interview !== undefined) ? c.interview : (r ? interviewText(r) : '')); // N 면접·실기·논술
+    put(row, 13, c.interview || '');                                       // N 면접·실기·논술
     put(row, 14, c.final || '');                                          // O 최초 발표일
     put(row, 15, vd ? VN[vd.v] : '');                                     // P 상향/적정/하향(자동)
     put(row, 16, r ? (r[C.N] || '') : '');                                // Q 현인원(모집인원)
@@ -7905,12 +7910,10 @@ window.SUSI_SAMEDAYS = function (a, b) {
       c.fillNo = e.fillNo || ''; c.passFail = e.passFail; c.step1 = e.step1 || '';
       c.final = e.final || '';
       var r = x.keepCustom ? null : rowOf(c);
-      // 면접·논술은 자료의 자동값과 다를 때만 「수정됨」으로 넣는다(같으면 자동값 그대로 두기).
-      // 직접 입력 카드는 자동값 자체가 없으니 적힌 값을 그대로 쓴다.
-      c.interview = x.keepCustom ? (e.interview || null)
-        : (e.interview && r && e.interview !== interviewText(r)) ? e.interview : null;
-      c.essay = x.keepCustom ? (e.essay || null)
-        : (e.essay && r && e.essay !== examText(r[C.L])) ? e.essay : null;
+      /* 파일에 적힌 날짜를 그대로 담는다. 예전에는 «자료의 자동값과 다를 때만»
+         담았는데, 자동 채움을 없앤 지금은 자료와 같은 날짜가 통째로 사라진다. */
+      c.interview = e.interview || null;
+      c.essay = e.essay || null;
       var area = e.area || (r && isCol(r) ? 'college' : 'main');
       if (area === 'college') college.push(c);
       else if (area === 'tech') { c.custom = true; tech.push(c); }
