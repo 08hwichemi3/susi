@@ -280,6 +280,47 @@ td.jh{color:var(--ink-2)}
    접어 두면 카드 키가 절반쯤 줄어 한 화면에 훨씬 많이 들어온다 */
 #v-plan.foldres .card .results{display:none}
 .pib.fold[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#fff}
+/* 카드 접기 단추 — 휴대폰에서만 나온다 */
+.card .foldbtn{display:none}
+@media(max-width:900px){
+  /* ── 다 고른 카드는 접어 둔다 ──
+     휴대폰에서 카드 한 장이 648px 이라 여섯 곳이면 3,949px 이었다(실측).
+     접으면 대학·학과 한 줄과 요약 한 줄만 남는다. 요약은 card 의 data-* 를
+     ::before·::after 로 찍는다 — 칸을 새로 만들면 넓은 화면 카드에 없던
+     줄이 하나 생긴다. 카드는 세로 flex 라 order 로 자리를 잡아 준다. */
+  #v-plan .card .foldbtn{display:inline-block;margin-left:auto;order:0;
+    border:1px solid var(--line-2);background:var(--surface-2);color:var(--accent);
+    border-radius:999px;padding:2px 9px;font-family:inherit;font-size:11px;
+    font-weight:600;cursor:pointer;line-height:1.6}
+  /* 접기 단추가 오른쪽 끝을 차지하므로 × 는 그 옆에 붙인다 */
+  #v-plan .card .foldbtn~.del{margin-left:0}
+  #v-plan .card.fold>*:not(.chd){display:none}
+  #v-plan .card.fold[data-name]::before{content:attr(data-name);order:1;
+    font-weight:700;font-size:13.5px;line-height:1.35;word-break:keep-all}
+  #v-plan .card.fold[data-sum]::after{content:attr(data-sum);order:2;
+    font-size:11.5px;color:var(--ink-3);line-height:1.4}
+  #v-plan .card.fold{gap:4px;padding:10px 12px}
+
+  /* ── 위쪽 세 칸(내신·모의·요약)의 낭비를 걷어낸다 ──
+     요약 딱지 넷이 84px 씩 자리를 잡아 두 줄로 접히면서 138px 을 먹고 있었다. */
+  #v-plan .cols3even>.panel{padding:11px 12px}
+  #v-plan .cols3even .sec{margin-bottom:5px}
+  #v-plan .cols3even .hint{font-size:11px;line-height:1.45;margin:0 0 6px}
+  /* ★ 아래 좁은 화면 규칙이 내신 3칸을 세로로 쌓아 155px 을 먹고 있었다.
+     「2.85」 한 줄이라 390px 에서도 셋이 나란히 들어간다. */
+  #v-plan .grades{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:0}
+  #v-plan .grades label{font-size:11px;gap:3px}
+  #v-plan .grades input{width:100%;min-width:0;padding:5px 6px;font-size:13px}
+  #v-plan .thresh{margin-top:8px;gap:6px}
+  #v-plan .thresh label{font-size:11.5px}
+  #v-plan .thresh input{width:60px}
+  #v-plan .thresh .hint{font-size:10.5px;line-height:1.4}
+  #v-plan .sumrow{gap:6px;margin-top:0}
+  #v-plan .sumtile{flex:1 1 0;min-width:0;padding:5px 4px;text-align:center}
+  #v-plan .sumtile .k{font-size:10px;letter-spacing:0;white-space:nowrap}
+  #v-plan .sumtile .v{font-size:16px}
+  #v-plan .warn{margin-top:8px;padding:7px 10px;font-size:11.5px}
+}
 .plansec .sec{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
 .plansec .sec .tag{text-transform:none;letter-spacing:0;font-size:11.5px}
 /* 지원 6칸이 넓은 화면에서 한 줄에 다 들어가게 한 칸의 최소 너비를 잡았다.
@@ -5631,7 +5672,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-17.3';
+  var BUILD_ID = '2026-09-17.4';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -7112,6 +7153,20 @@ window.SUSI_SAMEDAYS = function (a, b) {
 
   var AREA_LABEL = { main: '지원', cand: '예비', college: '전문대', tech: '기술원' };
   var PF_LABEL = { pass: '합격', fail: '불합격' };
+  /* ★ 휴대폰에서 카드를 접어 둔다. 다 채운 카드는 접힌 채로 열리고, 손댄 카드는
+     그대로 펼쳐 둔다 — 학과를 고르자마자 접혀 버리면 고르던 흐름이 끊긴다.
+     여기에는 «펼쳐 둔 카드» 만 담는다(자리 → true). 카드는 글자를 칠 때마다
+     다시 그려지므로 접힘 상태를 화면이 아니라 여기에 들고 있어야 한다. */
+  var CARD_OPEN = {};
+  /* 「2026/11/21」 → 「11/21」. 접은 카드의 요약은 자리가 좁아 연도를 뗀다.
+     ★ SHELLJS 에도 같은 이름이 있지만 블록이 달라 서로 안 보인다 — 여기 따로 둔다. */
+  function shortD(v) { return String(v || '').replace(/^\d{4}\s*[\/.\-]\s*/, ''); }
+  /* 접을 만큼 «다 고른» 카드인가 — 학과까지 정해져야 한 줄 요약이 뜻을 갖는다 */
+  function cardDone(c) {
+    if (!c) return false;
+    return c.custom ? !!(String(c.uName || '').trim() && String(c.dName || '').trim())
+                    : (c.d !== null && c.d !== undefined);
+  }
   function cardHTML(c, ix, area) {
     var r = c.custom ? null : rowOf(c), vd = verdict(r, c);
     var ev = effVerdict(c, vd);
@@ -7182,8 +7237,23 @@ window.SUSI_SAMEDAYS = function (a, b) {
         '" placeholder="예: 1215 → 2026/12/15"></label></div>' +
         '</div>';
     }
-    return '<div class="card' + (isPick ? ' swap-pick' : '') + '" data-area="' + area + '" data-ix="' + ix + '">' +
+    /* 접었을 때 카드에 남길 두 줄 — 대학·학과와, 판정·적어 둔 날짜. */
+    var nm = window.SUSI_NAMES ? window.SUSI_NAMES(c) : null;
+    var folded = cardDone(c) && !CARD_OPEN[area + '#' + ix];
+    var cSum = [];
+    if (ev) cSum.push(VN[ev.v]);
+    if (c.step1) cSum.push('1단계 ' + shortD(c.step1));
+    if (c.interview) cSum.push('면접/실기 ' + shortD(c.interview));
+    if (c.essay) cSum.push('논술 ' + shortD(c.essay));
+    if (c.final) cSum.push('발표 ' + shortD(c.final));
+    if (PF_LABEL[c.passFail]) cSum.push(PF_LABEL[c.passFail]);
+    return '<div class="card' + (isPick ? ' swap-pick' : '') + (folded ? ' fold' : '') +
+      '" data-area="' + area + '" data-ix="' + ix + '"' +
+      (nm ? ' data-name="' + esc(nm.uni + ' · ' + nm.dept) + '"' +
+            ' data-sum="' + esc(cSum.join(' · ') || '적어 둔 날짜 없음') + '"' : '') + '>' +
       '<div class="chd"><span class="no">' + (ix + 1) + '</span>' + headBadge +
+      (cardDone(c) ? '<button class="foldbtn" type="button" data-fold="1">' +
+        (folded ? '펼치기 ▾' : '접기 ▴') + '</button>' : '') +
       '<button class="swapbtn" type="button" data-swap="1" aria-pressed="' + (isPick ? 'true' : 'false') + '" title="자리 바꾸기">⇄</button>' +
       (showDel ? '<button class="del" data-del="1" title="' + ((area === 'college' || area === 'tech') ? '삭제' : '비우기') + '">×</button>' : '') +
       '</div>' +
@@ -7393,6 +7463,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
     });
     host.addEventListener('input', function (e) {
       var hit = cardHit(e); if (!hit) return;
+      /* 손댄 카드는 그대로 펼쳐 둔다 — 학과를 고르자마자 «다 채웠다» 며
+         접혀 버리면 고르던 흐름이 끊긴다. */
+      CARD_OPEN[hit.area + '#' + hit.ix] = 1;
       var f = e.target.dataset.f, c = hit.c;
       if (f === 'memo') c.memo = e.target.value;
       else if (f === 'fillNo') c.fillNo = e.target.value;
@@ -7438,6 +7511,15 @@ window.SUSI_SAMEDAYS = function (a, b) {
       renderCards();
     }, true);
     host.addEventListener('click', function (e) {
+      /* 카드 접기·펴기 (휴대폰). 넓은 화면에서는 단추 자체가 안 보인다. */
+      var foldBtn = e.target.closest('button[data-fold]');
+      if (foldBtn) {
+        var hf = cardHit(e); if (!hf) return;
+        var key = hf.area + '#' + hf.ix;
+        if (CARD_OPEN[key]) delete CARD_OPEN[key]; else CARD_OPEN[key] = 1;
+        renderCards();
+        return;
+      }
       var delBtn = e.target.closest('button[data-del]');
       if (delBtn) {
         var hit = cardHit(e); if (!hit) return;
@@ -8536,7 +8618,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
   window.SUSI = {
     start: start,
     getPlan: function () { return plan; },
-    setPlan: function (p) { plan = p || { g: { nat: '', hum: '', all: '' }, th: 0.3 }; renderCards(); },
+    setPlan: function (p) { plan = p || { g: { nat: '', hum: '', all: '' }, th: 0.3 }; CARD_OPEN = {}; renderCards(); },
     setGrades: function (g) {
       if (!g) return;
       ['nat', 'hum', 'all'].forEach(function (k) { if (g[k] != null && g[k] !== '') plan.g[k] = String(g[k]); });
