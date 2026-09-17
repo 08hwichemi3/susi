@@ -264,6 +264,9 @@ td.jh{color:var(--ink-2)}
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 0;
   padding:8px 0;background:var(--ground);border-bottom:1px solid var(--line)}
 .planidx .pi-label{font-size:12px;font-weight:700;color:var(--ink-3)}
+/* 칩 묶음 · 저장 묶음. 자리가 넉넉하면 한 줄, 좁으면 저장 묶음이 통째로 내려간다. */
+.planidx .pi-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.planidx .pi-acts{margin-left:auto;flex:none}
 .pib{padding:7px 14px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);
   color:var(--ink-2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .pib .n{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums;margin-left:2px}
@@ -326,7 +329,10 @@ td.jh{color:var(--ink-2)}
   #v-plan .planidx .pi-label{font-size:11px}
   #v-plan .planidx .pib{padding:5px 10px;font-size:12px}
   #v-plan .planidx .btn{padding:5px 10px;font-size:12px}
-  #v-plan .planidx .grow{display:none}
+  /* 좁은 화면에서는 두 묶음을 위아래로 세운다 — 칩 다섯이 윗줄, 저장·불러오기가 아랫줄 */
+  #v-plan .planidx{flex-direction:column;align-items:stretch;gap:6px}
+  #v-plan .planidx .pi-row{gap:5px}
+  #v-plan .planidx .pi-acts{margin-left:0;flex:0 0 auto}
 }
 .plansec .sec{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
 .plansec .sec .tag{text-transform:none;letter-spacing:0;font-size:11.5px}
@@ -2026,18 +2032,24 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 
   <div id="planIdxTop" style="height:0" aria-hidden="true"></div>
   <div class="planidx" id="planIdx" role="tablist" aria-label="간단히 보기">
-    <span class="pi-label">간단히 보기</span>
-    <button type="button" class="pib" data-pi="main" aria-pressed="false">일반대 <span class="n" id="piMainN"></span></button>
-    <button type="button" class="pib" data-pi="tech" aria-pressed="false">기술원 <span class="n" id="piTechN"></span></button>
-    <button type="button" class="pib" data-pi="cand" aria-pressed="false">예비 <span class="n" id="piCandN"></span></button>
-    <button type="button" class="pib" data-pi="college" aria-pressed="false">전문대 <span class="n" id="piColN"></span></button>
-    <button type="button" class="pib fold" id="piFold" aria-pressed="false" title="합불·1단계·면접 같은 결과 칸을 접어 카드를 짧게 봅니다">결과 칸 접기</button>
-    <span class="grow"></span>
-    <button class="btn" id="savePlanCsv">파일로 저장(CSV)</button>
-    <button class="btn" id="savePlanXlsx">xlsx로 저장</button>
-    <button class="btn" id="loadPlanXlsx">엑셀 불러오기</button>
-    <input type="file" id="planFileIn" accept=".xlsx,.xls" hidden>
-    <button class="btn solid" id="persist">모든 기기에 저장</button>
+    <!-- 골라 보는 칩 한 묶음, 저장·불러오기 한 묶음. 넓은 화면에서는 둘이 한 줄에
+         나란히 서고, 좁아지면 저장 묶음이 통째로 아랫줄로 내려간다(단추가 따로
+         흩어지지 않는다). -->
+    <div class="pi-row">
+      <span class="pi-label">간단히 보기</span>
+      <button type="button" class="pib" data-pi="main" aria-pressed="false">일반대 <span class="n" id="piMainN"></span></button>
+      <button type="button" class="pib" data-pi="tech" aria-pressed="false">기술원 <span class="n" id="piTechN"></span></button>
+      <button type="button" class="pib" data-pi="cand" aria-pressed="false">예비 <span class="n" id="piCandN"></span></button>
+      <button type="button" class="pib" data-pi="college" aria-pressed="false">전문대 <span class="n" id="piColN"></span></button>
+      <button type="button" class="pib fold" id="piFold" aria-pressed="false" title="합불·1단계·면접 같은 결과 칸을 접어 카드를 짧게 봅니다">결과 칸 접기</button>
+    </div>
+    <div class="pi-row pi-acts">
+      <button class="btn" id="savePlanCsv">CSV로 저장</button>
+      <button class="btn" id="savePlanXlsx">xlsx로 저장</button>
+      <button class="btn" id="loadPlanXlsx">엑셀 불러오기</button>
+      <input type="file" id="planFileIn" accept=".xlsx,.xls" hidden>
+      <button class="btn solid" id="persist">모든 기기에 저장</button>
+    </div>
   </div>
 
   <div class="plansec pi-main">
@@ -3522,11 +3534,6 @@ window.SUSI_SAMEDAYS = function (a, b) {
     }
     var order = { main: 0, tech: 1, cand: 2, college: 3 };
     apps.sort(function (a, b) { return (order[a.area] - order[b.area]) || (a.slot - b.slot); });
-    h += '<p class="hint">회색 칸은 <b>자료에서 자동으로</b> 옵니다. 흰 칸은 <b>직접 넣는 곳</b>이고, 고치면 바로 저장됩니다. ' +
-      '<b>면접 · 논술</b>과 <b>최초 발표</b> 칸의 날짜는 <b>1127</b> · <b>11/27</b> · <b>2026-11-27</b> 처럼 적어도 ' +
-      '칸을 떠날 때 <b>2026/11/27</b> 형식으로 자동으로 맞춰집니다. ' +
-      '<b>달력에는 여기에 적어 넣은 날짜만 올라갑니다</b> — 자료의 고사일은 참고용입니다. ' +
-      '대학이 실기 일정을 여러 날로 내놓아 학생마다 실제로 가는 날이 다르기 때문입니다.</p>';
     h += '<div class="tblwrap"><table class="plantbl edit"><thead><tr>' +
       '<th>구분</th><th>대학 · 전형 · 학과</th><th>70%컷</th><th>내신</th><th>판정</th>' +
       '<th>모집</th><th>경쟁률</th><th>1단계</th><th>면접 · 논술</th><th>최초 발표</th><th>합불</th><th>충원</th>' +
@@ -5683,7 +5690,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-17.5';
+  var BUILD_ID = '2026-09-17.6';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
