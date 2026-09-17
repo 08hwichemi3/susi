@@ -2590,6 +2590,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
   function enterStudent() {
     PLAN_OWNER = ME;
     PLAN_READY = false;                        // ★ 서버 계획을 손에 쥐기 전에는 저장 금지
+    PLAN_BASE = {};                            // 앞 사람 기준값을 물려 쓰지 않는다
     sync('불러오는 중…', '');
     setFormWho(ME);
     $('appwrap').classList.remove('hidden');
@@ -2606,6 +2607,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
       // 내신·모의고사는 양식으로 저장할 때 쓴다 (없으면 그 자리만 빈다)
       setFormWho(ME, (r[1] && r[1].data) || null, (r[2] && r[2].data) || null);
       PLAN = rowsToPlan((r[0] && r[0].data) || [], (r[1] && r[1].data) || null);
+      setBase((r[0] && r[0].data) || []);      // 남이 고친 칸을 가려낼 기준값
       window.SUSI.setPlan(PLAN);
       PLAN_READY = true;                       // 이제부터 저장해도 안전하다
       sync('저장됨', 'ok');
@@ -2668,6 +2670,42 @@ window.SUSI_SAMEDAYS = function (a, b) {
      실제로 그 일이 있었다 — 회선이 느리거나 읽기가 한 번 실패한 학생들. */
   var PLAN_READY = false;
 
+  /* ★★ 화면을 열 때 서버에 있던 값. 「내가 고친 것」과 「남이 고친 것」을 가른다.
+     저장은 계획 전체를 통째로 다시 쓰는 구조다. 그래서 선생님이 표에서 면접일을
+     넣어도, 그때 학생 창이 열려 있으면 학생이 아무 칸이나 한 글자 치는 순간
+     그 날짜가 빈 값으로 덮였다. 폰과 학교 컴퓨터를 같이 켜 둔 경우도 같다.
+     묻지도 않고 기록도 안 남아 학생은 '지워졌다' 고만 느낀다(실제 신고를 받았다).
+     → 이 기준값과 견줘, 내가 손대지 않은 칸은 서버 쪽 값을 그대로 살린다. */
+  var PLAN_BASE = {};
+  /* 서버 줄 ↔ 카드 칸 짝. 빈칸을 카드에서 무엇으로 두는지(blank)까지 적어 둔다 —
+     날짜 칸은 null, 글자 칸은 '' 이라 되돌려 담을 때 이 구분이 필요하다. */
+  var MERGE_F = [
+    { row: 'step1', card: 'step1', blank: '' },
+    { row: 'interview', card: 'interview', blank: null },
+    { row: 'essay', card: 'essay', blank: null },
+    { row: 'final_date', card: 'final', blank: '' },
+    { row: 'fill_no', card: 'fillNo', blank: '' },
+    { row: 'result', card: 'passFail', blank: null },
+    { row: 'verdict_override', card: 'verdictOverride', blank: null },
+    { row: 'manual_grade', card: 'manualGrade', blank: '' },
+    { row: 'memo', card: 'memo', blank: '' }
+  ];
+  /* 빈 값은 null 과 '' 이 섞여 들어오고 내신은 숫자로 돌아온다 — 글자로 맞춰 견준다 */
+  function sameVal(a, b) {
+    var x = (a === null || a === undefined) ? '' : String(a);
+    var y = (b === null || b === undefined) ? '' : String(b);
+    return x === y;
+  }
+  function setBase(rows) {
+    PLAN_BASE = {};
+    (rows || []).forEach(function (r) {
+      if (!r || !r.area) return;
+      var o = { uni_name: r.uni_name || '', dept_name: r.dept_name || '' };
+      MERGE_F.forEach(function (f) { o[f.row] = r[f.row]; });
+      PLAN_BASE[r.area + '#' + r.slot] = o;
+    });
+  }
+
   /* 화면에 '놓여 있는' 카드의 자리들. 학과를 아직 안 골랐어도 대학이 적혀 있으면 센다.
      ★ 두 가지에 쓴다.
        ① 고치는 중인 카드를 '빠진 카드' 로 오해하지 않는다.
@@ -2699,9 +2737,15 @@ window.SUSI_SAMEDAYS = function (a, b) {
           uni_name: n.uni, type_name: n.type, admission_name: n.jh, dept_name: n.dept,
           verdict_override: c.verdictOverride || null, step1: c.step1 || null,
           manual_grade: (function () { var n = parseFloat(c.manualGrade); return isFinite(n) && n > 0 ? n : null; })(),
-          interview: c.interview, essay: c.essay, final_date: c.final || null,
+          /* 지운 칸은 '' 이 아니라 null 로 담는다 — 둘 다 '비었다' 는 뜻인데
+             섞여 들어가면 나중에 «면접일이 있는 줄» 을 세는 것마다 어긋난다
+             (실제로 '' 인 줄이 22개 쌓여 있었다). */
+          interview: c.interview || null, essay: c.essay || null, final_date: c.final || null,
           fill_no: c.fillNo || null,
-          result: c.passFail || null, memo: c.memo || null });
+          result: c.passFail || null, memo: c.memo || null,
+          /* 병합할 때 화면 카드에도 되돌려 담아야 한다 — 올리기 직전에 지운다
+             (applications 에 없는 칸을 그대로 보내면 저장이 통째로 거부된다) */
+          _c: c });
       });
     });
     return out;
@@ -2733,7 +2777,11 @@ window.SUSI_SAMEDAYS = function (a, b) {
        '지워질 줄' 이 있으면 아무것도 쓰지 않고 사람에게 먼저 물어본다.
        올린 다음에 물어보면, 취소해도 이미 밀려 들어간 자리를 되돌릴 수 없다. */
     return Promise.resolve(
-      sb.from('applications').select('id,area,slot,uni_name,dept_name')
+      /* 지울 줄을 가리는 데는 id·자리·이름이면 되지만, 그 사이에 남이 고친 값이
+         있는지 보려면 고칠 수 있는 칸을 전부 같이 읽어야 한다. */
+      sb.from('applications')
+        .select('id,area,slot,uni_name,dept_name,step1,interview,essay,final_date,'
+              + 'fill_no,result,verdict_override,manual_grade,memo')
         .eq('student_id', owner.id).eq('year', CFG.year)
     ).then(function (res) {
       if (res && res.error) throw res.error;
@@ -2762,6 +2810,40 @@ window.SUSI_SAMEDAYS = function (a, b) {
         flushing = false; flushAgain = false; dirty = true;
         return askDelete(gone, owner);   // 확인을 받기 전에는 한 글자도 쓰지 않는다
       }
+      /* ★ 올리기 직전에 「남이 고친 칸」을 살려 낸다.
+           내 값 == 열 때 값  (나는 손대지 않았다)
+           서버 값 != 열 때 값 (그 사이 누군가 고쳤다)
+         둘 다 맞으면 서버 값을 쓴다. 같은 자리에 같은 대학·학과일 때만 본다 —
+         대학을 바꾼 자리는 새 카드라서 그 대학의 날짜를 물려받으면 안 된다. */
+      var srv = {};
+      (res.data || []).forEach(function (r) { srv[r.area + '#' + r.slot] = r; });
+      var merged = 0;
+      rows.forEach(function (r) {
+        var k = r.area + '#' + r.slot, b = PLAN_BASE[k], s = srv[k];
+        if (!b || !s) return;
+        if (!sameVal(b.uni_name, r.uni_name) || !sameVal(b.dept_name, r.dept_name)) return;
+        if (!sameVal(s.uni_name, r.uni_name) || !sameVal(s.dept_name, r.dept_name)) return;
+        MERGE_F.forEach(function (f) {
+          if (!sameVal(r[f.row], b[f.row])) return;       // 내가 고쳤다 — 내 값이 이긴다
+          if (sameVal(s[f.row], b[f.row])) return;        // 서버도 그대로다 — 할 일 없다
+          r[f.row] = s[f.row];
+          if (r._c) {
+            r._c[f.card] = (s[f.row] === null || s[f.row] === undefined)
+              ? f.blank
+              : (f.card === 'manualGrade' ? String(s[f.row]) : s[f.row]);
+          }
+          merged++;
+        });
+      });
+      /* 살려 낸 값이 화면에도 보이게 다시 그린다. 다만 지금 어딘가에 글자를 치고
+         있으면 그리지 않는다 — 다시 그리면 그 칸에서 초점이 튄다. 모델에는 이미
+         담겼으니 다음에 그릴 때 함께 나온다. */
+      if (merged) {
+        var ae = document.activeElement;
+        var typing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT');
+        if (!typing) window.SUSI.setPlan(window.SUSI.getPlan());
+      }
+      rows.forEach(function (r) { delete r._c; });
       var step = rows.length
         ? sb.from('applications').upsert(rows, { onConflict: 'student_id,year,area,slot' })
         : Promise.resolve({ error: null });
@@ -2772,6 +2854,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
         return sb.from('applications').delete()
           .in('id', dead.map(function (r) { return r.id; }));
       }).then(function () {
+        /* 방금 쓴 것이 이제 '열 때 값' 이다. 이걸 안 갱신하면, 다음 저장 때
+           내가 방금 바꾼 값이 '손대지 않은 칸' 으로 보여 서버 값으로 되돌아간다. */
+        setBase(rows);
         DEL_OK = false;
         flushing = false;
         if (flushAgain) { flushAgain = false; dirty = true; return flush(); }
@@ -2842,6 +2927,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
          (여기서 새로 만들면 학생 내신 칸이 빈칸이 되어 판정이 통째로 사라진다) */
       var cur = window.SUSI.getPlan();
       PLAN = rowsToPlan(r.data || [], null);
+      setBase(r.data || []);
       if (cur && cur.g) PLAN.g = cur.g;
       if (cur && cur.th !== undefined && cur.th !== null) PLAN.th = cur.th;
       window.SUSI.setPlan(PLAN);
@@ -3066,6 +3152,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     if (!st) return;
     var box = $('stDetail');
     PLAN_READY = false;                        // ★ 다 읽기 전에는 저장 금지
+    PLAN_BASE = {};
     return Promise.resolve(flush()).then(function () {
       return Promise.all([
         sb.from('applications').select('*').eq('student_id', st.id).eq('year', CFG.year),
@@ -3076,6 +3163,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
       var err = (r[0] && r[0].error) || (r[1] && r[1].error);
       if (err) throw err;
       PLAN = rowsToPlan((r[0] && r[0].data) || [], (r[1] && r[1].data) || null);
+      setBase((r[0] && r[0].data) || []);
       PLAN_OWNER = st;
       // 대신 짜는 동안 저장하면 그 학생 이름·내신·모의고사로 나간다
       setFormWho(st, (r[1] && r[1].data) || null, (r[2] && r[2].data) || null);
@@ -3120,7 +3208,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
       $('appwrap').classList.add('hidden');
       $('teacherView').classList.remove('hidden');
       window.SUSI.hideTabs(['plan']);
-      PLAN_OWNER = null; PLAN = null; PLAN_READY = false; setFormWho(null);
+      PLAN_OWNER = null; PLAN = null; PLAN_READY = false; PLAN_BASE = {}; setFormWho(null);
       if (st) pickStudent(st.id);            // 방금 고친 내용이 표에 반영된다
       if (dirty) window.alert('아직 저장되지 않은 변경이 있습니다. 인터넷을 확인하고 다시 열어 주세요.');
     });
@@ -5385,7 +5473,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-16.1';
+  var BUILD_ID = '2026-09-16.2';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
