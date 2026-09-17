@@ -583,6 +583,40 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 .stlist .empty{color:var(--ink-3);cursor:default;justify-content:center;padding:22px}
 .stlist .empty:hover{background:transparent}
 
+/* ═══════ 좁은 화면(휴대폰) ═══════
+   위쪽 @media(max-width:900px) 가 «앱 안의 모든 표» 를 한 칸에 한 줄짜리 카드로
+   푼다. 전형 찾기처럼 열이 열 개 넘는 표에는 맞지만, 숫자 대여섯 개짜리 작은
+   표까지 똑같이 풀어 놓아 두 가지 문제가 생겼다(390px 에서 직접 재 봤다).
+     · 학생 한 명 화면이 4,262px — 휴대폰 다섯 화면이다
+     · 더 나쁜 것: 이 표들은 data-label 이 없어서 머리글이 숨겨지면 이름표가
+       통째로 사라진다. 「3월」 밑에 2 3 2 3 4 만 남아 어느 것이 국어인지 알 수 없었다 */
+.stshow{display:none}
+@media(max-width:900px){
+  /* ── 숫자만 있는 작은 표(내신·모의·성적 입력)는 카드로 풀지 않는다 ──
+     한두 글자 숫자뿐이라 390px 에도 그대로 들어간다. 583+1,142px → 109+166px. */
+  .gt{display:table;table-layout:fixed;font-size:12px;margin:8px 0 12px}
+  .gt thead{position:static;width:auto;height:auto;clip:auto;overflow:visible;white-space:normal}
+  .gt tbody{display:table-row-group}
+  .gt tr{display:table-row;border:0;border-radius:0;background:transparent;
+    box-shadow:none;padding:0;margin:0}
+  .gt th,.gt td{display:table-cell;width:auto !important;
+    border:1px solid var(--line);padding:4px 2px;text-align:center}
+  .gt thead th{font-size:10.5px;padding:3px 1px;white-space:nowrap}
+  .gt tbody th{font-size:11px;text-align:left;padding-left:6px;white-space:nowrap;width:26% !important}
+  .gt.ed td{padding:2px}
+  .gt.ed input{min-width:0;padding:3px 2px;font-size:12px}
+
+  /* ── 학생을 고르면 명단을 접는다 ──
+     휴대폰에서는 명단(576px)을 다 지나쳐 내려야 그 학생 내용이 나왔다.
+     제목 줄에 「명단 보기」 가 남아 언제든 다시 펼칠 수 있다. */
+  #tv-students.picked .stlist,
+  #tv-students.picked .stxlsxrow,
+  #tv-students.picked #stFilter,
+  #tv-students.picked #notActivated{display:none}
+  #tv-students.picked .stshow{display:inline-block;margin-left:8px;
+    font-size:11px;padding:3px 10px;text-transform:none;letter-spacing:0}
+}
+
 .gt{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:13px}
 .gt th,.gt td{border:1px solid var(--line);padding:5px 8px;text-align:center}
 .gt thead th{background:var(--surface-2);color:var(--ink-3);font-weight:600;font-size:12px}
@@ -976,17 +1010,36 @@ td.c-cut70{font-weight:600;color:var(--ink)}
    사라지므로 각 칸의 data-label 로 이름을 되살린다(안 그러면 1.81 / 2 / 17 만 덩그러니
    남아 무슨 값인지 알 수 없다 — 실제로 그렇게 보여서 고쳤다).
    구분·대학 칸은 카드의 제목 노릇을 하므로 이름표를 붙이지 않는다. */
+/* ★ 한 항목에 한 줄씩 쌓았더니 대학 한 곳이 494px 이었다(390px 화면에서 실측).
+   짧은 값끼리 나란히 놓아 351px 로 줄인다. 칸 순서는 renderDetail 의 <td> 차례에
+   맞춰 order 로 다시 세운다 — 그 차례가 바뀌면 여기 번호도 같이 고쳐야 한다.
+     구분·대학 / 70%컷·모집·경쟁률 / 내신·판정 / 1단계·최초발표 / 면접·논술 / 합불·충원 */
 @media(max-width:900px){
   .plantbl.edit{margin-top:10px}
-  .plantbl.edit tr{padding:10px 12px}
-  .plantbl.edit td{border:0;padding:5px 0}
+  .plantbl.edit tbody tr{display:grid;grid-template-columns:repeat(6,1fr);
+    gap:7px 8px;align-items:start;padding:11px 12px}
+  .plantbl.edit td{border:0;padding:0}
   .plantbl.edit td.auto{background:transparent;color:var(--ink)}
-  .plantbl.edit td[data-label]{display:grid;grid-template-columns:76px minmax(0,1fr);
-    gap:8px;align-items:center}
-  .plantbl.edit td[data-label]::before{margin-bottom:0;font-size:11px;text-transform:none;
-    letter-spacing:0;color:var(--ink-3)}
-  .plantbl.edit td.two{display:block}
-  .plantbl.edit td.two::before{display:block;margin-bottom:3px}
+  .plantbl.edit td[data-label]{display:block}
+  .plantbl.edit td[data-label]::before{display:block;margin-bottom:2px;font-size:10.5px;
+    text-transform:none;letter-spacing:0;color:var(--ink-3)}
+  .plantbl.edit td:nth-child(1),
+  .plantbl.edit td:nth-child(2){grid-column:span 6;order:0}
+  .plantbl.edit td:nth-child(3){grid-column:span 2;order:1}    /* 70%컷 */
+  .plantbl.edit td:nth-child(6){grid-column:span 2;order:2}    /* 모집 */
+  .plantbl.edit td:nth-child(7){grid-column:span 2;order:3}    /* 경쟁률 */
+  .plantbl.edit td:nth-child(4){grid-column:span 3;order:4}    /* 내신 */
+  .plantbl.edit td:nth-child(5){grid-column:span 3;order:5}    /* 판정 */
+  .plantbl.edit td:nth-child(8){grid-column:span 3;order:6}    /* 1단계 */
+  .plantbl.edit td:nth-child(10){grid-column:span 3;order:7}   /* 최초 발표 */
+  .plantbl.edit td.two{grid-column:span 6;order:8;
+    display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .plantbl.edit td.two::before{grid-column:span 2;margin-bottom:0}
+  .plantbl.edit td.two input{margin-bottom:0}
+  .plantbl.edit td:nth-child(11){grid-column:span 3;order:9}   /* 합불 */
+  .plantbl.edit td:nth-child(12){grid-column:span 3;order:10}  /* 충원 */
+  .plantbl.edit input,.plantbl.edit select,
+  .plantbl.edit select[data-f="verdict_override"]{min-width:0}
   .plantbl.edit .whyno{display:inline-block;margin-left:0}
 }
 .whyno{display:block;margin-top:2px;font-size:10px;color:var(--ink-3)}
@@ -1517,7 +1570,7 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <section class="tview" id="tv-students">
       <div class="cols3">
         <div class="panel pad">
-          <h3 class="sec">담당 학생 <span class="tag" id="stCount"></span></h3>
+          <h3 class="sec">담당 학생 <span class="tag" id="stCount"></span><button type="button" class="btn stshow" id="stShow">명단 보기</button></h3>
           <div class="stxlsxrow">
             <button class="btn" id="stXlsx" title="담당 학생들의 지원계획을 한 장짜리 엑셀로 받습니다 (예비 칸은 빠집니다)">엑셀로 받기</button>
             <button class="btn hidden" id="stXlsxUp" title="학생자료양식.xlsx 로 내신·모의고사를 한 번에 넣습니다">엑셀로 올리기</button>
@@ -3283,8 +3336,15 @@ window.SUSI_SAMEDAYS = function (a, b) {
      A 학생 기록에 저장된다. 요청마다 번호를 매겨 마지막 것만 그린다. */
   var pickSeq = 0, planTimer = null;
 
+  /* 휴대폰에서는 학생을 고르면 명단을 접는다 — 안 접으면 명단을 다 지나쳐
+     내려야 그 학생 내용이 나온다. 넓은 화면은 CSS 가 이 표시를 무시한다. */
+  function foldList(on) {
+    var tv = $('tv-students');
+    if (tv) tv.classList[on ? 'add' : 'remove']('picked');
+  }
+
   function pickStudent(id, openGrades) {
-    PICKED = id; renderStudentList();
+    PICKED = id; renderStudentList(); foldList(true);
     var st = STUDENTS.filter(function (s) { return s.id === id; })[0];
     if (!st) return;
     clearTimeout(planTimer);        // 이전 학생의 예약 저장이 새 화면에 뜨는 것을 막는다
@@ -3769,7 +3829,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     Promise.resolve(sb.rpc('delete_student', { p_student: id })).then(function (r) {
       if (r.error) throw r.error;
       window.SUSI.toast(st.name + ' 학생 계정을 지웠습니다.');
-      if (PICKED === id) { PICKED = null; $('stDetail').innerHTML = '<p class="hint">왼쪽에서 학생을 고르세요.</p>'; }
+      if (PICKED === id) { PICKED = null; foldList(false); $('stDetail').innerHTML = '<p class="hint">왼쪽에서 학생을 고르세요.</p>'; }
       return loadStudents();
     }).then(function () { renderStudentAccounts(); }).catch(function (e) {
       if (btn) btn.disabled = false;
@@ -3962,6 +4022,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
       $('resetWord').value = '';
       return loadStudents();
     }).then(function () {
+      foldList(false);
       $('stDetail').innerHTML = '<p class="hint">왼쪽에서 학생을 고르세요.</p>';
     }).catch(function (e) {
       $('resetBtn').disabled = false;
@@ -5485,7 +5546,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-17.1';
+  var BUILD_ID = '2026-09-17.2';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -5595,6 +5656,8 @@ window.SUSI_SAMEDAYS = function (a, b) {
       flush().then(function () { return sb.auth.signOut(); }).then(function () { location.reload(); });
     });
     on('stFilter', 'input', renderStudentList);
+    // 접어 둔 명단을 다시 펼친다 (휴대폰에서만 보이는 단추)
+    on('stShow', 'click', function () { foldList(false); });
     on('stXlsx', 'click', downloadAllXlsx);
     on('stXlsxUp', 'click', function () {
       var t = document.querySelector('#tTabs [data-t="admin"]');
