@@ -320,6 +320,13 @@ td.jh{color:var(--ink-2)}
   #v-plan .sumtile .k{font-size:10px;letter-spacing:0;white-space:nowrap}
   #v-plan .sumtile .v{font-size:16px}
   #v-plan .warn{margin-top:8px;padding:7px 10px;font-size:11.5px}
+  /* 「간단히 보기」 줄 — 칩과 저장 단추가 세 줄로 접혀 171px 을 먹었다.
+     이 줄은 화면 위에 붙어 다니므로(sticky) 짧을수록 본문이 넓어진다. */
+  #v-plan .planidx{gap:5px;padding:7px 0}
+  #v-plan .planidx .pi-label{font-size:11px}
+  #v-plan .planidx .pib{padding:5px 10px;font-size:12px}
+  #v-plan .planidx .btn{padding:5px 10px;font-size:12px}
+  #v-plan .planidx .grow{display:none}
 }
 .plansec .sec{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
 .plansec .sec .tag{text-transform:none;letter-spacing:0;font-size:11.5px}
@@ -648,6 +655,9 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     font-size:11px;font-weight:600;color:var(--accent)}
   .foldbox:not(.fold) .foldhead::after{content:'접기 ▴'}
   .foldbox.fold .foldbody{display:none}
+  /* 손잡이가 제목 노릇을 하므로 원래 제목은 감춘다 (넓은 화면에서는 반대다) */
+  .foldbox>.sec{display:none}
+  .foldbox .foldhead{margin-top:0}
 }
 @media(max-width:900px){
   /* ── 숫자만 있는 작은 표(내신·모의·성적 입력)는 카드로 풀지 않는다 ──
@@ -1968,8 +1978,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
 <!-- ══ 전형 관리 ══ -->
 <section class="wrap view hidden" id="v-plan">
   <div class="cols3even">
-    <div class="panel pad">
+    <div class="panel pad foldbox fold">
       <h3 class="sec">내신 등급</h3>
+      <button type="button" class="foldhead"><span class="fh-t">내신 등급</span><span class="fh-sum" id="gradeSum"></span></button>
+      <div class="foldbody">
       <p class="hint">이수단위 가중평균으로 직접 계산한 값을 입력하세요. 학과 계열에 맞는 값이 카드에 자동으로 반영됩니다.</p>
       <div class="grades" id="grades">
         <label>국·수·영·과 <input type="number" step="0.01" min="1" max="9" id="g-nat" placeholder="예: 2.85"></label>
@@ -1980,11 +1992,15 @@ td.c-cut70{font-weight:600;color:var(--ink)}
         <label>판정 기준 <input type="number" step="0.05" min="0.05" max="2" id="g-th" value="0.3"> 등급</label>
         <span class="hint">본인 내신이 70%컷보다 이 값만큼 나쁘면 상향, 좋으면 하향으로 판정합니다.</span>
       </div>
+      </div>
     </div>
-    <div class="panel pad">
+    <div class="panel pad foldbox fold">
       <h3 class="sec">모의고사 등급</h3>
+      <button type="button" class="foldhead"><span class="fh-t">모의고사 등급</span><span class="fh-sum" id="mockSum"></span></button>
+      <div class="foldbody">
       <p class="hint">선생님이 등록한 모의고사 성적입니다. 이 화면에서는 수정할 수 없습니다.</p>
       <div id="mockGrades"></div>
+      </div>
     </div>
     <div class="panel pad">
       <h3 class="sec">요약</h3>
@@ -2016,7 +2032,6 @@ td.c-cut70{font-weight:600;color:var(--ink)}
     <button type="button" class="pib" data-pi="cand" aria-pressed="false">예비 <span class="n" id="piCandN"></span></button>
     <button type="button" class="pib" data-pi="college" aria-pressed="false">전문대 <span class="n" id="piColN"></span></button>
     <button type="button" class="pib fold" id="piFold" aria-pressed="false" title="합불·1단계·면접 같은 결과 칸을 접어 카드를 짧게 봅니다">결과 칸 접기</button>
-    <span class="fh">다시 누르면 전체</span>
     <span class="grow"></span>
     <button class="btn" id="savePlanCsv">파일로 저장(CSV)</button>
     <button class="btn" id="savePlanXlsx">xlsx로 저장</button>
@@ -3493,10 +3508,6 @@ window.SUSI_SAMEDAYS = function (a, b) {
     if (gr || mock.length) h += '</div></div>';
 
     var wire = function () {
-      var fh = $('stDetail').querySelector('.foldhead');
-      if (fh) fh.addEventListener('click', function () {
-        fh.parentNode.classList.toggle('fold');
-      });
       var eb = $('gEdit');
       if (eb) eb.addEventListener('click', function () { editGrades(st, gr, mock); });
       var qb = $('planEditBtn');
@@ -5672,7 +5683,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-17.4';
+  var BUILD_ID = '2026-09-17.5';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
@@ -5780,6 +5791,12 @@ window.SUSI_SAMEDAYS = function (a, b) {
     });
     on('logout', 'click', function () {
       flush().then(function () { return sb.auth.signOut(); }).then(function () { location.reload(); });
+    });
+    /* 접이 묶음 손잡이는 한 군데서 받는다 — 화면을 다시 그릴 때마다 새로 연결하면
+       같은 손잡이에 처리기가 겹쳐 붙어 눌러도 제자리로 돌아온다(두 번 토글). */
+    document.addEventListener('click', function (e) {
+      var fh = e.target.closest && e.target.closest('.foldhead');
+      if (fh && fh.parentNode) fh.parentNode.classList.toggle('fold');
     });
     on('stFilter', 'input', renderStudentList);
     // 접어 둔 명단을 다시 펼친다 (휴대폰에서만 보이는 단추)
@@ -7307,6 +7324,15 @@ window.SUSI_SAMEDAYS = function (a, b) {
     fillUniDatalist();          // 337곳 목록은 한 번만 만든다 (카드마다 만들면 3,700줄이 된다)
     $('g-nat').value = plan.g.nat; $('g-hum').value = plan.g.hum; $('g-all').value = plan.g.all;
     $('g-th').value = plan.th;
+    // 접어 두었을 때 손잡이에 적어 둘 요약 (휴대폰)
+    var gs = $('gradeSum');
+    if (gs) {
+      var gp = [];
+      if (plan.g.nat) gp.push('국·수·영·과 ' + plan.g.nat);
+      if (plan.g.hum) gp.push('국·수·영·사 ' + plan.g.hum);
+      if (plan.g.all) gp.push('전과목 ' + plan.g.all);
+      gs.textContent = gp.join(' · ') || '아직 없음';
+    }
     [['main', 'cardsMain'], ['tech', 'cardsTech'], ['cand', 'cardsCand'], ['college', 'cardsCollege']].forEach(function (a) {
       var area = a[0], host = $(a[1]);
       host.innerHTML = plan[area].map(function (c, ix) { return cardHTML(c, ix, area); }).join('');
@@ -7321,6 +7347,9 @@ window.SUSI_SAMEDAYS = function (a, b) {
     var host = $('mockGrades'); if (!host) return;
     var mocks = (WHO && WHO.mocks) || {};
     var rounds = FORM_MOCKS.filter(function (mo) { return mocks[mo]; });
+    // 접어 두었을 때 손잡이에 적어 둘 요약 (휴대폰)
+    var ms = $('mockSum');
+    if (ms) ms.textContent = rounds.length ? rounds.join(' · ') : '아직 없음';
     if (!rounds.length) { host.innerHTML = '<p class="hint">아직 올라온 모의고사 성적이 없습니다.</p>'; return; }
     host.innerHTML = '<table class="gt"><thead><tr><th>모의</th><th>국어</th><th>수학</th><th>영어</th><th>탐1</th><th>탐2</th></tr></thead><tbody>' +
       rounds.map(function (mo) {
