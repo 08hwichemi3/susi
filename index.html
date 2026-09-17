@@ -591,6 +591,23 @@ td.c-cut70{font-weight:600;color:var(--ink)}
      · 더 나쁜 것: 이 표들은 data-label 이 없어서 머리글이 숨겨지면 이름표가
        통째로 사라진다. 「3월」 밑에 2 3 2 3 4 만 남아 어느 것이 국어인지 알 수 없었다 */
 .stshow{display:none}
+/* 접었다 펴는 묶음 (성적). 넓은 화면에서는 손잡이를 감추고 늘 펼쳐 둔다 —
+   표는 한 눈에 견주려고 쓰는 것이라 접으면 오히려 불편하다. */
+.foldhead{display:none}
+@media(max-width:900px){
+  .foldhead{display:flex;width:100%;align-items:baseline;gap:8px;margin:10px 0 0;
+    padding:9px 12px;border:1px solid var(--line);border-radius:9px;
+    background:var(--surface-2);color:var(--ink-2);font-family:inherit;font-size:12.5px;
+    font-weight:600;cursor:pointer;text-align:left}
+  /* 요약이 길어도 「성적」 이 두 글자로 쪼개지지 않게 못박는다 */
+  .foldhead .fh-t{flex:none;white-space:nowrap}
+  .foldhead .fh-sum{font-weight:400;color:var(--ink-3);font-size:11.5px;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .foldhead::after{content:'펼치기 ▾';margin-left:auto;flex:none;
+    font-size:11px;font-weight:600;color:var(--accent)}
+  .foldbox:not(.fold) .foldhead::after{content:'접기 ▴'}
+  .foldbox.fold .foldbody{display:none}
+}
 @media(max-width:900px){
   /* ── 숫자만 있는 작은 표(내신·모의·성적 입력)는 카드로 풀지 않는다 ──
      한두 글자 숫자뿐이라 390px 에도 그대로 들어간다. 583+1,142px → 109+166px. */
@@ -1041,6 +1058,21 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .plantbl.edit input,.plantbl.edit select,
   .plantbl.edit select[data-f="verdict_override"]{min-width:0}
   .plantbl.edit .whyno{display:inline-block;margin-left:0}
+
+  /* ── 대학 한 곳씩 접는다 ──
+     펼쳐 두면 한 곳에 351px 이라 6곳이면 2,100px 이다. 접으면 대학명 한 줄과
+     요약(판정·고사일) 한 줄만 남는다. 앞 두 칸(구분·대학)이 여닫이 손잡이다 —
+     입력칸을 누르면 접히지 않아야 해서 손잡이를 그 둘로 한정했다.
+     요약은 tr 의 data-sum 을 그대로 찍는다(칸을 새로 만들면 넓은 화면 표에
+     없던 열이 하나 생긴다). */
+  .plantbl.edit tbody tr.fold>td:nth-child(n+3){display:none}
+  .plantbl.edit tbody tr.fold[data-sum]::after{content:attr(data-sum);
+    grid-column:span 6;order:11;font-size:11.5px;color:var(--ink-3)}
+  .plantbl.edit tbody tr>td:nth-child(1){cursor:pointer}
+  .plantbl.edit tbody tr>td:nth-child(2){cursor:pointer}
+  .plantbl.edit tbody tr>td:nth-child(1)::after{content:'접기 ▴';float:right;
+    font-size:11px;font-weight:600;color:var(--accent)}
+  .plantbl.edit tbody tr.fold>td:nth-child(1)::after{content:'펼치기 ▾'}
 }
 .whyno{display:block;margin-top:2px;font-size:10px;color:var(--ink-3)}
 .msg.ok{color:var(--accent)}
@@ -3328,6 +3360,10 @@ window.SUSI_SAMEDAYS = function (a, b) {
   }
 
   var VN = { up: '상향', fit: '적정', down: '하향' };
+  var RN = { pass: '합격', fail: '불합격', wait: '대기(예비)' };
+  /* 「2026/11/21」 → 「11/21」. 접은 줄의 요약은 자리가 좁아 연도를 뗀다
+     (한 해 것만 모여 있어 연도가 붙어 있어도 알려 주는 것이 없다). */
+  function shortD(v) { return String(v || '').replace(/^\d{4}\s*[\/.\-]\s*/, ''); }
   var AN = { main: '지원', cand: '예비', college: '전문대', tech: '기술원' };
 
   /* ★ 늦게 도착한 응답이 화면을 덮으면 안 된다.
@@ -3382,6 +3418,20 @@ window.SUSI_SAMEDAYS = function (a, b) {
         ' · 첫 로그인 ' + (st.first_login_at ? new Date(st.first_login_at).toLocaleString('ko-KR') : '—')) + '</p>';
 
     if (!gr && !mock.length) h += '<p class="hint">아직 성적이 없습니다. <b>성적 입력</b>을 눌러 직접 넣거나 엑셀로 올리세요.</p>';
+    /* ★ 성적표 둘을 접이 묶음에 담는다. 휴대폰에서는 접힌 채로 시작하고,
+       넓은 화면에서는 손잡이가 안 보이고 늘 펼쳐져 있다(CSS 가 가른다).
+       손잡이에 요약을 적어 두어 펴지 않고도 대략을 안다. */
+    if (gr || mock.length) {
+      var gsum = [];
+      if (gr && gr.nat_avg != null) gsum.push('국·수·영·과 ' + gr.nat_avg);
+      if (gr && gr.hum_avg != null) gsum.push('국·수·영·사 ' + gr.hum_avg);
+      if (gr && gr.all_avg != null) gsum.push('전과목 ' + gr.all_avg);
+      if (mock.length) gsum.push('모의 ' + mock.length + '회');
+      h += '<div class="foldbox fold" id="gradeBox">' +
+        '<button type="button" class="foldhead"><span class="fh-t">성적</span>' +
+        '<span class="fh-sum">' + esc(gsum.join(' · ') || '없음') + '</span></button>' +
+        '<div class="foldbody">';
+    }
     if (gr) {
       h += '<table class="gt"><thead><tr><th>내신</th><th>1학년</th><th>2학년</th><th>3학년</th><th>평균</th></tr></thead><tbody>' +
         // nat_y1 은 나중에 추가된 열이다. null 로 하드코딩돼 있어서
@@ -3399,8 +3449,13 @@ window.SUSI_SAMEDAYS = function (a, b) {
             .map(function (v) { return '<td>' + (v == null ? '—' : v) + '</td>'; }).join('') + '</tr>';
         }).join('') + '</tbody></table>';
     }
+    if (gr || mock.length) h += '</div></div>';
 
     var wire = function () {
+      var fh = $('stDetail').querySelector('.foldhead');
+      if (fh) fh.addEventListener('click', function () {
+        fh.parentNode.classList.toggle('fold');
+      });
       var eb = $('gEdit');
       if (eb) eb.addEventListener('click', function () { editGrades(st, gr, mock); });
       var qb = $('planEditBtn');
@@ -3435,7 +3490,17 @@ window.SUSI_SAMEDAYS = function (a, b) {
       var vd = window.SUSI_VERDICT(cut, mine, 0.3);
       // 판정이 왜 비었는지 보이게 한다 — 그냥 '—' 면 고장인지 자료 문제인지 알 수 없다
       var why = !info ? '자료에 없음' : (!cut ? '컷 없음' : (!mine ? '내신 없음' : ''));
-      h += '<tr data-id="' + a.id + '">' +
+      /* 접었을 때 보여 줄 한 줄 요약 — 판정과 적어 둔 고사일만 추린다. */
+      var sum = [];
+      var vshow = a.verdict_override ? VN[a.verdict_override] : (vd ? VN[vd.v] : '');
+      if (vshow) sum.push(vshow);
+      if (a.step1) sum.push('1단계 ' + shortD(a.step1));
+      if (a.interview) sum.push('면접/실기 ' + shortD(a.interview));
+      if (a.essay) sum.push('논술 ' + shortD(a.essay));
+      if (a.final_date) sum.push('발표 ' + shortD(a.final_date));
+      if (RN[a.result]) sum.push(RN[a.result]);
+      h += '<tr class="fold" data-sum="' + esc(sum.join(' · ') || '적어 둔 날짜 없음') +
+        '" data-id="' + a.id + '">' +
         '<td class="auto"><span class="areatag at-' + a.area + '">' + AN[a.area] + ' ' + a.slot + '</span></td>' +
         '<td class="auto"><b>' + esc(a.uni_name) + '</b><br><span class="who">' +
           esc(a.admission_name) + ' · ' + esc(a.dept_name) + '</span></td>' +
@@ -3653,6 +3718,17 @@ window.SUSI_SAMEDAYS = function (a, b) {
         var wh = tr.querySelector('.whyno');
         var why2 = !info ? '자료에 없음' : (!cut ? '컷 없음' : (!mine ? '내신 없음' : ''));
         if (wh) wh.textContent = (why2 && !a.verdict_override) ? why2 : '';
+        /* 접었을 때 보이는 한 줄 요약도 같이 고친다 — 안 그러면 날짜를 넣고
+           접었을 때 예전 요약이 그대로 남아 안 저장된 것처럼 보인다. */
+        var sum2 = [];
+        var vs2 = a.verdict_override ? VN[a.verdict_override] : (vd2 ? VN[vd2.v] : '');
+        if (vs2) sum2.push(vs2);
+        if (a.step1) sum2.push('1단계 ' + shortD(a.step1));
+        if (a.interview) sum2.push('면접/실기 ' + shortD(a.interview));
+        if (a.essay) sum2.push('논술 ' + shortD(a.essay));
+        if (a.final_date) sum2.push('발표 ' + shortD(a.final_date));
+        if (RN[a.result]) sum2.push(RN[a.result]);
+        tr.setAttribute('data-sum', sum2.join(' · ') || '적어 둔 날짜 없음');
       })();
       var m = $('planMsg');
       if (m) { m.className = 'msg'; m.textContent = '저장 중…'; }
@@ -3678,6 +3754,15 @@ window.SUSI_SAMEDAYS = function (a, b) {
         if (v !== el.value) el.value = v;
       });
     };
+    /* 앞 두 칸(구분·대학)이 여닫이 손잡이다. 입력칸을 누를 때 접히면 안 되므로
+       손잡이를 그 둘로 한정한다. 넓은 화면은 표 그대로라 접지 않는다. */
+    host.addEventListener('click', function (e) {
+      if (window.matchMedia('(min-width:901px)').matches) return;
+      var td = e.target.closest('td'); if (!td) return;
+      var tr = td.closest('tr[data-id]'); if (!tr) return;
+      if (Array.prototype.indexOf.call(tr.children, td) > 1) return;
+      tr.classList.toggle('fold');
+    });
     host.addEventListener('change', function (e) {
       var tr = e.target.closest('tr[data-id]'); if (tr) { fixDates(tr); save(tr); }
     });
@@ -5546,7 +5631,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
        이 문서가 브라우저 캐시에서 나왔더라도 «내가 들고 있는 판»과 정확히 견줄 수 있다.
 
      ※ 새 판을 올릴 때는 아래 BUILD_ID 와 version.txt 를 같은 값으로 고쳐야 한다. */
-  var BUILD_ID = '2026-09-17.2';
+  var BUILD_ID = '2026-09-17.3';
   var UPDATE_SHOWN = false;
 
   function showUpdateBar() {
