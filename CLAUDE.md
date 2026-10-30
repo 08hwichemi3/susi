@@ -139,7 +139,12 @@
     (1단계·최종·충원 번호). 카드 모델 `step1Res` ↔ 줄 `step1_result`(MERGE_F 에도 넣음). 최종에 `fill`(충원합격) 추가.
     1단계 불합격 → 최종 불합격 자동(표 `save`, 카드 change 둘 다). 휴대폰 grid: 합불 span 4 · 충원 span 2.
     배포할 때 BUILD_ID·version.txt 올릴 것.
-- 세 예약 작업 모두 같은 `susi_tools.py` 를 지시문에 품고 있다 — 고치면 **세 군데** 다 `update_trigger`.
+- **알림 방(채팅방 하나에 쌓임)**: 세션 `session_01YFfKQJZ2a3pdE2nFU1tCVn` 「3-1 수시 알림」(append_system_prompt 에 역할·스크립트).
+  예약 작업 「수시 알림 방 — 전날 저녁」(`trig_01NcGtT4j2jtmQNHBgPPRG2P`, 17:51 「알림: 내일」) ·
+  「— 당일 아침」(`trig_01PC2FQPYbbgaUhN4cfB45iR`, 07:21 「알림: 오늘」)이 그 세션으로 들어간다(푸시는 못 붙음 — 푸시는 위 작업이 맡음).
+  선생님이 그 방에 「26번 한기대 1단계 합격」처럼 말하면 확인 뒤 `sync` 로 앱 DB 에 쓴다. 권한 모드가 default 라
+  처음 도구 쓸 때 승인 창이 뜰 수 있다.
+- 예약 작업·세션 모두 같은 `susi_tools.py` 를 지시문에 품고 있다 — 고치면 **네 군데**(푸시 2·연동 1·알림 방 시스템 프롬프트) 다 바꿔야 한다.
 
 ## 10. 남은 일 · 사용자에게 알린 것
 
