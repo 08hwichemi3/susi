@@ -134,6 +134,10 @@
 - 형식·내용을 바꾸려면 두 예약 작업의 prompt 를 `update_trigger` 로 같이 바꾼다(0=오늘, 1=내일만 다름).
 - **기록·결과 입력 페이지** https://claude.ai/artifact/1uuN6DB2C4gN7onZ7zwS4c (비공개, 원본은 스크래치 `susi-alarm-log.html`,
   이 세션 뒤에는 Artifact `read` 로 받아 온다). 탭 둘: 알림 기록(날짜별 한 칸, `<!-- NEW -->` 뒤에 끼움) / 결과 입력.
+  - 2026-10-31 새 단장(판 15): 예약 작업이 끼우는 `<article><pre>` 조각 형식은 그대로 두고, 페이지가 열릴 때 `unfold()` 가
+    `<pre>` 를 줄 단위로 풀어 종류 줄(점 색 = 앱 달력 색) · 학생 줄(번호·이름 / 대학·학과 / 전형 세 줄, `button.ln`) 로 바꾼다.
+    머리줄 `[내일 …]` 은 카드 머리와 겹쳐 숨기고 「일정 없음」만 남긴다. 입력칸은 세로 세 줄(1단계·최종·충원번호, `.fr`).
+    실측: 390px 너비에서 가로 넘침 0, 밝은/어두운 화면 둘 다 확인(스크래치 `uitest/`).
   - 명단은 함께 발행되는 `apps.json`(스크립트 `apps`/`notice` 명령이 만든다). 입력은 페이지 DB `results/{지원 id}`
     ({step1, final, fill_no, updated, sent}) — `ArtifactData` 로 읽을 수 있다.
   - 「앱에 연동」 = 페이지가 `mcp` 로 Claude Code Remote 의 `fire_trigger` 를 불러 예약 작업
