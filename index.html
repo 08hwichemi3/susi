@@ -392,6 +392,10 @@ td.jh{color:var(--ink-2)}
 .rrow>label>select,.rrow>label>input{flex:1;min-width:0}
 .rrow2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .rrow2>label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink-3)}
+/* 1단계 · 최종 · 충원 번호 세 칸 (2026-10-30) */
+.rrow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.rrow3>label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink-3);min-width:0}
+.rrow3>label>select,.rrow3>label>input{min-width:0;width:100%}
 .modtag{font-size:9.5px;padding:0 5px;border-radius:999px;background:var(--blue-soft);color:var(--blue);font-weight:600;white-space:nowrap}
 .reseta{border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-3);border-radius:6px;width:20px;height:20px;line-height:1;cursor:pointer;font-size:12px;padding:0;flex:0 0 auto}
 .reseta:hover{border-color:var(--accent-line);color:var(--accent)}
@@ -1076,8 +1080,8 @@ td.c-cut70{font-weight:600;color:var(--ink)}
    74px 로는 「자동 (적…」 로 잘려서 무엇이 자동값인지 알 수가 없다. */
 .plantbl.edit select[data-f="verdict_override"]{min-width:96px}
 .plantbl.edit td.two{min-width:150px}
-.plantbl.edit td.two input{margin-bottom:3px}
-.plantbl.edit td.two input:last-child{margin-bottom:0}
+.plantbl.edit td.two input,.plantbl.edit td.two select{margin-bottom:3px;display:block}
+.plantbl.edit td.two input:last-child,.plantbl.edit td.two select:last-child{margin-bottom:0}
 
 /* ── 좁은 화면: 지원계획표도 카드로 ──
    app.css 의 @media(max-width:900px) 가 모든 table 을 카드로 바꾼다. 그때 머리글이
@@ -1109,9 +1113,10 @@ td.c-cut70{font-weight:600;color:var(--ink)}
   .plantbl.edit td.two{grid-column:span 6;order:8;
     display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .plantbl.edit td.two::before{grid-column:span 2;margin-bottom:0}
-  .plantbl.edit td.two input{margin-bottom:0}
-  .plantbl.edit td:nth-child(11){grid-column:span 3;order:9}   /* 합불 */
-  .plantbl.edit td:nth-child(12){grid-column:span 3;order:10}  /* 충원 */
+  .plantbl.edit td.two input,.plantbl.edit td.two select{margin-bottom:0}
+  /* 합불 칸은 1단계·최종 두 개라 4칸, 충원번호는 2칸 (2026-10-30) */
+  .plantbl.edit td:nth-child(11){grid-column:span 4;order:9}   /* 합불 (1단계 · 최종) */
+  .plantbl.edit td:nth-child(12){grid-column:span 2;order:10}  /* 충원 */
   .plantbl.edit input,.plantbl.edit select,
   .plantbl.edit select[data-f="verdict_override"]{min-width:0}
   .plantbl.edit .whyno{display:inline-block;margin-left:0}
@@ -2784,7 +2789,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     return { u: null, t: null, j: null, d: null,
              custom: false, uName: '', tName: '', jName: '', dName: '',
              memo: '', verdictOverride: null, manualGrade: '',
-             fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
+             fillNo: '', passFail: null, step1Res: null, step1: '', interview: null, essay: null, final: '' };
   }
   function rowsToPlan(rows, grades) {
     var plan = { g: { nat: '', hum: '', all: '' }, th: 0.3, main: [], cand: [], college: [], tech: [] };
@@ -2807,8 +2812,10 @@ window.SUSI_SAMEDAYS = function (a, b) {
       c.memo = r.memo || ''; c.verdictOverride = r.verdict_override || null;
       c.manualGrade = (r.manual_grade === null || r.manual_grade === undefined) ? '' : String(r.manual_grade);
       c.fillNo = r.fill_no || '';
-      // 'wait' 를 떨어뜨리면, 학생이 로그인만 해도 다음 저장 때 선생님이 넣은 값이 지워진다
-      c.passFail = (r.result === 'pass' || r.result === 'fail' || r.result === 'wait') ? r.result : null;
+      // 'wait'·'fill' 을 떨어뜨리면, 학생이 로그인만 해도 다음 저장 때 선생님이 넣은 값이 지워진다
+      c.passFail = (r.result === 'pass' || r.result === 'fail' || r.result === 'wait' || r.result === 'fill') ? r.result : null;
+      // 1단계 합불 — 2026-10-30 추가(Claude 결과 입력 페이지와 같은 칸)
+      c.step1Res = (r.step1_result === 'pass' || r.step1_result === 'fail') ? r.step1_result : null;
       c.step1 = r.step1 || ''; c.interview = r.interview; c.essay = r.essay;
       c.final = r.final_date || '';
       c._slot = r.slot;
@@ -2851,6 +2858,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     { row: 'final_date', card: 'final', blank: '' },
     { row: 'fill_no', card: 'fillNo', blank: '' },
     { row: 'result', card: 'passFail', blank: null },
+    { row: 'step1_result', card: 'step1Res', blank: null },
     { row: 'verdict_override', card: 'verdictOverride', blank: null },
     { row: 'manual_grade', card: 'manualGrade', blank: '' },
     { row: 'memo', card: 'memo', blank: '' }
@@ -2907,7 +2915,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
              (실제로 '' 인 줄이 22개 쌓여 있었다). */
           interview: c.interview || null, essay: c.essay || null, final_date: c.final || null,
           fill_no: c.fillNo || null,
-          result: c.passFail || null, memo: c.memo || null,
+          result: c.passFail || null, step1_result: c.step1Res || null, memo: c.memo || null,
           /* 병합할 때 화면 카드에도 되돌려 담아야 한다 — 올리기 직전에 지운다
              (applications 에 없는 칸을 그대로 보내면 저장이 통째로 거부된다) */
           _c: c });
@@ -2946,7 +2954,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
          있는지 보려면 고칠 수 있는 칸을 전부 같이 읽어야 한다. */
       sb.from('applications')
         .select('id,area,slot,uni_name,dept_name,step1,interview,essay,final_date,'
-              + 'fill_no,result,verdict_override,manual_grade,memo')
+              + 'fill_no,result,step1_result,verdict_override,manual_grade,memo')
         .eq('student_id', owner.id).eq('year', CFG.year)
     ).then(function (res) {
       if (res && res.error) throw res.error;
@@ -3200,7 +3208,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
      지원계획 시트뿐이라 그 두 장과 그것을 만들던 코드를 걷어냈다. */
   var PLAN_AREA = { main: '수시지원', cand: '예비', college: '전문대', tech: '기술원' };
   var AREA_ORDER = { main: 1, tech: 2, college: 3, cand: 4 };   // 학생 화면에 놓인 차례
-  var PLAN_RESULT = { pass: '합격', fail: '불합격', wait: '충원대기' };
+  var PLAN_RESULT = { pass: '합격', fail: '불합격', wait: '충원대기', fill: '충원합격' };
   var PLAN_VERDICT = { up: '상향', fit: '적정', down: '하향' };
 
   /* ★ '예비' 는 빼고 만든다.
@@ -3428,7 +3436,8 @@ window.SUSI_SAMEDAYS = function (a, b) {
   }
 
   var VN = { up: '상향', fit: '적정', down: '하향' };
-  var RN = { pass: '합격', fail: '불합격', wait: '대기(예비)' };
+  var RN = { pass: '합격', fail: '불합격', wait: '대기(예비)', fill: '충원합격' };
+  var RN1 = { pass: '1단계 합격', fail: '1단계 불합격' };   // 접은 줄 요약용
   /* 「2026/11/21」 → 「11/21」. 접은 줄의 요약은 자리가 좁아 연도를 뗀다
      (한 해 것만 모여 있어 연도가 붙어 있어도 알려 주는 것이 없다). */
   function shortD(v) { return String(v || '').replace(/^\d{4}\s*[\/.\-]\s*/, ''); }
@@ -3557,6 +3566,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
       if (a.interview) sum.push('면접/실기 ' + shortD(a.interview));
       if (a.essay) sum.push('논술 ' + shortD(a.essay));
       if (a.final_date) sum.push('발표 ' + shortD(a.final_date));
+      if (RN1[a.step1_result]) sum.push(RN1[a.step1_result]);
       if (RN[a.result]) sum.push(RN[a.result]);
       h += '<tr class="fold" data-sum="' + esc(sum.join(' · ') || '적어 둔 날짜 없음') +
         '" data-id="' + a.id + '">' +
@@ -3585,11 +3595,18 @@ window.SUSI_SAMEDAYS = function (a, b) {
         '</td>' +
         '<td data-label="최초 발표"><input type="text" data-f="final_date" value="' +
           esc(a.final_date || '') + '" placeholder="최초 발표일"></td>' +
-        // 합불을 먼저 정하고, 그 결과가 불합격·대기일 때 충원 번호를 적는 순서다.
-        '<td data-label="합불"><select data-f="result">' +
-            '<option value="">미정</option>' +
-            '<option value="pass"' + (a.result === 'pass' ? ' selected' : '') + '>합격</option>' +
+        /* 합불 칸은 두 줄 — 위 1단계, 아래 최종. 열을 늘리지 않아 휴대폰 배치(nth-child)가 그대로다.
+           1단계가 없는 전형은 위 줄을 「없음」으로 두면 된다. 1단계 불합격을 고르면 최종도 불합격이 된다. */
+        '<td class="two" data-label="합불 (1단계 · 최종)"><select data-f="step1_result" title="1단계">' +
+            '<option value="">1단계 없음</option>' +
+            '<option value="pass"' + (a.step1_result === 'pass' ? ' selected' : '') + '>1단계 합격</option>' +
+            '<option value="fail"' + (a.step1_result === 'fail' ? ' selected' : '') + '>1단계 불합격</option>' +
+          '</select>' +
+          '<select data-f="result" title="최종">' +
+            '<option value="">최종 미정</option>' +
+            '<option value="pass"' + (a.result === 'pass' ? ' selected' : '') + '>최초합격</option>' +
             '<option value="fail"' + (a.result === 'fail' ? ' selected' : '') + '>불합격</option>' +
+            '<option value="fill"' + (a.result === 'fill' ? ' selected' : '') + '>충원합격</option>' +
             // 'wait'(예비/대기) 는 데이터베이스 enum 에 있는 값이다. 여기에 항목이 없으면
             // 브라우저가 첫 항목('미정')을 보여 주고, 그 줄을 한 번만 건드려도 null 로 지워진다.
             '<option value="wait"' + (a.result === 'wait' ? ' selected' : '') + '>대기(예비)</option>' +
@@ -3762,8 +3779,14 @@ window.SUSI_SAMEDAYS = function (a, b) {
         // 이 대학 기준으로 다시 계산한 내신. 숫자로 안 읽히면 비운다(평균 내신을 다시 쓴다).
         manual_grade: (function () { var n = parseFloat(get('manual_grade')); return isFinite(n) && n > 0 ? n : null; })(),
         fill_no: get('fill_no') || null,
-        result: get('result') || null
+        result: get('result') || null,
+        step1_result: get('step1_result') || null
       };
+      // 1단계 불합격이면 최종도 불합격 — 화면의 선택 칸도 같이 맞춘다
+      if (patch.step1_result === 'fail' && patch.result !== 'fail') {
+        patch.result = 'fail';
+        var rs = tr.querySelector('[data-f="result"]'); if (rs) rs.value = 'fail';
+      }
       Object.keys(patch).forEach(function (k) { a[k] = patch[k]; });
       /* '이 대학 반영 내신' 을 고치면 판정이 달라진다 — 다시 그리지 않아도
          그 줄의 「자동 (적정)」 안내가 새 값으로 바로 바뀌게 해 준다. */
@@ -3786,6 +3809,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
         if (a.interview) sum2.push('면접/실기 ' + shortD(a.interview));
         if (a.essay) sum2.push('논술 ' + shortD(a.essay));
         if (a.final_date) sum2.push('발표 ' + shortD(a.final_date));
+        if (RN1[a.step1_result]) sum2.push(RN1[a.step1_result]);
         if (RN[a.result]) sum2.push(RN[a.result]);
         tr.setAttribute('data-sum', sum2.join(' · ') || '적어 둔 날짜 없음');
       })();
@@ -6971,7 +6995,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     return { u: null, t: null, j: null, d: null,
              custom: false, uName: '', tName: '', jName: '', dName: '',
              memo: '', verdictOverride: null, manualGrade: '',
-             fillNo: '', passFail: null, step1: '', interview: null, essay: null, final: '' };
+             fillNo: '', passFail: null, step1Res: null, step1: '', interview: null, essay: null, final: '' };
   }
   function normalizeCard(c) {
     c = c || {};
@@ -6988,7 +7012,8 @@ window.SUSI_SAMEDAYS = function (a, b) {
       // 이 대학 기준으로 다시 계산한 내신(비어 있으면 계열 평균 내신을 쓴다)
       manualGrade: (c.manualGrade === null || c.manualGrade === undefined) ? '' : String(c.manualGrade),
       fillNo: c.fillNo || '',
-      passFail: (c.passFail === 'pass' || c.passFail === 'fail') ? c.passFail : null,
+      passFail: (c.passFail === 'pass' || c.passFail === 'fail' || c.passFail === 'wait' || c.passFail === 'fill') ? c.passFail : null,
+      step1Res: (c.step1Res === 'pass' || c.step1Res === 'fail') ? c.step1Res : null,
       step1: c.step1 || '',
       interview: (c.interview === undefined || c.interview === null) ? null : c.interview,
       essay: (c.essay === undefined || c.essay === null) ? null : c.essay,
@@ -7176,7 +7201,8 @@ window.SUSI_SAMEDAYS = function (a, b) {
   }
 
   var AREA_LABEL = { main: '지원', cand: '예비', college: '전문대', tech: '기술원' };
-  var PF_LABEL = { pass: '합격', fail: '불합격' };
+  var PF_LABEL = { pass: '합격', fail: '불합격', wait: '대기(예비)', fill: '충원합격' };
+  var S1_LABEL = { pass: '1단계 합격', fail: '1단계 불합격' };
   /* ★ 휴대폰에서 카드를 접어 둔다. 다 채운 카드는 접힌 채로 열리고, 손댄 카드는
      그대로 펼쳐 둔다 — 학과를 고르자마자 접혀 버리면 고르던 흐름이 끊긴다.
      여기에는 «펼쳐 둔 카드» 만 담는다(자리 → true). 카드는 글자를 칠 때마다
@@ -7242,14 +7268,23 @@ window.SUSI_SAMEDAYS = function (a, b) {
         '<option value="fit"' + (c.verdictOverride === 'fit' ? ' selected' : '') + '>적정(수동)</option>' +
         '<option value="down"' + (c.verdictOverride === 'down' ? ' selected' : '') + '>하향(수동)</option>' +
         '</select></label></div>' +
-        // 합격 여부를 먼저 정하고, 불합격·충원일 때 최초 충원번호를 적는 순서로 둔다.
-        '<div class="rrow2">' +
-        '<label>합격 여부<select data-f="passFail" class="' + (c.passFail === 'pass' ? 'passfail-pass' : c.passFail === 'fail' ? 'passfail-fail' : '') + '">' +
-        '<option value=""' + (!c.passFail ? ' selected' : '') + '>미정</option>' +
-        '<option value="pass"' + (c.passFail === 'pass' ? ' selected' : '') + '>합격</option>' +
-        '<option value="fail"' + (c.passFail === 'fail' ? ' selected' : '') + '>불합격</option>' +
+        /* 1단계 → 최종 → 충원번호 순. 1단계가 없는 전형은 「없음」으로 두면 되고,
+           1단계 불합격을 고르면 최종도 불합격이 된다. 'wait'(대기) 는 선생님 표에서만 고를 수 있지만
+           값이 들어 있으면 여기서도 보여 준다(없으면 첫 항목으로 보여 저장 때 지워진다). */
+        '<div class="rrow3">' +
+        '<label>1단계<select data-f="step1Res" class="' + (c.step1Res === 'pass' ? 'passfail-pass' : c.step1Res === 'fail' ? 'passfail-fail' : '') + '">' +
+        '<option value=""' + (!c.step1Res ? ' selected' : '') + '>없음</option>' +
+        '<option value="pass"' + (c.step1Res === 'pass' ? ' selected' : '') + '>합격</option>' +
+        '<option value="fail"' + (c.step1Res === 'fail' ? ' selected' : '') + '>불합격</option>' +
         '</select></label>' +
-        '<label>충원합격 번호<input type="text" data-f="fillNo" value="' + esc(c.fillNo || '') + '" placeholder="예: 3"></label>' +
+        '<label>최종<select data-f="passFail" class="' + ((c.passFail === 'pass' || c.passFail === 'fill') ? 'passfail-pass' : c.passFail === 'fail' ? 'passfail-fail' : '') + '">' +
+        '<option value=""' + (!c.passFail ? ' selected' : '') + '>미정</option>' +
+        '<option value="pass"' + (c.passFail === 'pass' ? ' selected' : '') + '>최초합격</option>' +
+        '<option value="fail"' + (c.passFail === 'fail' ? ' selected' : '') + '>불합격</option>' +
+        '<option value="fill"' + (c.passFail === 'fill' ? ' selected' : '') + '>충원합격</option>' +
+        (c.passFail === 'wait' ? '<option value="wait" selected>대기(예비)</option>' : '') +
+        '</select></label>' +
+        '<label>충원 번호<input type="text" data-f="fillNo" value="' + esc(c.fillNo || '') + '" placeholder="예: 3"></label>' +
         '</div>' +
         '<div class="rrow"><label>1단계<input type="text" data-f="step1" value="' + esc(c.step1 || '') + '" placeholder="예: 1120 → 2026/11/20"></label></div>' +
         /* 「수정됨」 딱지와 ⟲(자동값으로 되돌리기)는 자동 채움이 있을 때 쓰던 것이라 뺐다 */
@@ -7270,6 +7305,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     if (c.interview) cSum.push('면접/실기 ' + shortD(c.interview));
     if (c.essay) cSum.push('논술 ' + shortD(c.essay));
     if (c.final) cSum.push('발표 ' + shortD(c.final));
+    if (S1_LABEL[c.step1Res]) cSum.push(S1_LABEL[c.step1Res]);
     if (PF_LABEL[c.passFail]) cSum.push(PF_LABEL[c.passFail]);
     return '<div class="card' + (isPick ? ' swap-pick' : '') + (folded ? ' fold' : '') +
       '" data-area="' + area + '" data-ix="' + ix + '"' +
@@ -7482,6 +7518,10 @@ window.SUSI_SAMEDAYS = function (a, b) {
       else if (f === 'd') { c.d = v; }
       else if (f === 'verdict') { c.verdictOverride = e.target.value || null; }
       else if (f === 'passFail') { c.passFail = e.target.value || null; }
+      else if (f === 'step1Res') {
+        c.step1Res = e.target.value || null;
+        if (c.step1Res === 'fail') c.passFail = 'fail';   // 1단계 불합격이면 최종도 불합격
+      }
       else return;
       growUnboundedArea(hit.area);
       savePlan();
@@ -8194,6 +8234,7 @@ window.SUSI_SAMEDAYS = function (a, b) {
     var s = normName(v);
     if (!s) return null;
     if (s.indexOf('불합') >= 0 || s === 'fail') return 'fail';
+    if (s.indexOf('충원합') >= 0 || s === 'fill') return 'fill';
     if (s.indexOf('합격') >= 0 || s === 'pass') return 'pass';
     return null;
   }
