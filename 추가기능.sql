@@ -773,3 +773,14 @@ create trigger trg_log_application_delete
         on conflict (student_id, year, area, slot) do nothing;
       ★ 칸 차례는 applications 표의 차례와 같아야 한다.
         바뀌었다면 information_schema.columns 로 먼저 확인할 것.            */
+
+-- ─────────────────────────────────────────────────────────────
+-- 2026-10-30 · 1단계 합불 칸 + 충원합격 값 (Claude 「결과 입력」 페이지 연동용)
+--   · pass_fail 에 'fill'(충원합격) 값 추가 — 앱 화면은 아직 pass/fail/wait 만 알므로
+--     앱 쪽 「1단계 합불」 작업과 함께 select 에 'fill' 항목을 넣어야 한다.
+--   · applications.step1_result : 1단계 합불(pass/fail, null = 없음/미정)
+--   연동 스크립트(susi_tools.py)는 이 둘이 없으면 그 값만 건너뛰고 돈다.
+-- ─────────────────────────────────────────────────────────────
+alter type public.pass_fail add value if not exists 'fill';
+alter table public.applications add column if not exists step1_result public.pass_fail;
+comment on column public.applications.step1_result is '1단계 합불(pass/fail). 2026-10-30 Claude 결과 입력 페이지용';
