@@ -8,7 +8,8 @@
 ## 1. 반드시 지킬 규칙 (사용자 요청)
 
 1. **`main` 에는 사용자가 그 차례에 「배포해」라고 할 때만 올린다.**
-   `main` = 실제 사이트(GitHub Pages). 작업은 `claude/staff-account-university-upload-9ccieg` 브랜치에서.
+   `main` = 실제 사이트(GitHub Pages). 작업은 세션에 주어진 `claude/…` 브랜치에서(세션마다 다르다. 2026-10-31 까지는 `claude/dazzling-bohr-imd0yy`).
+   새 세션은 `git fetch origin main && git merge origin/main` 으로 최신 main 을 먼저 받는다(앞 세션의 CLAUDE.md 갱신은 브랜치에만 있을 수 있음 — 그 브랜치도 받아 볼 것).
    배포 = 브랜치 푸시 → `git checkout main && git merge --ff-only <브랜치> && git push origin main` → 브랜치로 돌아오기.
 2. **「마음대로 작업하지 말고 물어봐」** — 디자인·동작을 바꾸는 결정은 먼저 묻는다.
    선택지가 갈리면 AskUserQuestion 으로 실측 숫자·그림과 함께 묻고, 권장안을 첫 번째에 둔다.
