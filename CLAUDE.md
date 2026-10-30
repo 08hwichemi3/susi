@@ -158,7 +158,10 @@
     (1단계·최종·충원 번호). 카드 모델 `step1Res` ↔ 줄 `step1_result`(MERGE_F 에도 넣음). 최종에 `fill`(충원합격) 추가.
     1단계 불합격 → 최종 불합격 자동(표 `save`, 카드 change 둘 다). 휴대폰 grid: 합불 span 4 · 충원 span 2.
     배포할 때 BUILD_ID·version.txt 올릴 것.
-- **알림 방(채팅방 하나에 쌓임)**: 세션 `session_01YFfKQJZ2a3pdE2nFU1tCVn` 「3-1 수시 알림」(append_system_prompt 에 역할·스크립트).
+- **알림 방은 2026-10-31 01:17(KST) 끔** — 사용자 «페이지가 보기 편해서 채팅이 필요 없다». 방으로 가는 예약 작업 셋 모두 enabled=false
+  (지우지 않음, 세션도 남김 — 다시 쓰려면 update_trigger enabled=true). 푸시·페이지 기록·연동은 방과 따로 돌아 그대로 온다.
+  그래서 스크립트를 고칠 때 바꿀 곳은 **네 군데**(푸시 3·연동 1). 방은 다시 켤 때만 새 판을 보낸다.
+- **알림 방(채팅방 하나에 쌓임, 지금 꺼짐)**: 세션 `session_01YFfKQJZ2a3pdE2nFU1tCVn` 「3-1 수시 알림」(append_system_prompt 에 역할·스크립트).
   예약 작업 「수시 알림 방 — 전날 저녁」(`trig_01NcGtT4j2jtmQNHBgPPRG2P`, 17:51 일~금 「알림: 내일」) ·
   「— 평일 아침」(`trig_01PC2FQPYbbgaUhN4cfB45iR`, 08:27) · 「— 주말 아침」(`trig_014n2fNJK4BruRHfKGBTn73B`, 09:52, **enabled=false**, 둘 다 「알림: 오늘」)이 그 세션으로 들어간다(푸시는 못 붙음 — 푸시는 위 작업이 맡음).
   ★ 그 세션으로 가는 예약 작업의 **prompt 는 여기서 못 고친다**(그 방에서만 됨) — cron·enabled 만 바꿀 수 있다.
